@@ -19,8 +19,8 @@ class DefaultVersionProviderUnitTest {
             @Override public Optional<String> versionCustom() { return versionCustom; }
             @Override public boolean encryptHistory() { return false; }
             @Override public boolean camelizeProps() { return false; }
+            @Override public boolean csrfEnabled() { return true; }
             @Override public Optional<String> rootView() { return Optional.empty(); }
-            @Override public boolean precognitionEnabled() { return false; }
             @Override public Optional<String> ssrBundle() { return Optional.empty(); }
         };
     }

@@ -14,15 +14,14 @@ Adaptador Inertia.js v3 para Quarkus Reactivo (Mutiny + CDI + Vert.x).
 com.quarkus.inertia
 ├── api/           → Inertia (interfaz pública)
 ├── config/        → InertiaConfig (ConfigMapping)
-├── model/         → PageObject, AlwaysProp, DeferredProp
+├── model/         → PageObject, AlwaysProp, DeferredProp, OnceProp
 ├── protocol/      → Filtros, builders, procesadores (núcleo HTTP)
 ├── renderer/      → HtmlRenderer, SsrHandler
 ├── response/      → JsonResponseProcessor
 ├── security/      → InertiaCsrfFilter
 ├── spi/           → FlashStore, JsonProvider
 ├── version/       → VersionProvider, DefaultVersionProvider
-├── internal/      → InertiaImpl, JsonbJsonProvider, JacksonJsonProvider
-└── util/
+└── internal/      → InertiaImpl, JsonbJsonProvider, JacksonJsonProvider
 ```
 
 ## Uso
@@ -33,7 +32,7 @@ com.quarkus.inertia
 <dependency>
     <groupId>com.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
 </dependency>
 ```
 
@@ -45,7 +44,7 @@ inertia.version-strategy=custom
 inertia.version-custom=1.0.0
 inertia.encrypt-history=false
 inertia.camelize-props=false
-inertia.precognition-enabled=false
+inertia.csrf.enabled=true
 ```
 
 ### 3. Usar en recursos JAX-RS
@@ -107,43 +106,44 @@ createInertiaApp({
 - [x] PageObject con todos los campos Inertia v3 (16 campos)
 - [x] Partial reloads (X-Inertia-Partial-Component/Data/Except, X-Inertia-Reset)
 - [x] Deferred props con grupos (Map<String, List<String>>)
-- [x] Merge props (append/prepend) — `prependProps`
-- [x] Once props con custom key
-- [x] Scroll props (infinite scroll merge)
+- [x] Merge props — append (`mergeProps`), prepend (`prependProps`), deep (`deepMergeProps`), `matchPropsOn`
+- [x] Once props con custom key y expiración (`X-Inertia-Except-Once-Props`)
+- [x] Scroll props + `X-Inertia-Infinite-Scroll-Merge-Intent` (append/prepend)
 - [x] Shared props
 - [x] Rescued props (fallos silenciosos)
-- [x] Meta tags via props
-- [x] `encryptHistory`/`clearHistory`/`preserveFragment` siempre presentes
+- [x] Meta del page (`inertia.meta(...)`) renderizable en el root template (`pageMeta`/`pageTitle`)
+- [x] `encryptHistory`/`clearHistory`/`preserveFragment` (omitidos si `false`)
 - [x] Redirect interno → 303 PUT/PATCH/DELETE, 302 GET
 - [x] Redirect externo → 409 + X-Inertia-Location (solo GET+302)
 - [x] Fragment redirect → 409 + X-Inertia-Redirect
 - [x] Empty response → redirect a referer
-- [x] Version mismatch → 409 + X-Inertia-Location + X-Inertia-Version
+- [x] Version mismatch → 409 + X-Inertia-Location + X-Inertia-Version (flash preservado)
 - [x] Version strategies: sha256, vite-manifest, custom
-- [x] Precognition (X-Inertia-Precognition) — 204 éxito / 422 errores
-- [x] CSRF token session-based (XSRF-TOKEN → X-CSRF-TOKEN)
+- [x] Precognition header-based (`Precognition`, `Precognition-Validate-Only`) — 204 éxito / 422 errores
+- [x] Prefetch (`Purpose: prefetch` / `X-Inertia-Prefetch`)
+- [x] CSRF on-by-default (`inertia.csrf.enabled`, default `true`) — 419 en mismatch
 - [x] Flash data via FlashStore SPI (sesión Vert.x)
 - [x] AlwaysProp (errores sobreviven partial reloads)
 - [x] JSON-B primario, Jackson como alternativa
-- [x] Vary: X-Inertia header
-- [x] Partial-Except-Once-Props, Error-Bag, Scroll-Merge-Intent headers
+- [x] Vary: X-Inertia / Precognition headers
+- [x] Error-Bag y Scroll-Merge-Intent headers
 - [x] camelizeProps (snake_case → camelCase)
-- [x] HTML + JSON responses con `@Produces` override
+- [x] Root template configurable (`inertia.root-template`)
+- [x] HTML + JSON responses
 - [x] Native Image ready (@RegisterForReflection)
 
 ## Tests
 
 ```bash
 # Adapter
-cd quarkus-inertia
-mvn test                    # 63 tests (unitarios + integración)
+mvn test                    # 79 tests (unitarios + integración)
 
 # Demo App
 cd examples/demo-app
-mvn test                    # 22 tests (incluye seed de 10k registros)
+mvn test                    # 83 tests (incluye seed de 10k registros)
 ```
 
-Total: **85 tests** — todos pasan.
+Total: **162 tests** — todos pasan.
 
 ## Demo App
 
@@ -179,11 +179,12 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 | `mergeProps` | String[] | no |
 | `prependProps` | String[] | no |
 | `deepMergeProps` | String[] | no |
+| `matchPropsOn` | String[] | no |
 | `onceProps` | Map | no |
 | `scrollProps` | Map | no |
 | `sharedProps` | String[] | no |
-| `rescuedProps` | Map | no |
+| `rescuedProps` | String[] | no |
 | `meta` | Object | no |
-| `encryptHistory` | boolean | sí |
-| `clearHistory` | boolean | sí |
-| `preserveFragment` | boolean | sí |
+| `encryptHistory` | boolean | no (omitido si `false`) |
+| `clearHistory` | boolean | no (omitido si `false`) |
+| `preserveFragment` | boolean | no (omitido si `false`) |

@@ -11,7 +11,7 @@ class InertiaConfigUnitTest {
     private InertiaConfig makeConfig(String rootTemplate, String versionStrategy,
             Optional<String> versionCustom, boolean encryptHistory,
             Optional<String> rootView, boolean camelizeProps,
-            boolean precognitionEnabled, Optional<String> ssrBundle) {
+            Optional<String> ssrBundle) {
         return new InertiaConfig() {
             @Override public String rootTemplate() { return rootTemplate; }
             @Override public boolean ssrEnabled() { return false; }
@@ -20,19 +20,19 @@ class InertiaConfigUnitTest {
             @Override public Optional<String> versionCustom() { return versionCustom; }
             @Override public boolean encryptHistory() { return encryptHistory; }
             @Override public boolean camelizeProps() { return camelizeProps; }
+            @Override public boolean csrfEnabled() { return true; }
             @Override public Optional<String> rootView() { return rootView; }
-            @Override public boolean precognitionEnabled() { return precognitionEnabled; }
             @Override public Optional<String> ssrBundle() { return ssrBundle; }
         };
     }
 
     private InertiaConfig defaultConfig() {
-        return makeConfig("index.html", "sha256", Optional.empty(), false, Optional.empty(), false, false, Optional.empty());
+        return makeConfig("index.html", "sha256", Optional.empty(), false, Optional.empty(), false, Optional.empty());
     }
 
     @Test
     void shouldRejectBlankRootTemplate() {
-        var config = makeConfig("", "sha256", Optional.empty(), false, Optional.empty(), false, false, Optional.empty());
+        var config = makeConfig("", "sha256", Optional.empty(), false, Optional.empty(), false, Optional.empty());
         assertThatThrownBy(() -> new InertiaConfigValidator(config).onStart(null))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("root-template");
@@ -40,7 +40,7 @@ class InertiaConfigUnitTest {
 
     @Test
     void shouldRejectInvalidVersionStrategy() {
-        var config = makeConfig("index.html", "invalid", Optional.empty(), false, Optional.empty(), false, false, Optional.empty());
+        var config = makeConfig("index.html", "invalid", Optional.empty(), false, Optional.empty(), false, Optional.empty());
         assertThatThrownBy(() -> new InertiaConfigValidator(config).onStart(null))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("version-strategy");
@@ -54,7 +54,7 @@ class InertiaConfigUnitTest {
 
     @Test
     void shouldAcceptCustomVersionStrategy() {
-        var config = makeConfig("index.html", "custom", Optional.of("v1.0.0"), false, Optional.empty(), false, false, Optional.empty());
+        var config = makeConfig("index.html", "custom", Optional.of("v1.0.0"), false, Optional.empty(), false, Optional.empty());
         assertThatNoException().isThrownBy(() -> new InertiaConfigValidator(config).onStart(null));
     }
 

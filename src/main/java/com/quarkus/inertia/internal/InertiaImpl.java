@@ -107,14 +107,26 @@ public class InertiaImpl implements Inertia {
 
     @Override
     public void deferred(String group, String name, Supplier<Uni<Object>> resolver) {
-        sharedData.addDeferredPropGroup(group, List.of(name));
-        sharedData.set(name, resolver);
+        var keys = sharedData.getDeferredPropGroups().getOrDefault(group, java.util.List.of());
+        var updated = new java.util.ArrayList<>(keys);
+        if (!updated.contains(name)) updated.add(name);
+        sharedData.addDeferredPropGroup(group, updated);
+        sharedData.setWithNoTrack(name, resolver);
+    }
+
+    @Override
+    public void deferred(String name, Supplier<Uni<Object>> resolver) {
+        deferred("default", name, resolver);
     }
 
     @Override
     public void once(String key, Object value) {
         oncePropRegistry.set(key, value);
-        sharedData.addOncePropKey(key, key);
+    }
+
+    @Override
+    public void once(String key, Object value, String customKey) {
+        oncePropRegistry.set(key, value, customKey, null);
     }
 
     @Override
@@ -124,27 +136,39 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
-    public <T> void once(String key, T value, String customKey) {
-        oncePropRegistry.set(key, value, customKey, null);
-        sharedData.addOncePropKey(key, customKey);
+    public void merge(String key, Object value, boolean deep) {
+        sharedData.addMergePropKey(key);
+        if (deep) {
+            sharedData.addDeepMergePropKey(key);
+        }
+        sharedData.set(key, value);
     }
 
     @Override
-    public <T> void merge(String key, T value, boolean deep) {
+    public void prepend(String key, Object value) {
         sharedData.addMergePropKey(key);
-        if (deep) {
-            @SuppressWarnings("unchecked")
-            var existing = (Map<String, Object>) sharedData.get(key);
-            if (existing != null && value instanceof Map) {
-                var merged = mergePropProcessor.merge(
-                    existing, (Map<String, Object>) value);
-                sharedData.set(key, merged);
-            } else {
-                sharedData.set(key, value);
-            }
-        } else {
-            sharedData.set(key, value);
-        }
+        sharedData.addPrependPropKey(key);
+        sharedData.set(key, value);
+    }
+
+    @Override
+    public void scroll(String key, Map<String, Object> metadata) {
+        sharedData.addScrollProp(key, metadata);
+    }
+
+    @Override
+    public void rescue(String key) {
+        sharedData.addRescuedProp(key);
+    }
+
+    @Override
+    public void meta(String key, Object value) {
+        sharedData.addMeta(key, value);
+    }
+
+    @Override
+    public void meta(Map<String, Object> values) {
+        sharedData.addMeta(values);
     }
 
     @Override

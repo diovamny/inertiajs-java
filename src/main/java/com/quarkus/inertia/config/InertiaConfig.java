@@ -26,10 +26,10 @@ public interface InertiaConfig {
     @WithDefault("false")
     boolean camelizeProps();
 
-    java.util.Optional<String> rootView();
+    @WithDefault("true")
+    boolean csrfEnabled();
 
-    @WithDefault("false")
-    boolean precognitionEnabled();
+    java.util.Optional<String> rootView();
 
     java.util.Optional<String> ssrBundle();
 }

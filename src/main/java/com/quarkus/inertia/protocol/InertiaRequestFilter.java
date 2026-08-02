@@ -66,14 +66,22 @@ public class InertiaRequestFilter implements ContainerRequestFilter {
             ctx.putLocal("inertia-scroll-merge-intent", scrollMergeIntent);
         }
 
-        var precognition = requestContext.getHeaderString("X-Inertia-Precognition");
+        var precognition = requestContext.getHeaderString("Precognition");
         if (precognition != null) {
             ctx.putLocal("inertia-precognition", "true".equalsIgnoreCase(precognition));
         }
 
-        var prefetch = requestContext.getHeaderString("X-Inertia-Prefetch");
-        if (prefetch != null) {
-            ctx.putLocal("inertia-prefetch", "true".equalsIgnoreCase(prefetch));
+        var validateOnly = requestContext.getHeaderString("Precognition-Validate-Only");
+        if (validateOnly != null) {
+            ctx.putLocal("inertia-precognition-validate-fields", validateOnly);
+        }
+
+        var purpose = requestContext.getHeaderString("Purpose");
+        ctx.putLocal("inertia-prefetch", "prefetch".equalsIgnoreCase(purpose));
+
+        var legacyPrefetch = requestContext.getHeaderString("X-Inertia-Prefetch");
+        if (legacyPrefetch != null) {
+            ctx.putLocal("inertia-prefetch", "true".equalsIgnoreCase(legacyPrefetch));
         }
 
         var referer = requestContext.getHeaderString("Referer");

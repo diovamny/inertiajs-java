@@ -18,11 +18,12 @@ public class SharedDataRegistry {
     private final Map<String, String> oncePropKeys = new HashMap<>();
     private final List<String> mergePropKeys = new java.util.ArrayList<>();
     private final List<String> prependPropKeys = new java.util.ArrayList<>();
+    private final List<String> deepMergePropKeys = new java.util.ArrayList<>();
     private final List<String> matchPropKeys = new java.util.ArrayList<>();
     private final Set<String> sharedKeys = new LinkedHashSet<>();
     private final Map<String, Map<String, Object>> scrollProps = new HashMap<>();
     private final Map<String, Object> meta = new HashMap<>();
-    private final Map<String, Object> rescuedProps = new HashMap<>();
+    private final List<String> rescuedProps = new java.util.ArrayList<>();
 
     public void set(String key, Object value) {
         data.put(key, value);
@@ -73,6 +74,7 @@ public class SharedDataRegistry {
         oncePropKeys.clear();
         mergePropKeys.clear();
         prependPropKeys.clear();
+        deepMergePropKeys.clear();
         matchPropKeys.clear();
         sharedKeys.clear();
         scrollProps.clear();
@@ -112,6 +114,14 @@ public class SharedDataRegistry {
         return List.copyOf(prependPropKeys);
     }
 
+    public void addDeepMergePropKey(String key) {
+        deepMergePropKeys.add(key);
+    }
+
+    public List<String> getDeepMergePropKeys() {
+        return List.copyOf(deepMergePropKeys);
+    }
+
     public void addMatchPropKey(String key) {
         matchPropKeys.add(key);
     }
@@ -125,11 +135,15 @@ public class SharedDataRegistry {
     }
 
     public void addScrollProp(String key, Map<String, Object> metadata) {
-        scrollProps.put(key, Map.copyOf(metadata));
+        scrollProps.put(key, new HashMap<>(metadata));
     }
 
     public Map<String, Map<String, Object>> getScrollProps() {
-        return Map.copyOf(scrollProps);
+        var result = new HashMap<String, Map<String, Object>>();
+        for (var entry : scrollProps.entrySet()) {
+            result.put(entry.getKey(), java.util.Collections.unmodifiableMap(entry.getValue()));
+        }
+        return java.util.Collections.unmodifiableMap(result);
     }
 
     public boolean hasScrollProps() {
@@ -152,16 +166,20 @@ public class SharedDataRegistry {
         return !meta.isEmpty();
     }
 
-    public void addRescuedProp(String key, Object value) {
-        rescuedProps.put(key, value);
+    public void addRescuedProp(String key) {
+        if (!rescuedProps.contains(key)) {
+            rescuedProps.add(key);
+        }
     }
 
-    public void addRescuedProps(Map<String, Object> values) {
-        rescuedProps.putAll(values);
+    public void addRescuedProps(java.util.Collection<String> keys) {
+        for (var key : keys) {
+            addRescuedProp(key);
+        }
     }
 
-    public Map<String, Object> getRescuedProps() {
-        return Map.copyOf(rescuedProps);
+    public List<String> getRescuedProps() {
+        return List.copyOf(rescuedProps);
     }
 
     public boolean hasRescuedProps() {

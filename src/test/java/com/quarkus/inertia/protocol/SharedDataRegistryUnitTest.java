@@ -94,14 +94,14 @@ class SharedDataRegistryUnitTest {
     @Test
     void shouldStoreAndRetrieveRescuedProps() {
         var registry = new SharedDataRegistry();
-        registry.addRescuedProp("failedKey", "error message");
-        assertThat(registry.getRescuedProps()).containsEntry("failedKey", "error message");
+        registry.addRescuedProp("failedKey");
+        assertThat(registry.getRescuedProps()).containsExactly("failedKey");
     }
 
     @Test
     void shouldAddMultipleRescuedProps() {
         var registry = new SharedDataRegistry();
-        registry.addRescuedProps(java.util.Map.of("a", "err1", "b", "err2"));
+        registry.addRescuedProps(java.util.List.of("a", "b"));
         assertThat(registry.hasRescuedProps()).isTrue();
         assertThat(registry.getRescuedProps()).hasSize(2);
     }
@@ -110,7 +110,7 @@ class SharedDataRegistryUnitTest {
     void shouldClearPrependAndRescuedProps() {
         var registry = new SharedDataRegistry();
         registry.addPrependPropKey("items");
-        registry.addRescuedProp("key", "err");
+        registry.addRescuedProp("key");
         registry.clear();
         assertThat(registry.getPrependPropKeys()).isEmpty();
         assertThat(registry.hasRescuedProps()).isFalse();

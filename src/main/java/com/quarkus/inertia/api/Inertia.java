@@ -1,5 +1,7 @@
 package com.quarkus.inertia.api;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import io.smallrye.mutiny.Uni;
@@ -30,13 +32,25 @@ public interface Inertia {
 
     void deferred(String group, String name, Supplier<Uni<Object>> resolver);
 
+    void deferred(String name, Supplier<Uni<Object>> resolver);
+
     void once(String key, Object value);
+
+    void once(String key, Object value, String customKey);
 
     void merge(String key, Object value);
 
-    <T> void once(String key, T value, String customKey);
+    void merge(String key, Object value, boolean deep);
 
-    <T> void merge(String key, T value, boolean deep);
+    void prepend(String key, Object value);
+
+    void scroll(String key, Map<String, Object> metadata);
+
+    void rescue(String key);
+
+    void meta(String key, Object value);
+
+    void meta(Map<String, Object> values);
 
     void encryptHistory(boolean encrypt);
 

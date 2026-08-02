@@ -29,11 +29,19 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
     public Response toResponse(ConstraintViolationException exception) {
         var ctx = Vertx.currentContext();
 
+        var validateFields = ctx != null
+            ? (String) ctx.getLocal("inertia-precognition-validate-fields")
+            : null;
+
         var errors = new HashMap<String, String>();
         for (var violation : exception.getConstraintViolations()) {
             var propertyPath = violation.getPropertyPath().toString();
             var field = propertyPath.contains(".") ?
                 propertyPath.substring(propertyPath.lastIndexOf('.') + 1) : propertyPath;
+            if (validateFields != null && !validateFields.isBlank()
+                    && !matchesValidateOnly(validateFields, field)) {
+                continue;
+            }
             errors.put(field, violation.getMessage());
         }
 
@@ -64,14 +72,16 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                     .entity(json)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .header("X-Inertia", "true")
-                    .header("Vary", "X-Inertia")
+                    .header("Precognition", "true")
+                    .header("Vary", "Precognition")
                     .build();
             } catch (Exception e) {
                 return Response.status(422)
                     .entity(body)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .header("X-Inertia", "true")
-                    .header("Vary", "X-Inertia")
+                    .header("Precognition", "true")
+                    .header("Vary", "Precognition")
                     .build();
             }
         }
@@ -90,5 +100,12 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
             .header("Location", location)
             .header("Vary", "Accept")
             .build();
+    }
+
+    private boolean matchesValidateOnly(String validateFields, String field) {
+        for (var candidate : validateFields.split(",")) {
+            if (candidate.trim().equals(field)) return true;
+        }
+        return false;
     }
 }

@@ -2,9 +2,11 @@ package com.quarkus.inertia.model;
 
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record PageObject(
     String component,
     Map<String, Object> props,
@@ -15,14 +17,14 @@ public record PageObject(
     List<String> prependProps,
     List<String> deepMergeProps,
     List<String> matchPropsOn,
-    Map<String, String> onceProps,
+    Map<String, OnceProp> onceProps,
     Map<String, Map<String, Object>> scrollProps,
     List<String> sharedProps,
-    Map<String, Object> rescuedProps,
+    List<String> rescuedProps,
     Map<String, Object> meta,
-    boolean encryptHistory,
-    boolean clearHistory,
-    boolean preserveFragment
+    Boolean encryptHistory,
+    Boolean clearHistory,
+    Boolean preserveFragment
 ) {
     public PageObject {
         if (component == null || component.isBlank()) {
@@ -44,6 +46,14 @@ public record PageObject(
     public PageObject withProps(Map<String, Object> newProps) {
         return new PageObject(component, newProps, url, version,
             deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            scrollProps, sharedProps, rescuedProps, meta,
+            encryptHistory, clearHistory, preserveFragment);
+    }
+
+    public PageObject withMergeMetadata(List<String> newMergeProps, List<String> newPrependProps,
+            List<String> newDeepMergeProps, List<String> newMatchPropsOn) {
+        return new PageObject(component, props, url, version,
+            deferredProps, newMergeProps, newPrependProps, newDeepMergeProps, newMatchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
             encryptHistory, clearHistory, preserveFragment);
     }
@@ -73,7 +83,9 @@ public record PageObject(
                (sharedProps != null && !sharedProps.isEmpty()) ||
                (rescuedProps != null && !rescuedProps.isEmpty()) ||
                (meta != null && !meta.isEmpty()) ||
-               encryptHistory || clearHistory || preserveFragment;
+               Boolean.TRUE.equals(encryptHistory) ||
+               Boolean.TRUE.equals(clearHistory) ||
+               Boolean.TRUE.equals(preserveFragment);
     }
 
     public boolean hasDeferredProps() {

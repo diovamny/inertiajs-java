@@ -34,7 +34,29 @@ public class PartialReloadProcessor {
             }
         }
 
-        return page.withProps(Map.copyOf(filteredProps));
+        var result = page.withProps(Map.copyOf(filteredProps));
+
+        if (context.hasReset()) {
+            result = stripResetKeys(result, context.reset());
+        }
+
+        return result;
+    }
+
+    private PageObject stripResetKeys(PageObject page, Set<String> resetKeys) {
+        var merge = page.mergeProps() == null ? java.util.List.<String>of() : page.mergeProps();
+        var prepend = page.prependProps() == null ? java.util.List.<String>of() : page.prependProps();
+        var deepMerge = page.deepMergeProps() == null ? java.util.List.<String>of() : page.deepMergeProps();
+        var match = page.matchPropsOn() == null ? java.util.List.<String>of() : page.matchPropsOn();
+
+        var newMerge = merge.stream().filter(k -> !resetKeys.contains(k)).toList();
+        var newPrepend = prepend.stream().filter(k -> !resetKeys.contains(k)).toList();
+        var newDeepMerge = deepMerge.stream().filter(k -> !resetKeys.contains(k)).toList();
+        var newMatch = match.stream()
+            .filter(k -> !resetKeys.stream().anyMatch(k::equals))
+            .toList();
+
+        return page.withMergeMetadata(newMerge, newPrepend, newDeepMerge, newMatch);
     }
 
     public record PartialReloadContext(

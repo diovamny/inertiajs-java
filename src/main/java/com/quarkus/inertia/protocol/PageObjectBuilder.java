@@ -61,12 +61,15 @@ public class PageObjectBuilder {
         if (props != null) allProps.putAll(props);
         allProps.putAll(sharedData.getAll());
 
-        if (flashStore.hasData()) {
+        if (flashStore.hasData() && !isGetVersionMismatch()) {
             allProps.putAll(flashStore.drain());
         }
 
+        var onceMetadata = oncePropRegistry.metadata();
+        var exceptOnceKeys = exceptOncePropKeys();
         if (oncePropRegistry.hasProps()) {
-            mergePropProcessor.merge(allProps, oncePropRegistry.drain());
+            var onceValues = oncePropRegistry.drain(exceptOnceKeys);
+            mergePropProcessor.merge(allProps, onceValues);
         }
 
         var errors = resolveErrors();
@@ -86,32 +89,39 @@ public class PageObjectBuilder {
             deferredKeys.forEach(allProps::remove);
         }
 
-        var deferredProps = isPartial ? Map.<String, List<String>>of() : deferredGroups;
-        var mergeProps = isPartial ? List.<String>of() : sharedData.getMergePropKeys();
-        var prependProps = isPartial ? List.<String>of() : sharedData.getPrependPropKeys();
-        var matchPropsOn = isPartial ? List.<String>of() : sharedData.getMatchPropKeys();
-        var onceProps = isPartial ? Map.<String, String>of() : sharedData.getOncePropKeys();
-        var scrollProps = sharedData.hasScrollProps() ? sharedData.getScrollProps() : null;
+        var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
+        var mergeProps = new java.util.ArrayList<>(sharedData.getMergePropKeys());
+        var prependProps = new java.util.ArrayList<>(sharedData.getPrependPropKeys());
+        var deepMergeProps = new java.util.ArrayList<>(sharedData.getDeepMergePropKeys());
+        var matchPropsOn = new java.util.ArrayList<>(sharedData.getMatchPropKeys());
+        var onceProps = onceMetadata.isEmpty() ? null : onceMetadata;
+        var scrollProps = sharedData.hasScrollProps()
+            ? buildScrollProps(mergeProps, prependProps, matchPropsOn)
+            : null;
+        var mergePropsOut = mergeProps.isEmpty() ? null : mergeProps;
+        var prependPropsOut = prependProps.isEmpty() ? null : prependProps;
+        var deepMergePropsOut = deepMergeProps.isEmpty() ? null : java.util.Collections.unmodifiableList(deepMergeProps);
+        var matchPropsOnOut = matchPropsOn.isEmpty() ? null : matchPropsOn;
         var sharedKeys = sharedData.getSharedKeys();
         var rescuedProps = sharedData.hasRescuedProps() ? sharedData.getRescuedProps() : null;
         var meta = sharedData.hasMeta() ? sharedData.getMeta() : null;
 
-        var encryptHistoryVal = encryptHistory();
-        var clearHistoryVal = clearHistory();
-        var preserveFragmentVal = preserveFragment();
+        var encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
+        var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
+        var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
 
         var partialContext = buildPartialReloadContext();
 
         Uni<Map<String, Object>> resolvedPropsUni;
         if (isPartial) {
-            resolvedPropsUni = resolveSupplierProps(allProps);
+            resolvedPropsUni = resolveSupplierProps(allProps, partialContext);
         } else {
             resolvedPropsUni = Uni.createFrom().item(allProps);
         }
 
         return resolvedPropsUni.map(resolvedProps -> {
             var page = new PageObject(component, Map.copyOf(resolvedProps), url, version,
-                deferredProps, mergeProps, prependProps, List.of(), matchPropsOn, onceProps,
+                deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut, onceProps,
                 scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
                 encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
 
@@ -130,21 +140,102 @@ public class PageObjectBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    private Uni<Map<String, Object>> resolveSupplierProps(Map<String, Object> props) {
+    private Uni<Map<String, Object>> resolveSupplierProps(Map<String, Object> props,
+            PartialReloadProcessor.PartialReloadContext partialContext) {
+        var requestedKeys = requestedKeys(partialContext);
         Uni<Map<String, Object>> result = Uni.createFrom().item(props);
         for (var entry : props.entrySet()) {
             if (entry.getValue() instanceof Supplier) {
                 var key = entry.getKey();
-                var supplier = (Supplier<Uni<Object>>) entry.getValue();
-                result = result.chain(map ->
-                    supplier.get().map(resolved -> {
-                        map.put(key, resolved);
-                        return map;
-                    })
-                );
+                if (requestedKeys == null || requestedKeys.contains(key)) {
+                    var supplier = (Supplier<Uni<Object>>) entry.getValue();
+                    result = result.chain(map ->
+                        supplier.get().map(resolved -> {
+                            map.put(key, resolved);
+                            return map;
+                        })
+                    );
+                }
             }
         }
         return result;
+    }
+
+    private java.util.Set<String> requestedKeys(PartialReloadProcessor.PartialReloadContext partialContext) {
+        if (partialContext == null) return null;
+        if (partialContext.hasData()) return partialContext.data();
+        if (partialContext.hasExcept()) {
+            return sharedData.getAll().keySet().stream()
+                .filter(key -> !partialContext.except().contains(key))
+                .collect(java.util.stream.Collectors.toSet());
+        }
+        return null;
+    }
+
+    private Map<String, Map<String, Object>> buildScrollProps(List<String> mergeProps,
+            List<String> prependProps, List<String> matchPropsOn) {
+        var result = new LinkedHashMap<String, Map<String, Object>>();
+        var intent = scrollMergeIntent();
+        for (var entry : sharedData.getScrollProps().entrySet()) {
+            var key = entry.getKey();
+            var metadata = entry.getValue();
+
+            if ("prepend".equals(intent)) {
+                prependProps.add(key);
+            } else {
+                mergeProps.add(key);
+            }
+
+            var matchOn = metadata.get("matchOn");
+            if (matchOn instanceof String s) {
+                matchPropsOn.add(key + "." + s);
+            } else if (matchOn instanceof List<?> list) {
+                for (var p : list) {
+                    matchPropsOn.add(key + "." + p);
+                }
+            }
+
+            var clean = new LinkedHashMap<String, Object>();
+            for (var name : List.of("previousPage", "nextPage", "currentPage", "pageName")) {
+                if (metadata.containsKey(name)) {
+                    clean.put(name, metadata.get(name));
+                }
+            }
+            result.put(key, java.util.Collections.unmodifiableMap(clean));
+        }
+        return java.util.Collections.unmodifiableMap(result);
+    }
+
+    private String scrollMergeIntent() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var intent = (String) ctx.getLocal("inertia-scroll-merge-intent");
+            if (intent != null) return intent;
+        }
+        return null;
+    }
+
+    private boolean isGetVersionMismatch() {
+        var ctx = Vertx.currentContext();
+        if (ctx == null) return false;
+        if (!Boolean.TRUE.equals(ctx.getLocal("inertia-request"))) return false;
+        var method = (String) ctx.getLocal("request-method");
+        if (!"GET".equalsIgnoreCase(method)) return false;
+        var clientVersion = (String) ctx.getLocal("inertia-version");
+        if (clientVersion == null || clientVersion.isBlank()) return false;
+        return !clientVersion.equals(versionProvider.getVersion());
+    }
+
+    private java.util.Set<String> exceptOncePropKeys() {        var ctx = Vertx.currentContext();
+        if (ctx == null) return java.util.Set.of();
+        var raw = (String) ctx.getLocal("inertia-except-once-props");
+        if (raw == null || raw.isBlank()) return java.util.Set.of();
+        var keys = new HashSet<String>();
+        for (var part : raw.split(",")) {
+            var trimmed = part.trim();
+            if (!trimmed.isEmpty()) keys.add(trimmed);
+        }
+        return keys;
     }
 
     private Map<String, Object> resolveErrors() {

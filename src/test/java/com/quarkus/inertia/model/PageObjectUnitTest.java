@@ -107,10 +107,10 @@ class PageObjectUnitTest {
     void shouldDetectRescuedPropsMetadata() {
         var page = new PageObject("Home", Map.of(), "/", "v1",
             null, null, null, null,
-            null, null, null, null, Map.of("failedProp", "error"), null,
+            null, null, null, null, List.of("failedProp"), null,
             false, false, false);
         assertThat(page.hasMetadata()).isTrue();
-        assertThat(page.rescuedProps()).containsEntry("failedProp", "error");
+        assertThat(page.rescuedProps()).containsExactly("failedProp");
     }
 
     @Test

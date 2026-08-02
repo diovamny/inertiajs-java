@@ -35,7 +35,7 @@ public class ResponseProcessor {
 
     public Uni<Object> process(PageObject page) {
         if (isPrecognition()) {
-            return jsonProcessor.write(page)
+            return jsonProcessor.serialize(page)
                 .map(json -> {
                     var rawErrors = page.props().get("errors");
                     boolean hasErrors = rawErrors instanceof Map && !((Map<?, ?>) rawErrors).isEmpty();
@@ -44,12 +44,13 @@ public class ResponseProcessor {
                             .entity(json)
                             .type(MediaType.APPLICATION_JSON_TYPE)
                             .header("X-Inertia", "true")
-                            .header("Vary", "X-Inertia")
+                            .header("Vary", "Precognition")
                             .build();
                     }
                     return Response.noContent()
                         .header("X-Inertia", "true")
-                        .header("Vary", "X-Inertia")
+                        .header("Precognition-Success", "true")
+                        .header("Vary", "Precognition")
                         .build();
                 })
                 .map(Object.class::cast);
