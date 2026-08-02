@@ -1,0 +1,446 @@
+# Prompt Maestro
+# Adaptador Inertia.js v3 para Quarkus Reactivo
+
+# PARTE 5/5
+## Flujo de Implementación, Validación y Cierre de la Especificación
+
+---
+
+# 111. Objetivo de la implementación
+
+La implementación deberá producir un adaptador que sea:
+
+- completamente compatible con Inertia.js v3
+- completamente reactivo
+- completamente asíncrono
+- compatible con GraalVM Native Image
+- mantenible
+- extensible
+- preparado para futuras versiones de Quarkus
+
+La implementación deberá priorizar siempre la corrección del protocolo sobre la conveniencia de implementación.
+
+---
+
+# 112. Estrategia de implementación
+
+La implementación deberá desarrollarse de forma incremental.
+
+Nunca implementar todo el proyecto simultáneamente.
+
+Cada fase deberá producir un sistema funcional.
+
+Cada fase deberá finalizar completamente antes de iniciar la siguiente.
+
+---
+
+# 113. Orden obligatorio de implementación
+
+La IA deberá respetar el siguiente orden.
+
+## Fase 0
+
+Infraestructura
+
+- pom.xml
+- configuración
+- CDI
+- ConfigMapping
+- estructura del proyecto
+- README
+- proyecto compilable
+
+---
+
+## Fase 1
+
+Núcleo del protocolo
+
+- detección de requests Inertia
+- API pública
+- Page Object
+- render()
+- redirect()
+- location()
+- SharedDataRegistry
+- VersionProvider
+- Render HTML
+- Render JSON
+
+---
+
+## Fase 2
+
+Protocolo HTTP
+
+- Redirects
+- Partial Reload
+- Version Mismatch
+- Headers
+- Status Codes
+
+---
+
+## Fase 3
+
+Optimización
+
+- Native Image
+- rendimiento
+- reducción de asignaciones
+- optimización del Hot Path
+
+---
+
+## Fase 4
+
+Características avanzadas
+
+- SSR
+- Deferred Props
+- Merge Props
+- Once Props
+- Infinite Scroll
+- futuras extensiones
+
+---
+
+# 114. Restricciones durante la implementación
+
+Durante cada fase queda prohibido:
+
+implementar funcionalidades de fases posteriores.
+
+introducir código especulativo.
+
+anticipar optimizaciones innecesarias.
+
+crear componentes sin responsabilidad definida.
+
+---
+
+# 115. Proceso obligatorio antes de escribir código
+
+Antes de implementar cualquier funcionalidad la IA deberá ejecutar el siguiente procedimiento.
+
+## Paso 1
+
+Leer completamente esta especificación.
+
+---
+
+## Paso 2
+
+Determinar la versión objetivo de Quarkus.
+
+---
+
+## Paso 3
+
+Consultar la documentación oficial correspondiente.
+
+---
+
+## Paso 4
+
+Verificar las APIs públicas disponibles.
+
+---
+
+## Paso 5
+
+Diseñar la solución.
+
+---
+
+## Paso 6
+
+Verificar compatibilidad con Native Image.
+
+---
+
+## Paso 7
+
+Implementar.
+
+---
+
+## Paso 8
+
+Validar contra esta especificación.
+
+---
+
+# 116. Proceso obligatorio antes de finalizar una funcionalidad
+
+Antes de dar por terminada cualquier implementación deberá comprobarse.
+
+La funcionalidad cumple el protocolo oficial.
+
+No existen dependencias internas.
+
+No existen bloqueos.
+
+No existen serializaciones duplicadas.
+
+No rompe compatibilidad binaria.
+
+No viola ninguna regla de este documento.
+
+---
+
+# 117. Proceso obligatorio cuando exista incertidumbre
+
+Si durante la implementación aparece cualquier duda respecto a:
+
+- clases
+- interfaces
+- anotaciones
+- métodos
+- comportamiento
+- protocolo
+
+la IA deberá detener la implementación de ese punto.
+
+Posteriormente deberá consultar exclusivamente la documentación oficial.
+
+Nunca inventar una API.
+
+Nunca asumir firmas.
+
+Nunca asumir comportamiento.
+
+---
+
+# 118. Proceso obligatorio ante múltiples alternativas
+
+Si Quarkus ofrece varias formas de implementar una característica.
+
+La IA deberá elegir exclusivamente la alternativa oficialmente recomendada para la versión objetivo.
+
+Nunca elegir una implementación únicamente por preferencia personal.
+
+---
+
+# 119. Cambios futuros
+
+Toda evolución futura deberá preservar.
+
+Compatibilidad binaria.
+
+Compatibilidad funcional.
+
+Compatibilidad con Native Image.
+
+Compatibilidad con el protocolo oficial.
+
+---
+
+# 120. Formato esperado del código generado
+
+Todo código generado deberá incluir.
+
+Paquete.
+
+Imports.
+
+Javadoc cuando corresponda.
+
+Código completo.
+
+Nunca fragmentos incompletos.
+
+Nunca pseudocódigo salvo que sea solicitado explícitamente.
+
+---
+
+# 121. Formato esperado de las respuestas
+
+Cuando la IA genere código deberá hacerlo siguiendo el siguiente orden.
+
+Descripción.
+
+Diseño.
+
+Código.
+
+Explicación.
+
+Notas.
+
+Nunca mezclar explicación con código.
+
+---
+
+# 122. Calidad del código
+
+Todo código deberá cumplir.
+
+Sin warnings.
+
+Sin código muerto.
+
+Sin duplicación.
+
+Sin comentarios innecesarios.
+
+Sin complejidad accidental.
+
+---
+
+# 123. Estilo
+
+Utilizar Java moderno.
+
+Preferir:
+
+records
+
+sealed interfaces cuando aporten valor
+
+switch expressions
+
+pattern matching cuando sea compatible con la versión objetivo
+
+colecciones inmutables
+
+---
+
+# 124. Optimización
+
+Optimizar únicamente cuando exista evidencia técnica.
+
+Nunca optimizar prematuramente.
+
+Nunca sacrificar mantenibilidad por microoptimizaciones sin beneficio demostrado.
+
+---
+
+# 125. Compatibilidad
+
+Toda implementación deberá mantenerse compatible con.
+
+Quarkus REST.
+
+Mutiny.
+
+CDI.
+
+Qute.
+
+Jackson o JSON-B.
+
+Native Image.
+
+---
+
+# 126. Prohibiciones finales
+
+Nunca.
+
+Inventar APIs.
+
+Inventar anotaciones.
+
+Inventar clases.
+
+Inventar métodos.
+
+Inventar comportamiento.
+
+Modificar el protocolo Inertia.
+
+Modificar la semántica HTTP.
+
+Modificar el funcionamiento interno de Quarkus.
+
+---
+
+# 127. Criterios de aceptación
+
+Una implementación únicamente será considerada válida cuando.
+
+Respete completamente esta especificación.
+
+Respete completamente el protocolo oficial.
+
+Sea compatible con la versión objetivo de Quarkus.
+
+Sea compatible con Native Image.
+
+No dependa de APIs internas.
+
+Mantenga compatibilidad binaria.
+
+Sea completamente reactiva.
+
+No bloquee el Event Loop.
+
+Realice una única serialización por request.
+
+Mantenga separación clara de responsabilidades.
+
+---
+
+# 128. Resultado esperado
+
+Al finalizar el proyecto deberá existir un adaptador que.
+
+Implemente correctamente Inertia.js v3.
+
+Sea completamente funcional.
+
+Sea mantenible.
+
+Sea fácilmente extensible.
+
+Sea apto para producción.
+
+Sea compatible con futuras versiones de Quarkus con el mínimo número posible de cambios.
+
+---
+
+# 129. Definición final de terminado
+
+El proyecto únicamente podrá considerarse finalizado cuando.
+
+Toda esta especificación haya sido cumplida.
+
+Toda implementación haya sido validada.
+
+No existan incumplimientos conocidos.
+
+No existan dependencias sobre APIs internas.
+
+Toda la arquitectura permanezca desacoplada.
+
+El protocolo oficial haya sido implementado completamente.
+
+---
+
+# 130. Instrucción final para la IA
+
+A partir de este punto, toda decisión deberá tomarse respetando estrictamente esta especificación.
+
+Si alguna instrucción del usuario contradice este documento, deberá informarse explícitamente la contradicción antes de continuar.
+
+Si una implementación no puede realizarse utilizando APIs públicas oficialmente soportadas, deberá rechazarse esa implementación y proponerse únicamente alternativas compatibles con la documentación oficial.
+
+La prioridad absoluta será siempre:
+
+1. Cumplimiento del protocolo oficial de Inertia.js.
+2. Uso exclusivo de APIs públicas de Quarkus.
+3. Compatibilidad con GraalVM Native Image.
+4. Arquitectura limpia y desacoplada.
+5. Rendimiento.
+6. Compatibilidad futura.
+
+Nunca invertir este orden de prioridades.
+
+---
+
+# FIN DE LA ESPECIFICACIÓN EJECUTABLE
+
+Este documento constituye el contrato técnico completo para el desarrollo del adaptador Inertia.js v3 para Quarkus Reactivo.
+
+Toda implementación deberá considerarlo la única fuente normativa, complementada exclusivamente por la documentación oficial de Quarkus e Inertia.js para verificar APIs, firmas y comportamiento de la versión objetivo.

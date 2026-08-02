@@ -1,0 +1,347 @@
+# ANEXO E
+# Plataforma Tecnológica Oficial
+
+## 1. Objetivo
+
+Este anexo define la plataforma tecnológica oficial del proyecto.
+
+La IA deberá utilizar exclusivamente las tecnologías definidas en este documento.
+
+Nunca sustituir una tecnología por otra sin autorización explícita.
+
+Cuando una tecnología disponga de varias alternativas, deberá utilizarse únicamente la oficialmente indicada.
+
+---
+
+# 2. Plataforma Base
+
+## Lenguaje
+
+Java 25 (LTS cuando esté disponible oficialmente).
+
+No utilizar características eliminadas o marcadas como obsoletas.
+
+Preferir las capacidades modernas del lenguaje siempre que sean compatibles con GraalVM Native Image.
+
+---
+
+## JDK
+
+JDK 25
+
+Toda la implementación deberá ser compatible con OpenJDK.
+
+Nunca depender de distribuciones específicas del JDK.
+
+---
+
+## Build Tool
+
+Apache Maven
+
+No utilizar Gradle.
+
+---
+
+## Framework Principal
+
+Quarkus
+
+Siempre utilizar la versión objetivo definida por el proyecto.
+
+Nunca asumir una versión.
+
+Toda API utilizada deberá verificarse contra la documentación oficial de dicha versión.
+
+---
+
+# 3. Frameworks permitidos
+
+## Inyección de Dependencias
+
+CDI (Jakarta CDI)
+
+Únicamente el mecanismo oficial soportado por Quarkus.
+
+---
+
+## REST
+
+Quarkus REST
+
+Nunca utilizar implementaciones alternativas salvo que el proyecto lo indique expresamente.
+
+---
+
+## Programación Reactiva
+
+Mutiny
+
+Tipos permitidos.
+
+- Uni
+- Multi
+
+Evitar mezclar otros modelos reactivos innecesariamente.
+
+---
+
+## Motor HTTP
+
+Vert.x
+
+Únicamente mediante las APIs públicas expuestas por Quarkus.
+
+Nunca utilizar APIs internas de Vert.x cuando exista una alternativa oficial en Quarkus.
+
+---
+
+## Templates
+
+Qute
+
+Único motor de templates permitido.
+
+Nunca utilizar:
+
+- Thymeleaf
+- Freemarker
+- Velocity
+- JSP
+
+---
+
+## JSON
+
+La implementación deberá detectar automáticamente el proveedor configurado.
+
+Orden de preferencia.
+
+1. Jackson
+2. JSON-B
+
+Nunca asumir Jackson.
+
+---
+
+# 4. Persistencia
+
+El adaptador no implementará acceso a base de datos.
+
+Cuando sea necesario desarrollar ejemplos oficiales.
+
+El orden de preferencia será.
+
+1. Hibernate ORM Panache
+
+2. Hibernate Reactive Panache
+
+3. Quarkus JDBC
+
+4. Quarkus Reactive SQL Client
+
+Nunca depender del mecanismo de persistencia dentro del núcleo del adaptador.
+
+---
+
+# 5. Seguridad
+
+Toda integración deberá utilizar exclusivamente.
+
+Quarkus Security
+
+Compatible con.
+
+- OIDC
+
+- JWT
+
+- Basic Authentication
+
+- Form Authentication
+
+Nunca implementar un framework propio.
+
+---
+
+# 6. Configuración
+
+Toda configuración deberá utilizar.
+
+SmallRye Config
+
+ConfigMapping
+
+application.properties
+
+Nunca utilizar YAML salvo que el proyecto lo habilite explícitamente.
+
+---
+
+# 7. Logging
+
+Utilizar exclusivamente.
+
+JBoss Logging
+
+o
+
+la abstracción oficial proporcionada por Quarkus.
+
+Nunca utilizar.
+
+System.out
+
+System.err
+
+---
+
+# 8. Testing
+
+Framework oficial.
+
+JUnit 5
+
+Mockito
+
+QuarkusTest
+
+QuarkusIntegrationTest
+
+Nunca utilizar JUnit 4.
+
+---
+
+# 9. Native Image
+
+Toda funcionalidad deberá ser compatible con.
+
+GraalVM Native Image
+
+Nunca depender de características incompatibles.
+
+---
+
+# 10. Librerías prohibidas
+
+Está prohibido introducir librerías que dupliquen funcionalidades ya proporcionadas por Quarkus.
+
+Ejemplos.
+
+Spring Framework
+
+Guice
+
+Apache Camel
+
+Micronaut
+
+Play Framework
+
+Servlet Containers externos
+
+---
+
+# 11. APIs del lenguaje
+
+Preferir siempre.
+
+Records
+
+Pattern Matching
+
+Switch Expressions
+
+Text Blocks
+
+Sequenced Collections
+
+Virtual Threads únicamente cuando Quarkus las soporte oficialmente para el caso de uso correspondiente.
+
+Nunca utilizar APIs marcadas como deprecated.
+
+---
+
+# 12. Reflection
+
+Reflection constituye el último recurso.
+
+Siempre preferir.
+
+CDI
+
+Build Time
+
+Generación automática de metadatos
+
+---
+
+# 13. Serialización
+
+El adaptador nunca serializará manualmente respuestas JSON.
+
+La serialización será responsabilidad del proveedor oficial configurado en Quarkus.
+
+---
+
+# 14. Dependencias
+
+Toda dependencia nueva deberá cumplir.
+
+Compatible con Java 25.
+
+Compatible con Quarkus.
+
+Compatible con Native Image.
+
+Licencia compatible con Apache 2.0 o equivalente.
+
+Mantenida activamente.
+
+---
+
+# 15. Convenciones
+
+Preferir siempre.
+
+Interfaces pequeñas.
+
+Records.
+
+Colecciones inmutables.
+
+Programación funcional cuando mejore la claridad.
+
+Composición sobre herencia.
+
+---
+
+# 16. Compatibilidad futura
+
+Nunca depender de implementaciones internas.
+
+Toda integración deberá realizarse mediante APIs públicas estables.
+
+La migración entre versiones de Quarkus deberá requerir el mínimo número posible de cambios.
+
+---
+
+# 17. Regla Final
+
+Toda decisión tecnológica deberá respetar el siguiente orden de prioridad.
+
+1. Java 25
+
+2. Quarkus
+
+3. Mutiny
+
+4. CDI
+
+5. Qute
+
+6. GraalVM Native Image
+
+7. Documentación Oficial
+
+Si existe conflicto entre tecnologías, prevalecerá siempre la solución oficialmente recomendada por la documentación de Quarkus para la versión objetivo.

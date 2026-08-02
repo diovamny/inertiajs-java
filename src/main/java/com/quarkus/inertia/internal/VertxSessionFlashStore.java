@@ -1,0 +1,84 @@
+package com.quarkus.inertia.internal;
+
+import java.util.HashMap;
+import java.util.Map;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import io.vertx.ext.web.RoutingContext;
+
+import com.quarkus.inertia.spi.FlashStore;
+
+@RequestScoped
+public class VertxSessionFlashStore implements FlashStore {
+
+    static final String SESSION_KEY = "__inertia_flash";
+
+    @Inject
+    Instance<RoutingContext> routingContext;
+
+    @Override
+    public void put(String key, Object value) {
+        var session = getSession();
+        if (session == null) return;
+        var data = getFlashData();
+        var mutable = new HashMap<>(data);
+        mutable.put(key, value);
+        session.put(SESSION_KEY, mutable);
+    }
+
+    @Override
+    public void putAll(Map<String, Object> values) {
+        if (values == null || values.isEmpty()) return;
+        var session = getSession();
+        if (session == null) return;
+        var data = getFlashData();
+        var mutable = new HashMap<>(data);
+        mutable.putAll(values);
+        session.put(SESSION_KEY, mutable);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> drain() {
+        var session = getSession();
+        if (session == null) return Map.of();
+
+        var raw = session.get(SESSION_KEY);
+        if (raw instanceof Map && !((Map<?, ?>) raw).isEmpty()) {
+            session.remove(SESSION_KEY);
+            return Map.copyOf((Map<String, Object>) raw);
+        }
+
+        return Map.of();
+    }
+
+    @Override
+    public boolean hasData() {
+        var session = getSession();
+        if (session == null) return false;
+        var raw = session.get(SESSION_KEY);
+        return raw instanceof Map && !((Map<?, ?>) raw).isEmpty();
+    }
+
+    private io.vertx.ext.web.Session getSession() {
+        try {
+            var rc = routingContext.get();
+            return rc != null ? rc.session() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getFlashData() {
+        var session = getSession();
+        if (session != null) {
+            var raw = session.get(SESSION_KEY);
+            if (raw instanceof Map) {
+                return (Map<String, Object>) raw;
+            }
+        }
+        return Map.of();
+    }
+}

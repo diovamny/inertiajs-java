@@ -1,0 +1,585 @@
+# Prompt Maestro
+# Adaptador Inertia.js v3 para Quarkus Reactivo
+
+# PARTE 2/5
+## Arquitectura y Diseño del Adaptador
+
+---
+
+# 13. Arquitectura General
+
+El adaptador deberá dividirse en componentes pequeños, desacoplados y con responsabilidades claramente definidas.
+
+Cada componente deberá tener una única responsabilidad.
+
+No deberán existir componentes "todopoderosos".
+
+Toda dependencia deberá realizarse mediante CDI.
+
+Nunca mediante variables estáticas.
+
+---
+
+# 14. Objetivos de la arquitectura
+
+La arquitectura deberá permitir:
+
+- mantenimiento sencillo
+- pruebas unitarias aisladas
+- sustitución de componentes
+- compatibilidad futura
+- mínima dependencia de Quarkus
+
+---
+
+# 15. Componentes principales
+
+Como mínimo el adaptador estará compuesto por los siguientes componentes.
+
+## API Pública
+
+Expone los métodos utilizados por las aplicaciones.
+
+No contiene lógica del protocolo.
+
+Únicamente delega.
+
+---
+
+## Response Processor
+
+Responsable de decidir:
+
+- HTML
+
+o
+
+- JSON
+
+Nunca ambos.
+
+---
+
+## Page Object Builder
+
+Construye el Page Object completo.
+
+No realiza serialización.
+
+No genera respuestas HTTP.
+
+---
+
+## SharedDataRegistry
+
+Responsable del almacenamiento de Shared Data durante un request.
+
+Nunca compartirá información entre requests.
+
+---
+
+## VersionProvider
+
+Responsable del cálculo de la versión de los assets.
+
+Nunca deberá recalcularla por request.
+
+---
+
+## PartialReloadProcessor
+
+Aplica el protocolo Partial Reload.
+
+Nunca modifica datos fuera de las reglas oficiales.
+
+---
+
+## RedirectProcessor
+
+Aplica las reglas oficiales de Redirect.
+
+Nunca modifica respuestas que no correspondan.
+
+---
+
+## HtmlRenderer
+
+Renderiza HTML mediante Qute.
+
+Nunca genera JSON.
+
+---
+
+## JsonResponseProcessor
+
+Genera respuestas Inertia utilizando el proveedor JSON configurado.
+
+Nunca serializa manualmente el cuerpo HTTP.
+
+---
+
+# 16. Dependencias entre componentes
+
+Las dependencias deberán ser unidireccionales.
+
+API Pública
+
+↓
+
+Page Builder
+
+↓
+
+Protocol Processors
+
+↓
+
+Renderer
+
+↓
+
+HTTP Response
+
+Nunca deberán existir dependencias circulares.
+
+---
+
+# 17. Flujo completo del Request
+
+Todo request deberá seguir exactamente el siguiente flujo.
+
+Cliente
+
+↓
+
+Quarkus REST
+
+↓
+
+Endpoint
+
+↓
+
+API Pública Inertia
+
+↓
+
+Construcción del Page Object
+
+↓
+
+Shared Data
+
+↓
+
+Version Provider
+
+↓
+
+Partial Reload
+
+↓
+
+Determinación del tipo de respuesta
+
+↓
+
+HTML
+
+o
+
+JSON
+
+↓
+
+Respuesta HTTP
+
+---
+
+# 18. API Pública
+
+La API Pública constituye un contrato estable.
+
+Nunca deberán romperse sus firmas.
+
+Los siguientes métodos forman parte del contrato.
+
+render(...)
+
+redirect(...)
+
+location(...)
+
+---
+
+# 19. Evolución de la API
+
+Las futuras versiones deberán mantener compatibilidad binaria.
+
+Las nuevas funcionalidades únicamente podrán agregarse mediante:
+
+- sobrecargas
+
+- nuevas interfaces
+
+- nuevos métodos default
+
+Nunca modificando firmas existentes.
+
+---
+
+# 20. Responsabilidades de render()
+
+render() deberá ser responsable únicamente de:
+
+crear la respuesta Inertia.
+
+No deberá:
+
+serializar
+
+renderizar HTML
+
+escribir headers
+
+modificar códigos HTTP
+
+Su única responsabilidad consiste en representar la intención de devolver una página Inertia.
+
+---
+
+# 21. Responsabilidades de redirect()
+
+redirect() deberá representar un redirect interno de Inertia.
+
+Nunca decidirá:
+
+302
+
+303
+
+307
+
+Esa decisión pertenece al Redirect Processor.
+
+---
+
+# 22. Responsabilidades de location()
+
+location() representa una navegación externa.
+
+Su implementación deberá seguir estrictamente la especificación oficial de Inertia.
+
+---
+
+# 23. Construcción del Page Object
+
+El Page Object deberá construirse una única vez.
+
+Nunca deberán existir múltiples versiones del mismo objeto durante un request.
+
+---
+
+# 24. Contenido obligatorio del Page Object
+
+El objeto deberá contener:
+
+component
+
+props
+
+url
+
+version
+
+errors
+
+Los demás campos únicamente deberán existir cuando el protocolo así lo requiera.
+
+---
+
+# 25. SharedDataRegistry
+
+SharedDataRegistry deberá ser RequestScoped.
+
+Características obligatorias.
+
+Una instancia por request.
+
+Sin variables estáticas.
+
+Sin estado global.
+
+Sin cachés compartidas.
+
+Toda la información desaparecerá automáticamente al finalizar el request.
+
+---
+
+# 26. VersionProvider
+
+VersionProvider deberá ser ApplicationScoped.
+
+La implementación por defecto calculará la versión durante Startup.
+
+Nunca durante un request.
+
+La versión deberá almacenarse como un valor inmutable.
+
+---
+
+# 27. Renderizado HTML
+
+El renderizado HTML utilizará exclusivamente Qute.
+
+No se permitirá:
+
+StringBuilder
+
+concatenación manual
+
+plantillas propias
+
+HTML construido manualmente
+
+---
+
+# 28. API de Qute
+
+La implementación utilizará exclusivamente la API asíncrona oficialmente soportada por la versión objetivo.
+
+Nunca asumir:
+
+nombres
+
+métodos
+
+firmas
+
+Antes de implementar deberá verificarse la documentación oficial.
+
+---
+
+# 29. Renderizado JSON
+
+Las respuestas JSON serán producidas por Quarkus REST.
+
+Nunca por código manual.
+
+El adaptador no deberá construir manualmente respuestas JSON.
+
+---
+
+# 30. Serialización
+
+Cada request podrá ejecutar exactamente una serialización.
+
+Caso HTML
+
+Page Object
+
+↓
+
+JSON
+
+↓
+
+data-page
+
+Caso Inertia
+
+Page Object
+
+↓
+
+Proveedor JSON
+
+↓
+
+HTTP Response
+
+Nunca ambas rutas.
+
+---
+
+# 31. ObjectMapper
+
+Si el proyecto utiliza Jackson.
+
+El ObjectMapper deberá obtenerse mediante CDI.
+
+Está prohibido.
+
+new ObjectMapper()
+
+copy()
+
+configure()
+
+enable()
+
+disable()
+
+registerModule()
+
+durante el procesamiento de un request.
+
+Toda configuración deberá realizarse durante Startup.
+
+---
+
+# 32. JSON-B
+
+Si el proyecto utiliza JSON-B.
+
+Aplican exactamente las mismas restricciones.
+
+Nunca reconstruir Jsonb.
+
+Nunca modificar JsonbConfig durante un request.
+
+---
+
+# 33. Interceptación de respuestas
+
+La interceptación utilizará exclusivamente el mecanismo reactivo oficialmente soportado por Quarkus.
+
+Nunca dependerá de una implementación concreta.
+
+Nunca formará parte del contrato arquitectónico.
+
+El contrato únicamente exige:
+
+no bloquear
+
+permitir operaciones asíncronas
+
+ser compatible con Native Image
+
+ser compatible con Quarkus REST
+
+---
+
+# 34. Determinación del tipo de respuesta
+
+La decisión deberá tomarse utilizando el protocolo oficial.
+
+Si existe X-Inertia.
+
+↓
+
+JSON
+
+Si no existe.
+
+↓
+
+HTML
+
+Nunca deberán mezclarse ambos comportamientos.
+
+---
+
+# 35. Partial Reload
+
+El comportamiento deberá seguir exactamente la especificación oficial.
+
+Antes de aplicar cualquier filtrado deberá verificarse:
+
+X-Inertia-Partial-Component
+
+Si no coincide.
+
+Se ignorará completamente el Partial Reload.
+
+Se devolverán todas las propiedades.
+
+---
+
+# 36. Reglas del Partial Reload
+
+Data presente
+
+↓
+
+incluir únicamente esas propiedades.
+
+Except presente
+
+↓
+
+excluir dichas propiedades.
+
+Ambos presentes
+
+↓
+
+Except tiene prioridad.
+
+Ambos vacíos
+
+↓
+
+devolver todas las propiedades.
+
+errors
+
+↓
+
+nunca eliminar.
+
+---
+
+# 37. Redirects
+
+Únicamente los redirects definidos por la especificación oficial podrán transformarse automáticamente.
+
+Nunca modificar.
+
+301
+
+307
+
+308
+
+El comportamiento deberá seguir estrictamente el patrón Post Redirect Get definido por Inertia.
+
+---
+
+# 38. Version Mismatch
+
+Cuando la versión enviada por el cliente no coincida con la versión del servidor.
+
+El comportamiento deberá seguir exactamente el protocolo oficial.
+
+No implementar variantes propias.
+
+---
+
+# 39. Errores
+
+El adaptador nunca deberá capturar errores de negocio.
+
+Únicamente implementará comportamiento relacionado con el protocolo Inertia.
+
+Toda excepción de negocio será responsabilidad de la aplicación.
+
+---
+
+# 40. Fin de la Parte 2/5
+
+La Parte 3 desarrollará:
+
+- Seguridad
+- CSRF
+- Autenticación
+- Asset Versioning
+- Rendimiento
+- Event Loop
+- Mutiny
+- CDI
+- Native Image
+- GraalVM
+- Optimización
+- Build Time
+- Buenas prácticas de rendimiento

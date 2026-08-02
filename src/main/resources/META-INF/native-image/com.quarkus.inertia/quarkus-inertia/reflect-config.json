@@ -1,0 +1,8 @@
+[
+  {
+    "name": "com.quarkus.inertia.model.PageObject",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  }
+]

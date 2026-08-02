@@ -1,0 +1,32 @@
+# ANEXO C
+# Matriz de Trazabilidad
+
+---
+
+# Objetivo
+
+Permitir conocer qué clases implementan cada requisito y cómo se valida.
+
+---
+
+| Requisito | Clase | Método | Validación |
+|-----------|--------|---------|------------|
+| REQ-001 | ResponseProcessor | process() | Integración |
+| REQ-002 | HtmlRenderer | render() | Integración |
+| REQ-003 | JsonResponseProcessor | write() | Unit |
+| REQ-004 | VersionProvider | getVersion() | Unit |
+| REQ-005 | SharedDataRegistry | get() | Unit |
+| REQ-006 | PartialReloadProcessor | apply() | Unit |
+| REQ-007 | RedirectProcessor | process() | Integración |
+| REQ-008 | PageObjectBuilder | build() | Unit |
+| REQ-009 | Inertia | render() | Unit |
+| REQ-010 | Inertia | redirect() | Unit |
+| REQ-011 | Inertia | location() | Unit |
+
+---
+
+Cada nuevo requisito deberá añadirse a esta matriz.
+
+Nunca implementar un requisito sin registrarlo aquí.
+
+Toda Pull Request deberá mantener esta matriz actualizada.

@@ -1,0 +1,280 @@
+# ANEXO 0
+# Matriz de Cumplimiento (Compliance Matrix)
+
+> **Versión:** 1.0
+>
+> Este anexo constituye el mecanismo oficial para verificar que la implementación cumple completamente la especificación ejecutable.
+>
+> Ninguna funcionalidad podrá considerarse terminada hasta que todos los requisitos aplicables hayan sido implementados y validados.
+
+---
+
+# 0.1 Objetivo
+
+La Matriz de Cumplimiento tiene los siguientes objetivos.
+
+- Evitar requisitos olvidados.
+- Facilitar revisiones de código.
+- Facilitar auditorías técnicas.
+- Facilitar migraciones entre versiones.
+- Facilitar pruebas de regresión.
+- Garantizar cumplimiento del protocolo.
+
+---
+
+# 0.2 Identificador de requisitos
+
+Cada requisito deberá poseer un identificador único.
+
+Formato:
+
+REQ-XXX
+
+Ejemplo.
+
+REQ-001
+
+REQ-002
+
+REQ-003
+
+Los identificadores nunca deberán reutilizarse.
+
+---
+
+# 0.3 Prioridad
+
+Cada requisito deberá clasificarse utilizando uno de los siguientes niveles.
+
+## Crítica
+
+Su incumplimiento impide liberar el proyecto.
+
+---
+
+## Alta
+
+Debe implementarse antes de la primera versión estable.
+
+---
+
+## Media
+
+Puede implementarse en versiones menores.
+
+---
+
+## Baja
+
+Corresponde a mejoras futuras.
+
+---
+
+# 0.4 Estado
+
+Cada requisito deberá indicar su estado.
+
+Valores permitidos.
+
+NOT_STARTED
+
+IN_PROGRESS
+
+IMPLEMENTED
+
+VALIDATED
+
+REJECTED
+
+DEPRECATED
+
+---
+
+# 0.5 Fuente
+
+Cada requisito deberá indicar su fuente normativa.
+
+Valores permitidos.
+
+- Especificación Inertia.js
+
+- Documentación Oficial Quarkus
+
+- Esta especificación
+
+Nunca utilizar otra fuente como referencia normativa.
+
+---
+
+# 0.6 Validación
+
+Cada requisito deberá indicar cómo será validado.
+
+Valores permitidos.
+
+- Revisión de código
+
+- Prueba unitaria
+
+- Prueba de integración
+
+- Benchmark
+
+- Native Image
+
+- Inspección manual
+
+Un requisito podrá tener múltiples mecanismos de validación.
+
+---
+
+# 0.7 Responsable
+
+Cada requisito deberá indicar el componente responsable de cumplirlo.
+
+Ejemplo.
+
+Inertia
+
+ResponseProcessor
+
+VersionProvider
+
+HtmlRenderer
+
+SharedDataRegistry
+
+PartialReloadProcessor
+
+RedirectProcessor
+
+---
+
+# 0.8 Formato de la matriz
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+
+---
+
+# 0.9 Requisitos arquitectónicos
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-001 | Crítica | Utilizar únicamente APIs públicas de Quarkus | Quarkus | Todo el proyecto | Revisión | |
+| REQ-002 | Crítica | No utilizar clases internas | Quarkus | Todo el proyecto | Revisión | |
+| REQ-003 | Crítica | No utilizar SPI privadas | Quarkus | Todo el proyecto | Revisión | |
+| REQ-004 | Alta | Minimizar acoplamiento con Quarkus | Especificación | Arquitectura | Revisión | |
+| REQ-005 | Alta | Mantener separación de responsabilidades | Especificación | Arquitectura | Revisión | |
+
+---
+
+# 0.10 Requisitos de rendimiento
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-010 | Crítica | Nunca bloquear el Event Loop | Quarkus | Todo | Revisión + Benchmark | |
+| REQ-011 | Crítica | Una única serialización por request | Especificación | ResponseProcessor | Revisión | |
+| REQ-012 | Alta | VersionProvider calcula una sola vez | Especificación | VersionProvider | Test | |
+| REQ-013 | Alta | SharedData se crea una vez por request | Especificación | SharedDataRegistry | Test | |
+| REQ-014 | Alta | No crear ObjectMapper durante un request | Especificación | Todo | Revisión | |
+
+---
+
+# 0.11 Requisitos Native Image
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-020 | Crítica | Compatible con GraalVM Native Image | Quarkus | Todo | Native Build | |
+| REQ-021 | Alta | Reflection mínima | Quarkus | Todo | Revisión | |
+| REQ-022 | Alta | Build Time First | Quarkus | Arquitectura | Revisión | |
+
+---
+
+# 0.12 Requisitos del protocolo
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-030 | Crítica | Implementar protocolo oficial Inertia | Inertia | Todo | Integración | |
+| REQ-031 | Crítica | Implementar Version Mismatch | Inertia | ResponseProcessor | Test | |
+| REQ-032 | Crítica | Implementar Redirects | Inertia | RedirectProcessor | Test | |
+| REQ-033 | Crítica | Implementar Partial Reload | Inertia | PartialReloadProcessor | Test | |
+| REQ-034 | Crítica | errors siempre presente | Inertia | PageObjectBuilder | Test | |
+
+---
+
+# 0.13 Requisitos de seguridad
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-040 | Crítica | Delegar autenticación a Quarkus | Quarkus | Seguridad | Revisión | |
+| REQ-041 | Crítica | Delegar autorización a Quarkus | Quarkus | Seguridad | Revisión | |
+| REQ-042 | Alta | Cumplir CSRF oficial de Inertia | Inertia | Seguridad | Test | |
+| REQ-043 | Alta | No exponer datos sensibles | Especificación | Todo | Revisión | |
+
+---
+
+# 0.14 Requisitos de API pública
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-050 | Crítica | Mantener compatibilidad binaria | Especificación | API Pública | Revisión | |
+| REQ-051 | Alta | Evolucionar mediante sobrecargas | Especificación | API Pública | Revisión | |
+| REQ-052 | Alta | Nunca modificar firmas existentes | Especificación | API Pública | Revisión | |
+
+---
+
+# 0.15 Requisitos de calidad
+
+| ID | Prioridad | Requisito | Fuente | Componente | Validación | Estado |
+|-----|-----------|-----------|---------|------------|------------|--------|
+| REQ-060 | Alta | Sin código duplicado | Especificación | Todo | Revisión | |
+| REQ-061 | Alta | Sin warnings | Especificación | Todo | Compilación | |
+| REQ-062 | Alta | Javadoc en API pública | Especificación | API Pública | Revisión | |
+| REQ-063 | Alta | Código mantenible | Especificación | Todo | Revisión | |
+
+---
+
+# 0.16 Regla de aceptación
+
+Una fase únicamente podrá considerarse completada cuando.
+
+- Todos los requisitos críticos estén en estado VALIDATED.
+
+- No existan requisitos críticos en estado IN_PROGRESS.
+
+- No existan requisitos críticos en estado NOT_STARTED.
+
+---
+
+# 0.17 Regla de liberación
+
+La versión 1.0 únicamente podrá liberarse cuando.
+
+✓ Todos los requisitos críticos estén validados.
+
+✓ Todos los requisitos altos estén implementados.
+
+✓ El proyecto compile correctamente.
+
+✓ El proyecto funcione en JVM.
+
+✓ El proyecto funcione en Native Image.
+
+✓ El protocolo Inertia haya sido implementado completamente.
+
+✓ No existan incumplimientos conocidos.
+
+---
+
+# 0.18 Regla de auditoría
+
+Toda Pull Request deberá actualizar esta matriz.
+
+Nunca se aceptará una Pull Request que implemente nuevos requisitos sin actualizar la Matriz de Cumplimiento.
+
+Esta matriz constituye el registro oficial del estado de implementación del proyecto.
+
+---
+
+# Fin del Anexo 0

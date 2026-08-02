@@ -1,0 +1,419 @@
+# Prompt Maestro
+# Adaptador Inertia.js v3 para Quarkus Reactivo
+## Especificación Ejecutable
+### Versión 1.0
+
+---
+
+# 1. Objetivo
+
+Este documento define la especificación ejecutable para construir un adaptador de Inertia.js v3 sobre Quarkus.
+
+El documento constituye el contrato técnico que deberá seguir cualquier Inteligencia Artificial durante el diseño e implementación del proyecto.
+
+Las instrucciones aquí definidas prevalecen sobre cualquier decisión de implementación.
+
+La IA no podrá modificar, reinterpretar ni omitir ninguna regla aquí especificada.
+
+Cuando exista una contradicción entre varias decisiones de diseño, deberá respetarse el orden de prioridad definido en este documento.
+
+---
+
+# 2. Alcance
+
+El objetivo consiste en implementar un adaptador completamente funcional del protocolo oficial de Inertia.js v3 para Quarkus.
+
+El adaptador deberá ser:
+
+- completamente reactivo
+- completamente asíncrono
+- no bloqueante
+- compatible con GraalVM Native Image
+- independiente de otros adaptadores
+- desacoplado de APIs internas
+- preparado para futuras versiones de Quarkus
+- mantenible
+- extensible
+- altamente eficiente
+
+Este proyecto no consiste en portar código existente.
+
+Toda implementación deberá realizarse específicamente para Quarkus utilizando únicamente APIs públicas soportadas.
+
+---
+
+# 3. Rol de la IA
+
+La IA actuará como Arquitecto Principal de Software.
+
+Se asume experiencia avanzada en:
+
+- Quarkus
+- Quarkus REST
+- CDI
+- Mutiny
+- Qute
+- Jackson
+- JSON-B
+- Jakarta REST
+- GraalVM Native Image
+- Inertia.js v3
+- HTTP
+- Programación Reactiva
+- Clean Architecture
+- SOLID
+
+La IA deberá tomar decisiones propias únicamente cuando este documento no las defina explícitamente.
+
+En ese caso deberá utilizar exclusivamente las recomendaciones oficiales de Quarkus.
+
+Nunca utilizará preferencias personales.
+
+---
+
+# 4. Objetivos de calidad
+
+Toda decisión deberá maximizar simultáneamente:
+
+- simplicidad
+- mantenibilidad
+- rendimiento
+- estabilidad
+- compatibilidad futura
+- bajo consumo de memoria
+- compatibilidad Native Image
+
+Ningún objetivo podrá sacrificar el cumplimiento del protocolo oficial de Inertia.
+
+---
+
+# 5. Prioridad de decisiones
+
+Si durante la implementación aparecen conflictos entre distintas reglas, deberá respetarse estrictamente el siguiente orden de prioridad.
+
+## Nivel 1
+
+Especificación oficial de Inertia.js
+
+## Nivel 2
+
+Documentación oficial de Quarkus
+
+## Nivel 3
+
+Esta especificación
+
+## Nivel 4
+
+Buenas prácticas oficiales de Jakarta EE
+
+## Nivel 5
+
+Buenas prácticas generales de Java
+
+Nunca podrá invertirse este orden.
+
+---
+
+# 6. Fuentes de verdad
+
+Antes de escribir código deberán consultarse únicamente las siguientes fuentes.
+
+## Inertia.js
+
+https://inertiajs.com/docs/v3
+
+https://inertiajs.com/the-protocol
+
+https://inertiajs.com/docs/llms.txt
+
+Estas constituyen la única referencia normativa respecto al protocolo.
+
+---
+
+## Quarkus
+
+https://quarkus.io
+
+https://quarkus.io/guides
+
+Toda decisión relacionada con Quarkus deberá verificarse contra la documentación oficial correspondiente a la versión objetivo.
+
+---
+
+## Qute
+
+https://quarkus.io/guides/qute-reference
+
+---
+
+## GraalVM
+
+https://www.graalvm.org/
+
+---
+
+## Inertia4J
+
+https://github.com/Inertia4J/inertia4j
+
+Este proyecto podrá utilizarse únicamente como referencia de diseño de API pública.
+
+Está prohibido:
+
+- copiar código
+- depender del proyecto
+- reutilizar implementaciones internas
+
+---
+
+# 7. Procedimiento obligatorio antes de generar código
+
+Antes de escribir una sola línea de código la IA deberá completar obligatoriamente las siguientes verificaciones.
+
+## 7.1 Determinar la versión objetivo
+
+Deberá identificarse la versión exacta de Quarkus.
+
+Ejemplo:
+
+Quarkus 3.33 LTS
+
+o
+
+Quarkus 3.37
+
+Nunca asumir una versión.
+
+---
+
+## 7.2 Verificar las APIs
+
+Toda clase utilizada deberá existir oficialmente.
+
+Toda anotación utilizada deberá existir oficialmente.
+
+Toda interfaz utilizada deberá existir oficialmente.
+
+Toda firma utilizada deberá coincidir exactamente con la documentación oficial.
+
+Nunca asumir nombres de métodos.
+
+Nunca asumir parámetros.
+
+Nunca asumir tipos de retorno.
+
+---
+
+## 7.3 Determinar el proveedor JSON
+
+Antes de comenzar deberá determinarse cuál de los siguientes proveedores utiliza el proyecto.
+
+- Jackson
+
+o
+
+- JSON-B
+
+Nunca asumir Jackson.
+
+---
+
+## 7.4 Confirmar soporte Native Image
+
+Toda decisión deberá verificarse considerando GraalVM Native Image.
+
+Si una implementación requiere reflection innecesaria deberá descartarse.
+
+---
+
+## 7.5 Verificar compatibilidad reactiva
+
+Toda API utilizada deberá permitir procesamiento completamente reactivo.
+
+Nunca introducir operaciones bloqueantes.
+
+---
+
+# 8. Principios arquitectónicos
+
+Toda implementación deberá respetar obligatoriamente los siguientes principios.
+
+## Reactive First
+
+Toda operación deberá diseñarse para ejecutarse de forma completamente reactiva.
+
+Nunca bloquear el Event Loop.
+
+---
+
+## Build Time First
+
+Toda información que pueda calcularse durante el arranque deberá evitar calcularse por request.
+
+---
+
+## Stateless
+
+Toda operación deberá ser libre de estado compartido salvo cuando Quarkus defina explícitamente otro comportamiento.
+
+---
+
+## Immutable First
+
+Siempre que sea posible deberán utilizarse estructuras inmutables.
+
+---
+
+## Composition over Inheritance
+
+Se preferirá composición sobre herencia.
+
+---
+
+## Public API Only
+
+Nunca depender de APIs internas.
+
+---
+
+## Low Coupling
+
+El adaptador deberá minimizar el acoplamiento con Quarkus.
+
+---
+
+## High Cohesion
+
+Cada componente deberá tener una única responsabilidad claramente definida.
+
+---
+
+# 9. Compatibilidad con Quarkus
+
+Toda integración deberá utilizar únicamente APIs públicas oficialmente soportadas.
+
+Está prohibido utilizar:
+
+- clases internas
+- paquetes internal
+- APIs experimentales no autorizadas
+- SPI privadas
+- mecanismos no documentados
+
+Cuando existan varias alternativas deberá utilizarse únicamente la recomendada oficialmente para la versión objetivo.
+
+---
+
+# 10. Compatibilidad con GraalVM Native Image
+
+Native Image constituye un requisito obligatorio.
+
+No es una característica opcional.
+
+Toda decisión deberá ser compatible con:
+
+- build-time initialization
+- análisis estático
+- generación automática de metadatos
+- eliminación de reflection innecesaria
+
+La utilización de @RegisterForReflection únicamente estará permitida cuando exista una necesidad técnica demostrable.
+
+Nunca registrar clases preventivamente.
+
+---
+
+# 11. Restricciones absolutas
+
+Durante la implementación queda prohibido:
+
+- usar APIs internas
+- usar clases internal
+- usar reflection innecesaria
+- crear proxies dinámicos
+- bloquear el Event Loop
+- utilizar Thread.sleep()
+- utilizar await().indefinitely() fuera de pruebas
+- crear ObjectMapper mediante new
+- reconfigurar ObjectMapper durante un request
+- serializar manualmente respuestas JSON
+- recalcular VersionProvider por request
+- almacenar información de request en variables estáticas
+- mantener cachés globales sin justificación documentada
+
+Toda excepción deberá documentarse técnicamente.
+
+---
+
+# 12. Definiciones
+
+## Adaptador
+
+Conjunto de componentes encargados de implementar el protocolo Inertia.js sobre Quarkus.
+
+---
+
+## Page Object
+
+Objeto definido por la especificación oficial de Inertia.
+
+Representa la estructura intercambiada entre servidor y cliente.
+
+---
+
+## Request Inertia
+
+Petición HTTP que contiene el encabezado X-Inertia.
+
+---
+
+## Request HTML
+
+Petición tradicional que requiere renderizado HTML.
+
+---
+
+## Shared Data
+
+Datos compartidos entre todas las respuestas Inertia del mismo request.
+
+---
+
+## Version Provider
+
+Componente responsable de calcular la versión de los assets utilizada por Inertia.
+
+---
+
+## Event Loop
+
+Hilo de ejecución reactivo administrado por Vert.x.
+
+Nunca deberá bloquearse.
+
+---
+
+## Hot Path
+
+Ruta de ejecución crítica que se ejecuta en prácticamente todos los requests.
+
+Toda optimización deberá priorizar este camino.
+
+---
+
+# Fin de la Parte 1/5
+
+La siguiente parte desarrollará:
+
+- Arquitectura completa
+- Componentes
+- API Pública
+- Flujo del Request
+- Renderizado HTML
+- Renderizado JSON
+- Interceptación de respuestas
+- SharedDataRegistry
+- VersionProvider
+- Redirects
+- Partial Reload

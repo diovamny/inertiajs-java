@@ -1,0 +1,110 @@
+# ANEXO D
+# Release Checklist
+
+---
+
+## Arquitectura
+
+☐ No existen APIs internas.
+
+☐ No existen dependencias circulares.
+
+☐ Arquitectura limpia.
+
+☐ Responsabilidades separadas.
+
+☐ Sin estado global mutable.
+
+---
+
+## Rendimiento
+
+☐ Event Loop nunca bloqueado.
+
+☐ Una serialización por request.
+
+☐ Sin reflection innecesaria.
+
+☐ VersionProvider cacheado.
+
+☐ SharedData por request.
+
+---
+
+## Native Image
+
+☐ Compila.
+
+☐ Ejecuta correctamente.
+
+☐ Sin reflection innecesaria.
+
+☐ Sin proxies dinámicos.
+
+---
+
+## Seguridad
+
+☐ Compatible con Quarkus Security.
+
+☐ Compatible con OIDC.
+
+☐ Compatible con JWT.
+
+☐ Compatible con Basic Auth.
+
+☐ Compatible con Form Auth.
+
+☐ Compatible con CSRF oficial.
+
+---
+
+## API Pública
+
+☐ Compatibilidad binaria.
+
+☐ Métodos documentados.
+
+☐ Sin breaking changes.
+
+---
+
+## Protocolo Inertia
+
+☐ Render HTML.
+
+☐ Render JSON.
+
+☐ Partial Reload.
+
+☐ Redirect.
+
+☐ Version Mismatch.
+
+☐ Shared Data.
+
+☐ Errors.
+
+☐ Asset Versioning.
+
+---
+
+## Calidad
+
+☐ Sin warnings.
+
+☐ Sin código muerto.
+
+☐ Sin duplicación.
+
+☐ Javadoc completo.
+
+☐ Código formateado.
+
+☐ Compilación exitosa.
+
+---
+
+## Liberación
+
+La versión únicamente podrá publicarse cuando todos los puntos anteriores estén marcados como completados.

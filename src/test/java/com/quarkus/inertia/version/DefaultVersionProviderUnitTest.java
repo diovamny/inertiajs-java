@@ -1,0 +1,48 @@
+package com.quarkus.inertia.version;
+
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
+import com.quarkus.inertia.config.InertiaConfig;
+
+class DefaultVersionProviderUnitTest {
+
+    private InertiaConfig makeConfig(String versionStrategy, Optional<String> versionCustom) {
+        return new InertiaConfig() {
+            @Override public String rootTemplate() { return "index.html"; }
+            @Override public boolean ssrEnabled() { return false; }
+            @Override public String ssrUrl() { return "http://localhost:13714"; }
+            @Override public String versionStrategy() { return versionStrategy; }
+            @Override public Optional<String> versionCustom() { return versionCustom; }
+            @Override public boolean encryptHistory() { return false; }
+            @Override public boolean camelizeProps() { return false; }
+            @Override public Optional<String> rootView() { return Optional.empty(); }
+            @Override public boolean precognitionEnabled() { return false; }
+            @Override public Optional<String> ssrBundle() { return Optional.empty(); }
+        };
+    }
+
+    @Test
+    void shouldComputeVersionAtConstruction() {
+        var config = makeConfig("sha256", Optional.empty());
+        var provider = new DefaultVersionProvider(config);
+        assertThat(provider.getVersion()).isNotEmpty();
+    }
+
+    @Test
+    void shouldUseCustomVersion() {
+        var config = makeConfig("custom", Optional.of("v1.0.0"));
+        var provider = new DefaultVersionProvider(config);
+        assertThat(provider.getVersion()).isEqualTo("v1.0.0");
+    }
+
+    @Test
+    void shouldReturnSameVersionOnMultipleCalls() {
+        var config = makeConfig("custom", Optional.of("fixed"));
+        var provider = new DefaultVersionProvider(config);
+        assertThat(provider.getVersion()).isSameAs(provider.getVersion());
+    }
+}

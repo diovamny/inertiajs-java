@@ -1,0 +1,156 @@
+# ANEXO B
+# Architecture Decision Records
+
+---
+
+# Objetivo
+
+Toda decisión arquitectónica importante deberá documentarse mediante un ADR.
+
+Formato.
+
+ADR-XXX
+
+---
+
+# ADR-001
+
+## Título
+
+Uso exclusivo de APIs públicas de Quarkus.
+
+### Estado
+
+Aceptado.
+
+### Contexto
+
+Las APIs internas pueden cambiar sin previo aviso.
+
+### Decisión
+
+Utilizar únicamente APIs públicas documentadas.
+
+### Consecuencias
+
+Mayor estabilidad.
+
+Mayor compatibilidad futura.
+
+---
+
+# ADR-002
+
+## Título
+
+Reactive First
+
+### Estado
+
+Aceptado.
+
+### Decisión
+
+Todo procesamiento será completamente reactivo.
+
+Nunca bloquear el Event Loop.
+
+---
+
+# ADR-003
+
+## Título
+
+Build Time First
+
+### Decisión
+
+Toda información calculable durante Startup se calculará durante Startup.
+
+Nunca por request.
+
+---
+
+# ADR-004
+
+## Título
+
+Single Serialization
+
+### Decisión
+
+Cada request ejecutará exactamente una serialización del Page Object.
+
+---
+
+# ADR-005
+
+## Título
+
+Uso de CDI
+
+### Decisión
+
+Toda dependencia será administrada por CDI.
+
+Nunca mediante Singletons manuales.
+
+---
+
+# ADR-006
+
+## Título
+
+Native Image First
+
+### Decisión
+
+Toda funcionalidad deberá ser compatible con GraalVM Native Image.
+
+---
+
+# ADR-007
+
+## Título
+
+Compatibilidad Binaria
+
+### Decisión
+
+La API pública nunca romperá compatibilidad en versiones menores.
+
+---
+
+# ADR-008
+
+## Título
+
+Desacoplamiento de Quarkus
+
+### Decisión
+
+El núcleo del protocolo permanecerá desacoplado de detalles internos de Quarkus.
+
+---
+
+# ADR-009
+
+## Título
+
+Seguridad Delegada
+
+### Decisión
+
+Toda autenticación y autorización será responsabilidad exclusiva de Quarkus Security.
+
+---
+
+# ADR-010
+
+## Título
+
+Qute Oficial
+
+### Decisión
+
+Todo renderizado HTML utilizará exclusivamente Qute.
