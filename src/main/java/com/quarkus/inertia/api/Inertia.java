@@ -20,6 +20,10 @@ public interface Inertia {
 
     Uni<Object> back();
 
+    Uni<Object> back(String fallback);
+
+    Uni<Object> back(int status, String fallback);
+
     void share(String key, Object value);
 
     void share(Map<String, Object> values);
@@ -33,6 +37,8 @@ public interface Inertia {
     void deferred(String group, String name, Supplier<Uni<Object>> resolver);
 
     void deferred(String name, Supplier<Uni<Object>> resolver);
+
+    void optional(String key, Supplier<Uni<Object>> resolver);
 
     void once(String key, Object value);
 
@@ -58,5 +64,17 @@ public interface Inertia {
 
     void preserveFragment(boolean preserve);
 
+    void setRootView(String name);
+
+    void withoutSsr(String... paths);
+
+    void disableSsr();
+
+    Map<String, Object> getShared();
+
+    void flushShared();
+
     String getVersion();
+
+    void version(String version);
 }

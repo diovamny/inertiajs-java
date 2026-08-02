@@ -22,6 +22,7 @@ class DefaultVersionProviderUnitTest {
             @Override public boolean csrfEnabled() { return true; }
             @Override public Optional<String> rootView() { return Optional.empty(); }
             @Override public Optional<String> ssrBundle() { return Optional.empty(); }
+            @Override public Optional<java.util.List<String>> ssrExcludePaths() { return Optional.empty(); }
         };
     }
 
@@ -43,6 +44,23 @@ class DefaultVersionProviderUnitTest {
     void shouldReturnSameVersionOnMultipleCalls() {
         var config = makeConfig("custom", Optional.of("fixed"));
         var provider = new DefaultVersionProvider(config);
+        assertThat(provider.getVersion()).isSameAs(provider.getVersion());
+    }
+
+    @Test
+    void runtimeVersionOverridesConfiguredVersion() {
+        var config = makeConfig("custom", Optional.of("v1.0.0"));
+        var provider = new DefaultVersionProvider(config);
+        provider.setVersion("v2.0.0");
+        assertThat(provider.getVersion()).isEqualTo("v2.0.0");
+    }
+
+    @Test
+    void runtimeVersionPersistsAcrossCalls() {
+        var config = makeConfig("custom", Optional.of("v1.0.0"));
+        var provider = new DefaultVersionProvider(config);
+        provider.setVersion("v2.0.0");
+        assertThat(provider.getVersion()).isEqualTo("v2.0.0");
         assertThat(provider.getVersion()).isSameAs(provider.getVersion());
     }
 }

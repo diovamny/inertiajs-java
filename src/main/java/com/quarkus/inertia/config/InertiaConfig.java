@@ -15,6 +15,8 @@ public interface InertiaConfig {
     @WithDefault("http://localhost:13714")
     String ssrUrl();
 
+    java.util.Optional<java.util.List<String>> ssrExcludePaths();
+
     @WithDefault("sha256")
     String versionStrategy();
 

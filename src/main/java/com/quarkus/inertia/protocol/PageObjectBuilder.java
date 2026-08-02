@@ -80,6 +80,8 @@ public class PageObjectBuilder {
         var url = currentUrl();
         var version = versionProvider.getVersion();
 
+        var partialContext = buildPartialReloadContext();
+
         var deferredGroups = sharedData.getDeferredPropGroups();
         var deferredKeys = deferredGroups.values().stream()
             .flatMap(List::stream)
@@ -87,6 +89,17 @@ public class PageObjectBuilder {
 
         if (!isPartial) {
             deferredKeys.forEach(allProps::remove);
+        }
+
+        if (isPartial) {
+            var explicitDataKeys = explicitPartialDataKeys(partialContext);
+            if (explicitDataKeys != null) {
+                for (var entry : sharedData.getOptionalProps().entrySet()) {
+                    if (explicitDataKeys.contains(entry.getKey())) {
+                        allProps.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
         }
 
         var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
@@ -109,8 +122,6 @@ public class PageObjectBuilder {
         var encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
         var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
         var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
-
-        var partialContext = buildPartialReloadContext();
 
         Uni<Map<String, Object>> resolvedPropsUni;
         if (isPartial) {
@@ -170,6 +181,11 @@ public class PageObjectBuilder {
                 .collect(java.util.stream.Collectors.toSet());
         }
         return null;
+    }
+
+    private java.util.Set<String> explicitPartialDataKeys(PartialReloadProcessor.PartialReloadContext partialContext) {
+        if (partialContext == null) return null;
+        return partialContext.hasData() ? partialContext.data() : null;
     }
 
     private Map<String, Map<String, Object>> buildScrollProps(List<String> mergeProps,

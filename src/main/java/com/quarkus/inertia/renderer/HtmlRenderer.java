@@ -48,6 +48,15 @@ public class HtmlRenderer {
     }
 
     private Template resolveRootTemplate() {
+        var override = rootViewOverride();
+        if (override != null && !override.isBlank()) {
+            var template = engine.getTemplate(override);
+            if (template == null) {
+                template = engine.getTemplate(override + ".html");
+            }
+            if (template != null) return template;
+        }
+
         var configured = config.rootTemplate();
         if (configured == null || configured.isBlank() || "index.html".equals(configured)) {
             return defaultRootTemplate;
@@ -55,5 +64,14 @@ public class HtmlRenderer {
 
         var resolved = engine.getTemplate(configured);
         return resolved != null ? resolved : defaultRootTemplate;
+    }
+
+    private String rootViewOverride() {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            var override = (String) ctx.getLocal("inertia-root-view");
+            if (override != null) return override;
+        }
+        return null;
     }
 }

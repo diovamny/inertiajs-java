@@ -76,6 +76,16 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Uni<Object> back(String fallback) {
+        return redirectProcessor.back(fallback);
+    }
+
+    @Override
+    public Uni<Object> back(int status, String fallback) {
+        return redirectProcessor.back(status, fallback);
+    }
+
+    @Override
     public Uni<Object> location(String url) {
         return redirectProcessor.external(url);
     }
@@ -117,6 +127,11 @@ public class InertiaImpl implements Inertia {
     @Override
     public void deferred(String name, Supplier<Uni<Object>> resolver) {
         deferred("default", name, resolver);
+    }
+
+    @Override
+    public void optional(String key, Supplier<Uni<Object>> resolver) {
+        sharedData.addOptionalProp(key, resolver);
     }
 
     @Override
@@ -225,5 +240,44 @@ public class InertiaImpl implements Inertia {
     @Override
     public String getVersion() {
         return versionProvider.getVersion();
+    }
+
+    @Override
+    public void version(String version) {
+        versionProvider.setVersion(version);
+    }
+
+    @Override
+    public void setRootView(String name) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            ctx.putLocal("inertia-root-view", name);
+        }
+    }
+
+    @Override
+    public void withoutSsr(String... paths) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            ctx.putLocal("inertia-ssr-exclude-paths", java.util.List.of(paths));
+        }
+    }
+
+    @Override
+    public void disableSsr() {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            ctx.putLocal("inertia-disable-ssr", Boolean.TRUE);
+        }
+    }
+
+    @Override
+    public Map<String, Object> getShared() {
+        return sharedData.getShared();
+    }
+
+    @Override
+    public void flushShared() {
+        sharedData.flushShared();
     }
 }

@@ -25,6 +25,18 @@ Inertia.js v3 (validado contra `inertia-laravel` / `inertia-rails`).
 - **Rescued props**: `rescue(key)` → `rescuedProps` (lista, formato v3).
 - **Meta**: `meta(key, value)` / `meta(map)` — expuesto al root template como
   `pageMeta` y `pageTitle`.
+- **Optional props**: `optional(key, resolver)` — nunca se resuelven en la
+  carga inicial y solo se evalúan cuando un partial reload las pide
+  explícitamente (`X-Inertia-Partial-Data`).
+- **`back()` ergonómico**: `back(fallback)` y `back(status, fallback)`
+  (equivalente al `back(status, headers, fallback)` de Laravel).
+- **Inspección de shared data**: `getShared()` y `flushShared()`.
+- **Versión runtime**: `version(version)` (override persistente sobre la
+  estrategia configurada — `sha256`/`vite-manifest`/`custom`).
+- **Root view por request**: `setRootView(name)` — prioridad sobre
+  `inertia.root-template` para el render HTML.
+- **SSR condicional**: `withoutSsr(paths)` / `disableSsr()` por request y
+  `inertia.ssr-exclude-paths` global (matcher exacto o `*` wildcard).
 - **Partial reloads**: `X-Inertia-Partial-Data/Except/Component`, `X-Inertia-Reset`,
   `X-Inertia-Error-Bag`.
 - **Serialización limpia**: metadata vacía y flags `false`

@@ -82,4 +82,38 @@ class RedirectProcessorUnitTest {
         assertThat(response.getHeaderString("Location")).isEqualTo("http://localhost:8080/other");
         assertThat(response.getHeaderString("X-Inertia-Location")).isNull();
     }
+
+    @Test
+    void shouldBackToRefererWhenPresent() {
+        when(httpRequest.getHeader("Referer")).thenReturn("/previous");
+        var result = processor.back();
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/previous");
+    }
+
+    @Test
+    void shouldBackToFallbackWhenNoReferer() {
+        var result = processor.back("/fallback");
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/fallback");
+    }
+
+    @Test
+    void shouldBackWithCustomStatusAndFallback() {
+        var result = processor.back(303, "/fallback");
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(303);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/fallback");
+    }
+
+    @Test
+    void shouldPreferRefererOverCustomFallback() {
+        when(httpRequest.getHeader("Referer")).thenReturn("/previous");
+        var result = processor.back(303, "/fallback");
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(303);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/previous");
+    }
 }

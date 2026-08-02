@@ -64,11 +64,31 @@ public class RedirectProcessor {
     }
 
     public Uni<Object> back() {
+        return back("/");
+    }
+
+    public Uni<Object> back(String fallback) {
+        return back0(fallback, -1);
+    }
+
+    public Uni<Object> back(int status, String fallback) {
+        return back0(fallback, status);
+    }
+
+    private Uni<Object> back0(String fallback, int forcedStatus) {
         var referer = getRefererUrl();
-        if (referer != null && !referer.isBlank()) {
-            return process(referer);
+        var url = (referer != null && !referer.isBlank())
+            ? referer
+            : (fallback != null && !fallback.isBlank()) ? fallback : "/";
+        if (forcedStatus > 0) {
+            return Uni.createFrom().item(
+                Response.status(forcedStatus)
+                    .header("Location", url)
+                    .header("Vary", "X-Inertia")
+                    .build()
+            );
         }
-        return process("/");
+        return process(url);
     }
 
     private boolean isInertiaRequest() {

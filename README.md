@@ -106,6 +106,7 @@ createInertiaApp({
 - [x] PageObject con todos los campos Inertia v3 (16 campos)
 - [x] Partial reloads (X-Inertia-Partial-Component/Data/Except, X-Inertia-Reset)
 - [x] Deferred props con grupos (Map<String, List<String>>)
+- [x] Optional props (`optional(...)` — solo se resuelven si el partial reload las pide explícitamente)
 - [x] Merge props — append (`mergeProps`), prepend (`prependProps`), deep (`deepMergeProps`), `matchPropsOn`
 - [x] Once props con custom key y expiración (`X-Inertia-Except-Once-Props`)
 - [x] Scroll props + `X-Inertia-Infinite-Scroll-Merge-Intent` (append/prepend)
@@ -128,7 +129,9 @@ createInertiaApp({
 - [x] Vary: X-Inertia / Precognition headers
 - [x] Error-Bag y Scroll-Merge-Intent headers
 - [x] camelizeProps (snake_case → camelCase)
-- [x] Root template configurable (`inertia.root-template`)
+- [x] Root template configurable (`inertia.root-template`) + `setRootView(name)` por request
+- [x] Versión runtime (`version(...)`) sobre la estrategia configurada
+- [x] SSR por ruta: `withoutSsr(paths)` / `disableSsr()` + `inertia.ssr-exclude-paths`
 - [x] HTML + JSON responses
 - [x] Native Image ready (@RegisterForReflection)
 
@@ -188,3 +191,33 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 | `encryptHistory` | boolean | no (omitido si `false`) |
 | `clearHistory` | boolean | no (omitido si `false`) |
 | `preserveFragment` | boolean | no (omitido si `false`) |
+
+## Equivalencias con los adaptadores oficiales
+
+| quarkus-inertia | inertia-laravel | inertia-rails |
+|-----------------|-----------------|---------------|
+| `render(component, props)` | `Inertia::render()` | `render inertia: {...}` |
+| `redirect(url)` / `back()` | `redirect()` / `back()` | `redirect_to` / `redirect_back` |
+| `back(fallback)` / `back(status, fallback)` | `back(status, headers, fallback)` | `redirect_back` |
+| `location(url)` (409 + `X-Inertia-Location`) | `Inertia::location()` | `inertia_location()` |
+| `version(version)` / `getVersion()` | `Inertia::version()` / `getVersion()` | `inertia_version` |
+| `setRootView(name)` | `Inertia::setRootView()` | `inertia_layout` |
+| `share(key, value)` / `share(map)` | `Inertia::share()` | `inertia_share` |
+| `getShared()` / `flushShared()` | `Inertia::getShared()` / `flushShared()` | — |
+| `always(key, value)` | `Inertia::always()` | `always_prop` |
+| `deferred(group, name, resolver)` | `Inertia::defer(cb, group)` | `defer` |
+| `optional(key, resolver)` | `Inertia::optional()` | `optional_prop` |
+| `once(key, value[, customKey])` | `Inertia::once()` / `shareOnce()` | `once_prop` |
+| `merge(key, value[, deep])` / `prepend(key, value)` | `Inertia::merge()` / `prepend()` | `merge_prop` |
+| `scroll(key, metadata)` | `Inertia::scroll()` | `scroll_prop` |
+| `rescue(key)` | `Inertia::rescue()` | — |
+| `meta(key, value)` | props `meta` | `inertia_meta_tags` |
+| `flash(key, value)` | `Inertia::flash()` | `inertia_flash` |
+| `withoutSsr(paths)` / `disableSsr()` | `Inertia::withoutSsr()` / `disableSsr()` | — |
+| `encryptHistory/clearHistory/preserveFragment` | igual | igual |
+
+Diferencias de ergonomía (intencionales): las props no se pueden pasar como
+callables dentro del mapa de props (estilo Laravel/Rails); en su lugar se
+registran explícitamente con `deferred`/`optional`/`once`/`merge` antes del
+`render`. SSR global vía configuración (`inertia.ssr-enabled`) sin exclusión
+por ruta.

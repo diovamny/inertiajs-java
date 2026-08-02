@@ -123,4 +123,37 @@ class SharedDataRegistryUnitTest {
         registry.clear();
         assertThat(registry.getPrependPropKeys()).isEmpty();
     }
+
+    @Test
+    void shouldStoreOptionalProps() {
+        var registry = new SharedDataRegistry();
+        registry.addOptionalProp("key", () -> io.smallrye.mutiny.Uni.createFrom().item("value"));
+        assertThat(registry.hasOptionalProps()).isTrue();
+        assertThat(registry.getOptionalProps()).containsOnlyKeys("key");
+    }
+
+    @Test
+    void shouldClearOptionalProps() {
+        var registry = new SharedDataRegistry();
+        registry.addOptionalProp("key", () -> io.smallrye.mutiny.Uni.createFrom().item("value"));
+        registry.clear();
+        assertThat(registry.hasOptionalProps()).isFalse();
+    }
+
+    @Test
+    void getSharedShouldReturnOnlyTrackedKeys() {
+        var registry = new SharedDataRegistry();
+        registry.set("shared", 1);
+        registry.setWithNoTrack("untracked", 2);
+        assertThat(registry.getShared()).containsOnlyKeys("shared");
+    }
+
+    @Test
+    void flushSharedShouldRemoveTrackedKeysOnly() {
+        var registry = new SharedDataRegistry();
+        registry.set("shared", 1);
+        registry.setWithNoTrack("untracked", 2);
+        registry.flushShared();
+        assertThat(registry.getAll()).containsOnlyKeys("untracked");
+    }
 }

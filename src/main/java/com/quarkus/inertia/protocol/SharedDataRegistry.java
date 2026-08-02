@@ -5,7 +5,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import jakarta.enterprise.context.RequestScoped;
+
+import io.smallrye.mutiny.Uni;
 
 import com.quarkus.inertia.model.AlwaysProp;
 
@@ -16,6 +19,7 @@ public class SharedDataRegistry {
     private final Map<String, Object> flashData = new HashMap<>();
     private final Map<String, List<String>> deferredPropGroups = new HashMap<>();
     private final Map<String, String> oncePropKeys = new HashMap<>();
+    private final Map<String, Supplier<Uni<Object>>> optionalProps = new HashMap<>();
     private final List<String> mergePropKeys = new java.util.ArrayList<>();
     private final List<String> prependPropKeys = new java.util.ArrayList<>();
     private final List<String> deepMergePropKeys = new java.util.ArrayList<>();
@@ -72,6 +76,7 @@ public class SharedDataRegistry {
         flashData.clear();
         deferredPropGroups.clear();
         oncePropKeys.clear();
+        optionalProps.clear();
         mergePropKeys.clear();
         prependPropKeys.clear();
         deepMergePropKeys.clear();
@@ -88,6 +93,18 @@ public class SharedDataRegistry {
 
     public Map<String, List<String>> getDeferredPropGroups() {
         return Map.copyOf(deferredPropGroups);
+    }
+
+    public void addOptionalProp(String key, Supplier<Uni<Object>> resolver) {
+        optionalProps.put(key, resolver);
+    }
+
+    public Map<String, Supplier<Uni<Object>>> getOptionalProps() {
+        return Map.copyOf(optionalProps);
+    }
+
+    public boolean hasOptionalProps() {
+        return !optionalProps.isEmpty();
     }
 
     public void addOncePropKey(String key, String customKey) {
@@ -132,6 +149,23 @@ public class SharedDataRegistry {
 
     public List<String> getSharedKeys() {
         return List.copyOf(sharedKeys);
+    }
+
+    public Map<String, Object> getShared() {
+        var result = new HashMap<String, Object>();
+        for (var key : sharedKeys) {
+            if (data.containsKey(key)) {
+                result.put(key, data.get(key));
+            }
+        }
+        return java.util.Collections.unmodifiableMap(result);
+    }
+
+    public void flushShared() {
+        for (var key : sharedKeys) {
+            data.remove(key);
+        }
+        sharedKeys.clear();
     }
 
     public void addScrollProp(String key, Map<String, Object> metadata) {

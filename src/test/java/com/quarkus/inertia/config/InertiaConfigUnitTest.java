@@ -23,6 +23,7 @@ class InertiaConfigUnitTest {
             @Override public boolean csrfEnabled() { return true; }
             @Override public Optional<String> rootView() { return rootView; }
             @Override public Optional<String> ssrBundle() { return ssrBundle; }
+            @Override public Optional<java.util.List<String>> ssrExcludePaths() { return Optional.empty(); }
         };
     }
 

@@ -13,6 +13,7 @@ import com.quarkus.inertia.config.InertiaConfig;
 public class DefaultVersionProvider implements VersionProvider {
 
     private final String version;
+    private volatile String runtimeVersion;
 
     @Inject
     public DefaultVersionProvider(InertiaConfig config) {
@@ -21,7 +22,13 @@ public class DefaultVersionProvider implements VersionProvider {
 
     @Override
     public String getVersion() {
+        if (runtimeVersion != null) return runtimeVersion;
         return version;
+    }
+
+    @Override
+    public void setVersion(String version) {
+        this.runtimeVersion = version;
     }
 
     private String computeVersion(InertiaConfig config) {
