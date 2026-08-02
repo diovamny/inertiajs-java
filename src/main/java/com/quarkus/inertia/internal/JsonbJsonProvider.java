@@ -18,7 +18,10 @@ public class JsonbJsonProvider implements JsonProvider {
 
     @Override
     public String toJson(Object value) {
-        return jsonb.toJson(value);
+        var target = RawJsonUnwrapper.containsRawJson(value)
+            ? RawJsonUnwrapper.unwrap(value)
+            : value;
+        return jsonb.toJson(target);
     }
 
     @Override

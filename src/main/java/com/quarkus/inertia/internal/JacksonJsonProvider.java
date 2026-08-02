@@ -23,7 +23,10 @@ public class JacksonJsonProvider implements JsonProvider {
     @Override
     public String toJson(Object value) {
         try {
-            return mapper.writeValueAsString(value);
+            var target = RawJsonUnwrapper.containsRawJson(value)
+                ? RawJsonUnwrapper.unwrap(value)
+                : value;
+            return mapper.writeValueAsString(target);
         } catch (Exception e) {
             throw new RuntimeException("JSON serialization failed", e);
         }

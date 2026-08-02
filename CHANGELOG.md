@@ -75,3 +75,33 @@ Inertia.js v3 (validado contra `inertia-laravel` / `inertia-rails`).
   `ResponseProcessor` ya lo manejaba).
 - Tests: 79 en el adaptador (incluye CSRF, precognition, once props) y 83 en
   la demo-app (incluye infinite scroll, flash sobre 409, CSRF end-to-end).
+
+### Paridad completa (features avanzadas)
+
+- **Cached props**: `cache(key, resolver)` / `cache(key, ttl, resolver)`,
+  `optional(key, resolver, cacheKey[, ttl])` y `deferred(group, name, resolver, cacheKey[, ttl])`
+  respaldadas por `CachedPropStore` `@ApplicationScoped` con TTL opcional.
+- **Flash API**: `getFlash(key, default)` / `pullFlash(key, default)` sobre el
+  FlashStore SPI; allowlist con `inertia.flash-keys` (la descarga solo emite las
+  keys configuradas) y `inertia.always-include-errors` para forzar `errors` siempre.
+- **Component/URL hooks**: SPIs `ComponentTransformer` y `UrlResolver`
+  (inyectables con `@Inject Instance<>`) y `render(Enum)` → `enum.name()`.
+- **Full-page redirect**: `redirect(url, fullPage)` — en peticiones Inertia
+  responde `409` + `X-Inertia-Location`; fuera de Inertia, 302 normal.
+- **Error handling**: `handleErrorUsing(ErrorMapper)` por request y
+  `ErrorResponseFactory` (`@ApplicationScoped`) — `530` + payload
+  `{error: {message, exception}}`; `InertiaExceptionMapper` (`@Provider`)
+  centraliza errores no controlados (500 en no-Inertia).
+- **SSR de verdad**: `SsrHandler.render(page)` hace POST a `ssrUrl` + `/render`
+  (con `RequestOptions.setAbsoluteURI`), `HtmlRenderer` usa el response en el
+  root template (`{ssrBody}`/`{ssrHead}`) con fallback automático a CSR, y soporta
+  exclusión por request/global con `withoutSsr`/`inertia.ssr-exclude-paths`.
+- **ETag condicional**: `InertiaResponseFilter` computa un ETag SHA-256 de la
+  representación y devuelve `304` en GET con `If-None-Match` (habilitable con
+  `inertia.lazy-etag-enabled`, default `true`).
+- **Testing helper**: `com.quarkus.inertia.testing.InertiaPage` — deserializa el
+  page JSON y ofrece aserciones fluidas (`assertComponent`, `assertHasProps`
+  parcial, `assertHasExactProps`, `assertNoProp`, `assertDeferredProps(…InGroup)`,
+  `assertOnceProps`, `assertScrollProps`, `assertMeta`, familias merge/match).
+- Tests finales: **150 en el adaptador** y **86 en la demo-app** (helper
+  `InertiaPage` end-to-end incluido).

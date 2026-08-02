@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{#if pageTitle}{pageTitle}{#else}Inertia App{/if}</title>
+    {#if ssrHead}{ssrHead}{/if}
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app" {#if ssrBody}data-server-rendered="true"{/if}>{#if ssrBody}{ssrBody}{/if}</div>
     <script type="application/json" data-page="app">{dataPage}</script>
     <script src="/assets/app.js"></script>
 </body>

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
@@ -17,7 +18,9 @@ import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import com.quarkus.inertia.config.InertiaConfig;
 import com.quarkus.inertia.model.AlwaysProp;
 import com.quarkus.inertia.model.PageObject;
+import com.quarkus.inertia.spi.ComponentTransformer;
 import com.quarkus.inertia.spi.FlashStore;
+import com.quarkus.inertia.spi.UrlResolver;
 import com.quarkus.inertia.version.VersionProvider;
 
 @RequestScoped
@@ -31,6 +34,8 @@ public class PageObjectBuilder {
     private final FlashStore flashStore;
     private final CurrentVertxRequest currentVertxRequest;
     private final InertiaConfig config;
+    private final Instance<ComponentTransformer> componentTransformer;
+    private final Instance<UrlResolver> urlResolver;
 
     @Inject
     public PageObjectBuilder(
@@ -41,7 +46,9 @@ public class PageObjectBuilder {
             MergePropProcessor mergePropProcessor,
             FlashStore flashStore,
             CurrentVertxRequest currentVertxRequest,
-            InertiaConfig config) {
+            InertiaConfig config,
+            Instance<ComponentTransformer> componentTransformer,
+            Instance<UrlResolver> urlResolver) {
         this.sharedData = sharedData;
         this.versionProvider = versionProvider;
         this.partialReloadProcessor = partialReloadProcessor;
@@ -50,6 +57,21 @@ public class PageObjectBuilder {
         this.flashStore = flashStore;
         this.currentVertxRequest = currentVertxRequest;
         this.config = config;
+        this.componentTransformer = componentTransformer;
+        this.urlResolver = urlResolver;
+    }
+
+    PageObjectBuilder(
+            SharedDataRegistry sharedData,
+            VersionProvider versionProvider,
+            PartialReloadProcessor partialReloadProcessor,
+            OncePropRegistry oncePropRegistry,
+            MergePropProcessor mergePropProcessor,
+            FlashStore flashStore,
+            CurrentVertxRequest currentVertxRequest,
+            InertiaConfig config) {
+        this(sharedData, versionProvider, partialReloadProcessor, oncePropRegistry, mergePropProcessor,
+            flashStore, currentVertxRequest, config, null, null);
     }
 
     public Uni<PageObject> build(String component, Map<String, Object> props) {
@@ -57,27 +79,48 @@ public class PageObjectBuilder {
     }
 
     public Uni<PageObject> build(String component, Map<String, Object> props, boolean isPartial) {
+        var resolvedComponent = resolveComponent(component);
         var allProps = new HashMap<String, Object>();
         if (props != null) allProps.putAll(props);
         allProps.putAll(sharedData.getAll());
 
         if (flashStore.hasData() && !isGetVersionMismatch()) {
-            allProps.putAll(flashStore.drain());
+            var flashed = flashStore.drain();
+            if (!flashed.isEmpty()) {
+                var allowed = config.flashKeys().orElse(null);
+                if (allowed != null) {
+                    var filtered = new HashMap<String, Object>();
+                    for (var key : allowed) {
+                        if (flashed.containsKey(key)) {
+                            filtered.put(key, flashed.get(key));
+                        }
+                    }
+                    allProps.putAll(filtered);
+                } else {
+                    allProps.putAll(flashed);
+                }
+            }
         }
 
         var onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
+        var clientHasOnceKeys = oncePropRegistry.propKeys(exceptOnceKeys);
         if (oncePropRegistry.hasProps()) {
             var onceValues = oncePropRegistry.drain(exceptOnceKeys);
-            mergePropProcessor.merge(allProps, onceValues);
+            allProps.putAll(mergePropProcessor.merge(allProps, onceValues));
+        }
+        if (!clientHasOnceKeys.isEmpty()) {
+            clientHasOnceKeys.forEach(allProps::remove);
         }
 
+        wrapScrollPropValues(allProps);
+
         var errors = resolveErrors();
-        if (!errors.isEmpty()) {
+        if (!errors.isEmpty() || config.alwaysIncludeErrors()) {
             allProps.put("errors", AlwaysProp.of(errors));
         }
 
-        var url = currentUrl();
+        var url = resolveUrl(currentUrl());
         var version = versionProvider.getVersion();
 
         var partialContext = buildPartialReloadContext();
@@ -116,22 +159,16 @@ public class PageObjectBuilder {
         var deepMergePropsOut = deepMergeProps.isEmpty() ? null : java.util.Collections.unmodifiableList(deepMergeProps);
         var matchPropsOnOut = matchPropsOn.isEmpty() ? null : matchPropsOn;
         var sharedKeys = sharedData.getSharedKeys();
-        var rescuedProps = sharedData.hasRescuedProps() ? sharedData.getRescuedProps() : null;
         var meta = sharedData.hasMeta() ? sharedData.getMeta() : null;
 
         var encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
         var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
         var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
 
-        Uni<Map<String, Object>> resolvedPropsUni;
-        if (isPartial) {
-            resolvedPropsUni = resolveSupplierProps(allProps, partialContext);
-        } else {
-            resolvedPropsUni = Uni.createFrom().item(allProps);
-        }
+        return resolveSupplierProps(allProps, partialContext).map(resolvedProps -> {
+            var rescuedProps = sharedData.hasRescuedProps() ? sharedData.getRescuedProps() : null;
 
-        return resolvedPropsUni.map(resolvedProps -> {
-            var page = new PageObject(component, Map.copyOf(resolvedProps), url, version,
+            var page = new PageObject(resolvedComponent, Map.copyOf(resolvedProps), url, version,
                 deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut, onceProps,
                 scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
                 encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
@@ -160,9 +197,20 @@ public class PageObjectBuilder {
                 var key = entry.getKey();
                 if (requestedKeys == null || requestedKeys.contains(key)) {
                     var supplier = (Supplier<Uni<Object>>) entry.getValue();
-                    result = result.chain(map ->
-                        supplier.get().map(resolved -> {
-                            map.put(key, resolved);
+                    result = result.chain(map -> supplier.get()
+                        .onFailure().recoverWithUni(failure -> {
+                            if (sharedData.getRescuedProps().contains(key)) {
+                                map.remove(key);
+                                return Uni.createFrom().nullItem();
+                            }
+                            return Uni.createFrom().failure(failure);
+                        })
+                        .map(resolved -> {
+                            if (resolved == null && sharedData.getRescuedProps().contains(key)) {
+                                map.remove(key);
+                            } else {
+                                map.put(key, resolved);
+                            }
                             return map;
                         })
                     );
@@ -192,22 +240,25 @@ public class PageObjectBuilder {
             List<String> prependProps, List<String> matchPropsOn) {
         var result = new LinkedHashMap<String, Map<String, Object>>();
         var intent = scrollMergeIntent();
-        for (var entry : sharedData.getScrollProps().entrySet()) {
+        for (var entry : sharedData.getScrollSpecs().entrySet()) {
             var key = entry.getKey();
-            var metadata = entry.getValue();
+            var spec = entry.getValue();
+            var metadata = spec.metadata();
+            var wrapper = spec.wrapper() != null ? spec.wrapper() : "data";
 
+            var mergePath = wrapper;
             if ("prepend".equals(intent)) {
-                prependProps.add(key);
+                prependProps.add(key + "." + mergePath);
             } else {
-                mergeProps.add(key);
+                mergeProps.add(key + "." + mergePath);
             }
 
             var matchOn = metadata.get("matchOn");
             if (matchOn instanceof String s) {
-                matchPropsOn.add(key + "." + s);
+                matchPropsOn.add(key + "." + mergePath + "." + s);
             } else if (matchOn instanceof List<?> list) {
                 for (var p : list) {
-                    matchPropsOn.add(key + "." + p);
+                    matchPropsOn.add(key + "." + mergePath + "." + p);
                 }
             }
 
@@ -220,6 +271,17 @@ public class PageObjectBuilder {
             result.put(key, java.util.Collections.unmodifiableMap(clean));
         }
         return java.util.Collections.unmodifiableMap(result);
+    }
+
+    private void wrapScrollPropValues(Map<String, Object> allProps) {
+        if (!sharedData.hasScrollProps()) return;
+        for (var entry : sharedData.getScrollSpecs().entrySet()) {
+            var spec = entry.getValue();
+            if (spec.value() != null) {
+                var wrapper = spec.wrapper() != null ? spec.wrapper() : "data";
+                allProps.put(entry.getKey(), Map.of(wrapper, spec.value()));
+            }
+        }
     }
 
     private String scrollMergeIntent() {
@@ -260,12 +322,30 @@ public class PageObjectBuilder {
 
         var errorBag = (String) ctx.getLocal("inertia-error-bag");
         var rawErrors = (Map<String, Object>) ctx.getLocal("inertia-validation-errors");
-        if (rawErrors == null || rawErrors.isEmpty()) return Map.of();
+        if (rawErrors == null || rawErrors.isEmpty()) {
+            return Map.of();
+        }
 
         if (errorBag != null && !errorBag.isBlank()) {
             return Map.of(errorBag, rawErrors);
         }
         return rawErrors;
+    }
+
+    private String resolveComponent(String component) {
+        if (component == null || componentTransformer == null || !componentTransformer.isResolvable()) {
+            return component;
+        }
+        var transformed = componentTransformer.get().transform(component);
+        return transformed != null && !transformed.isBlank() ? transformed : component;
+    }
+
+    private String resolveUrl(String url) {
+        if (url == null || urlResolver == null || !urlResolver.isResolvable()) {
+            return url;
+        }
+        var resolved = urlResolver.get().resolve(url);
+        return resolved != null && !resolved.isBlank() ? resolved : url;
     }
 
     private String currentUrl() {

@@ -31,4 +31,23 @@ class InertiaRenderQuarkusTest {
         var result = inertia.location("https://example.com");
         assertThat(result).isNotNull();
     }
+
+    enum HomePage { HOME }
+
+    @Test
+    void shouldRenderEnumComponentByName() {
+        var result = inertia.render(HomePage.HOME);
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void shouldRedirectWithFullPageReturnUni() {
+        var result = inertia.redirect("/external", true);
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void shouldHandleErrorUsingMapperReturnUni() {
+        assertThatCode(() -> inertia.handleErrorUsing(error -> null)).doesNotThrowAnyException();
+    }
 }

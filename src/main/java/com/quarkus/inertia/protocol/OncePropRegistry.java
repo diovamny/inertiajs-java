@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import jakarta.enterprise.context.RequestScoped;
 
 import com.quarkus.inertia.model.OnceProp;
@@ -20,6 +21,34 @@ public class OncePropRegistry {
 
     public void set(String key, Object value, String customKey, Instant expiresAt) {
         onceProps.put(key, new OnceEntry(value, customKey, expiresAt));
+    }
+
+    public void setLazy(String key, Supplier<io.smallrye.mutiny.Uni<Object>> resolver) {
+        onceProps.put(key, new OnceEntry(resolver, null, null));
+    }
+
+    public void setLazy(String key, Supplier<io.smallrye.mutiny.Uni<Object>> resolver,
+            String customKey) {
+        onceProps.put(key, new OnceEntry(resolver, customKey, null));
+    }
+
+    public void setLazy(String key, Supplier<io.smallrye.mutiny.Uni<Object>> resolver,
+            String customKey, Instant expiresAt) {
+        onceProps.put(key, new OnceEntry(resolver, customKey, expiresAt));
+    }
+
+    public Set<String> propKeys(Set<String> onceKeys) {
+        if (onceKeys == null || onceKeys.isEmpty()) return Set.of();
+        purgeExpired();
+        var keys = new HashSet<String>();
+        for (var entry : onceProps.entrySet()) {
+            var value = entry.getValue();
+            var onceKey = value.customKey() != null ? value.customKey() : entry.getKey();
+            if (onceKeys.contains(onceKey)) {
+                keys.add(entry.getKey());
+            }
+        }
+        return keys;
     }
 
     public boolean hasProps() {

@@ -19,8 +19,10 @@ com.quarkus.inertia
 ├── renderer/      → HtmlRenderer, SsrHandler
 ├── response/      → JsonResponseProcessor
 ├── security/      → InertiaCsrfFilter
-├── spi/           → FlashStore, JsonProvider
+├── spi/           → FlashStore, JsonProvider, ComponentTransformer, UrlResolver, ErrorMapper
+├── cache/         → CachedPropStore
 ├── version/       → VersionProvider, DefaultVersionProvider
+├── testing/       → InertiaPage (helper de aserciones)
 └── internal/      → InertiaImpl, JsonbJsonProvider, JacksonJsonProvider
 ```
 
@@ -124,6 +126,14 @@ createInertiaApp({
 - [x] Prefetch (`Purpose: prefetch` / `X-Inertia-Prefetch`)
 - [x] CSRF on-by-default (`inertia.csrf.enabled`, default `true`) — 419 en mismatch
 - [x] Flash data via FlashStore SPI (sesión Vert.x)
+- [x] `getFlash(key)` / `pullFlash(key)` con allowlist (`inertia.flash-keys`) y `inertia.always-include-errors`
+- [x] Cached props (`inertia.cache(key, ttl, resolver)`) con TTL por `CachedPropStore` (`@ApplicationScoped`)
+- [x] Component/URL hooks (`ComponentTransformer`, `UrlResolver` SPI) y `render(Enum)`
+- [x] `redirect(url, fullPage)` → 409 + `X-Inertia-Location` en peticiones Inertia
+- [x] Error handling configurable (`handleErrorUsing(ErrorMapper)`, `ErrorResponseFactory`) + `InertiaExceptionMapper` (530/500)
+- [x] SSR por `SsrHandler` (POST a `ssrUrl` + `/render` con fallback a CSR automático, `{ssrHead}`/`{ssrBody}` en el root template)
+- [x] ETag sleepy (`inertia.lazy-etag-enabled`, default `true`) — 304 en GET si `If-None-Match` coincide
+- [x] Testing helper `InertiaPage`: parsea el page JSON y aserciones `assertComponent`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/`assertDeferredProps`/`assertOnceProps`/`assertScrollProps`/`assertMeta`/…
 - [x] AlwaysProp (errores sobreviven partial reloads)
 - [x] JSON-B primario, Jackson como alternativa
 - [x] Vary: X-Inertia / Precognition headers
@@ -139,14 +149,45 @@ createInertiaApp({
 
 ```bash
 # Adapter
-mvn test                    # 79 tests (unitarios + integración)
+mvn test                    # 150 tests (unitarios + integración)
 
 # Demo App
 cd examples/demo-app
-mvn test                    # 83 tests (incluye seed de 10k registros)
+mvn test                    # 86 tests (incluye seed de 10k registros)
 ```
 
-Total: **162 tests** — todos pasan.
+Total: **236 tests** — todos pasan.
+
+### Testing del adapter
+
+El artefacto incluye un helper de testing (`com.quarkus.inertia.testing.InertiaPage`)
+que deserializa el page object de una respuesta Inertia (JSON) y permite
+asericiones fluidas y encadenables, similar a los helpers de `inertia-rails`:
+
+```java
+var body = given()
+    .header("X-Inertia", "true")
+    .when().get("/persons")
+    .then()
+        .statusCode(200)
+        .extract().body().asString();
+
+InertiaPage.fromJson(body)
+    .assertComponent("Persons/Index")
+    .assertHasProps("persons", "total")                 // presencia
+    .assertHasProps(Map.of("active", "true"))           // subconjunto con valores
+    .assertHasExactProps(Map.of(...))                    // mapa exacto
+    .assertDeferredProps("analytics")                  // en cualquier grupo
+    .assertDeferredPropsInGroup("slow", "statistics")  // en grupo concreto
+    .assertOnceProps("flash")
+    .assertScrollProps("persons")
+    .assertMeta("title", "Persons");
+```
+
+También hay aserciones para `mergeProps`/`prependProps`/`deepMergeProps`/
+`matchPropsOn` y acceso directo a `props()`/`component()`/`url()`/`version()`/
+`deferredProps()`/`meta()`. `InertiaPage.from(...)` acepta también un
+`PageObject` construido manualmente.
 
 ## Demo App
 
@@ -214,8 +255,14 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 | `rescue(key)` | `Inertia::rescue()` | — |
 | `meta(key, value)` | props `meta` | `inertia_meta_tags` |
 | `flash(key, value)` | `Inertia::flash()` | `inertia_flash` |
+| `getFlash(key, default)` / `pullFlash(key, default)` | — | `flash` del page |
+| `cache(key, ttl, resolver)` / `optional(…, cacheKey, ttl)` | `Inertia::lazy()` con prop dorado | `cache_prop` |
+| `handleErrorUsing(mapper)` | `Inertia::handle()` | — |
+| `render(Enum)` / `redirect(url, fullPage)` | `Inertia::render()`/`Inertia::location()` | `redirect_to inertia` |
 | `withoutSsr(paths)` / `disableSsr()` | `Inertia::withoutSsr()` / `disableSsr()` | — |
 | `encryptHistory/clearHistory/preserveFragment` | igual | igual |
+
+**Testing**: `InertiaPage` (`assertComponent`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/…) es el equivalente Java a los helpers de `inertia-rails`/`inertia-laravel` tests.
 
 Diferencias de ergonomía (intencionales): las props no se pueden pasar como
 callables dentro del mapa de props (estilo Laravel/Rails); en su lugar se

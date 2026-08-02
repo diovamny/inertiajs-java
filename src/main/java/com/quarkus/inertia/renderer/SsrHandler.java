@@ -1,11 +1,15 @@
 package com.quarkus.inertia.renderer;
 
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 
@@ -16,11 +20,17 @@ public class SsrHandler {
 
     private final InertiaConfig config;
     private final CurrentVertxRequest currentVertxRequest;
+    private final Vertx vertx;
 
     @Inject
-    public SsrHandler(InertiaConfig config, CurrentVertxRequest currentVertxRequest) {
+    public SsrHandler(InertiaConfig config, CurrentVertxRequest currentVertxRequest, Vertx vertx) {
         this.config = config;
         this.currentVertxRequest = currentVertxRequest;
+        this.vertx = vertx;
+    }
+
+    SsrHandler(InertiaConfig config, CurrentVertxRequest currentVertxRequest) {
+        this(config, currentVertxRequest, null);
     }
 
     public boolean isSsrEnabled() {
@@ -40,8 +50,67 @@ public class SsrHandler {
         return true;
     }
 
-    public String render(JsonObject page) {
-        throw new UnsupportedOperationException("SSR is not supported yet");
+    /**
+     * Sends the page to the SSR server and returns its JSON response
+     * ({@code head} + {@code body}). Fails with an exception when the SSR
+     * server is unreachable; callers fall back to client-side rendering.
+     */
+    public Uni<JsonObject> render(JsonObject page) {
+        if (vertx == null) {
+            return Uni.createFrom().failure(new IllegalStateException("SSR is not supported yet"));
+        }
+        var url = resolveSsrUrl();
+        if (url == null || url.isBlank()) {
+            return Uni.createFrom().failure(new IllegalStateException("ssr-url is not configured"));
+        }
+        return Uni.createFrom().deferred(() -> {
+            var client = vertx.createHttpClient();
+            return Uni.createFrom().emitter(emitter -> {
+                emitter.onTermination(client::close);
+                var options = new io.vertx.core.http.RequestOptions()
+                    .setAbsoluteURI(url)
+                    .setMethod(HttpMethod.POST);
+                client.request(options, ar -> {
+                    if (ar.failed()) {
+                        emitter.fail(ar.cause());
+                        return;
+                    }
+                    var req = ar.result();
+                    req.putHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+                    req.putHeader("X-Inertia", "true");
+                    req.send(page.encode(), respAr -> {
+                        if (respAr.failed()) {
+                            emitter.fail(respAr.cause());
+                            return;
+                        }
+                        var resp = respAr.result();
+                        resp.body(bodyAr -> {
+                            if (bodyAr.failed()) {
+                                emitter.fail(bodyAr.cause());
+                                return;
+                            }
+                            var body = bodyAr.result().toString();
+                            if (resp.statusCode() >= 400) {
+                                emitter.fail(new IllegalStateException(
+                                    "SSR server responded with " + resp.statusCode() + ": " + body));
+                                return;
+                            }
+                            emitter.complete(new JsonObject(body));
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    public String resolveSsrUrl() {
+        var base = config.ssrUrl();
+        if (base == null || base.isBlank()) return base;
+        var trimmed = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        if (trimmed.endsWith("/render") || trimmed.endsWith("/__inertia_ssr")) {
+            return trimmed;
+        }
+        return trimmed + "/render";
     }
 
     private String resolveUri(Context ctx) {

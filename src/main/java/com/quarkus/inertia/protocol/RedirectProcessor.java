@@ -19,6 +19,18 @@ public class RedirectProcessor {
     }
 
     public Uni<Object> process(String url) {
+        return process(url, false);
+    }
+
+    public Uni<Object> process(String url, boolean fullPage) {
+        if (fullPage && isInertiaRequest()) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.CONFLICT)
+                    .header("X-Inertia-Location", url)
+                    .header("Vary", "X-Inertia")
+                    .build()
+            );
+        }
         var status = isNonGetRequest() ? Response.Status.SEE_OTHER : Response.Status.FOUND;
         return Uni.createFrom().item(
             Response.status(status)

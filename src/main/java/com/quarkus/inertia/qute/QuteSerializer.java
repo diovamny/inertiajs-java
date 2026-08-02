@@ -1,5 +1,6 @@
 package com.quarkus.inertia.qute;
 
+import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
@@ -18,6 +19,14 @@ public class QuteSerializer {
     }
 
     public Uni<String> serialize(PageObject page) {
-        return Uni.createFrom().item(() -> jsonProvider.toJson(page));
+        return Uni.createFrom().item(() -> {
+            if (!com.quarkus.inertia.internal.RawJsonUnwrapper.containsRawJson(page.props())) {
+                return jsonProvider.toJson(page);
+            }
+            var unwrapped = com.quarkus.inertia.internal.RawJsonUnwrapper.unwrap(page.props());
+            @SuppressWarnings("unchecked")
+            var props = (Map<String, Object>) unwrapped;
+            return jsonProvider.toJson(page.withProps(props));
+        });
     }
 }

@@ -54,6 +54,25 @@ public class VertxSessionFlashStore implements FlashStore {
     }
 
     @Override
+    public Object get(String key, Object defaultValue) {
+        var data = getFlashData();
+        return data.containsKey(key) ? data.get(key) : defaultValue;
+    }
+
+    @Override
+    public Object pull(String key, Object defaultValue) {
+        var session = getSession();
+        if (session == null) return defaultValue;
+        var data = getFlashData();
+        if (!data.containsKey(key)) return defaultValue;
+        var value = data.get(key);
+        var mutable = new HashMap<>(data);
+        mutable.remove(key);
+        session.put(SESSION_KEY, mutable);
+        return value;
+    }
+
+    @Override
     public boolean hasData() {
         var session = getSession();
         if (session == null) return false;

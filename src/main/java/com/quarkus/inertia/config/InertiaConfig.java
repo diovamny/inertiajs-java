@@ -34,4 +34,12 @@ public interface InertiaConfig {
     java.util.Optional<String> rootView();
 
     java.util.Optional<String> ssrBundle();
+
+    java.util.Optional<java.util.List<String>> flashKeys();
+
+    @WithDefault("false")
+    boolean alwaysIncludeErrors();
+
+    @WithDefault("true")
+    boolean lazyEtagEnabled();
 }

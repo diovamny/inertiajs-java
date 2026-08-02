@@ -1,5 +1,7 @@
 package com.quarkus.inertia.internal;
 
+import java.time.Instant;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -8,8 +10,10 @@ import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
 
 import com.quarkus.inertia.api.Inertia;
+import com.quarkus.inertia.cache.CachedPropStore;
 import com.quarkus.inertia.config.InertiaConfig;
 import com.quarkus.inertia.model.AlwaysProp;
+import com.quarkus.inertia.model.RawJson;
 import com.quarkus.inertia.protocol.PageObjectBuilder;
 import com.quarkus.inertia.protocol.ResponseProcessor;
 import com.quarkus.inertia.protocol.SharedDataRegistry;
@@ -17,6 +21,7 @@ import com.quarkus.inertia.protocol.RedirectProcessor;
 import com.quarkus.inertia.protocol.OncePropRegistry;
 import com.quarkus.inertia.protocol.MergePropProcessor;
 import com.quarkus.inertia.spi.FlashStore;
+import com.quarkus.inertia.spi.ErrorMapper;
 import com.quarkus.inertia.version.VersionProvider;
 
 @RequestScoped
@@ -30,6 +35,7 @@ public class InertiaImpl implements Inertia {
     private final OncePropRegistry oncePropRegistry;
     private final MergePropProcessor mergePropProcessor;
     private final FlashStore flashStore;
+    private final CachedPropStore cachedPropStore;
     private final InertiaConfig config;
 
     @Inject
@@ -42,6 +48,7 @@ public class InertiaImpl implements Inertia {
             OncePropRegistry oncePropRegistry,
             MergePropProcessor mergePropProcessor,
             FlashStore flashStore,
+            CachedPropStore cachedPropStore,
             InertiaConfig config) {
         this.pageBuilder = pageBuilder;
         this.responseProcessor = responseProcessor;
@@ -51,6 +58,7 @@ public class InertiaImpl implements Inertia {
         this.oncePropRegistry = oncePropRegistry;
         this.mergePropProcessor = mergePropProcessor;
         this.flashStore = flashStore;
+        this.cachedPropStore = cachedPropStore;
         this.config = config;
     }
 
@@ -66,8 +74,23 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Uni<Object> render(Enum<?> component) {
+        return render(component.name(), Map.of());
+    }
+
+    @Override
+    public Uni<Object> render(Enum<?> component, Map<String, Object> props) {
+        return render(component.name(), props);
+    }
+
+    @Override
     public Uni<Object> redirect(String url) {
         return redirectProcessor.process(url);
+    }
+
+    @Override
+    public Uni<Object> redirect(String url, boolean fullPage) {
+        return redirectProcessor.process(url, fullPage);
     }
 
     @Override
@@ -101,6 +124,11 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public RawJson rawJson(String json) {
+        return RawJson.of(json);
+    }
+
+    @Override
     public void always(String key, Object value) {
         sharedData.set(key, AlwaysProp.of(value));
     }
@@ -116,22 +144,78 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Object getFlash(String key, Object defaultValue) {
+        return flashStore.get(key, defaultValue);
+    }
+
+    @Override
+    public Object pullFlash(String key, Object defaultValue) {
+        return flashStore.pull(key, defaultValue);
+    }
+
+    @Override
     public void deferred(String group, String name, Supplier<Uni<Object>> resolver) {
-        var keys = sharedData.getDeferredPropGroups().getOrDefault(group, java.util.List.of());
-        var updated = new java.util.ArrayList<>(keys);
-        if (!updated.contains(name)) updated.add(name);
-        sharedData.addDeferredPropGroup(group, updated);
-        sharedData.setWithNoTrack(name, resolver);
+        cachedDeferred(group, name, resolver, null, null);
     }
 
     @Override
     public void deferred(String name, Supplier<Uni<Object>> resolver) {
-        deferred("default", name, resolver);
+        cachedDeferred("default", name, resolver, null, null);
+    }
+
+    @Override
+    public void deferred(String group, String name, Supplier<Uni<Object>> resolver, String cacheKey) {
+        cachedDeferred(group, name, resolver, cacheKey, null);
+    }
+
+    @Override
+    public void deferred(String group, String name, Supplier<Uni<Object>> resolver, String cacheKey,
+            Duration cacheTtl) {
+        cachedDeferred(group, name, resolver, cacheKey, cacheTtl);
+    }
+
+    private void cachedDeferred(String group, String name, Supplier<Uni<Object>> resolver, String cacheKey,
+            Duration cacheTtl) {
+        var source = wrapCache(resolver, cacheKey, cacheTtl);
+        var keys = sharedData.getDeferredPropGroups().getOrDefault(group, java.util.List.of());
+        var updated = new java.util.ArrayList<>(keys);
+        if (!updated.contains(name)) updated.add(name);
+        sharedData.addDeferredPropGroup(group, updated);
+        sharedData.setWithNoTrack(name, source);
     }
 
     @Override
     public void optional(String key, Supplier<Uni<Object>> resolver) {
-        sharedData.addOptionalProp(key, resolver);
+        optionalCached(key, resolver, null, null);
+    }
+
+    @Override
+    public void optional(String key, Supplier<Uni<Object>> resolver, String cacheKey) {
+        optionalCached(key, resolver, cacheKey, null);
+    }
+
+    @Override
+    public void optional(String key, Supplier<Uni<Object>> resolver, String cacheKey, Duration cacheTtl) {
+        optionalCached(key, resolver, cacheKey, cacheTtl);
+    }
+
+    private void optionalCached(String key, Supplier<Uni<Object>> resolver, String cacheKey, Duration cacheTtl) {
+        sharedData.addOptionalProp(key, wrapCache(resolver, cacheKey, cacheTtl));
+    }
+
+    @Override
+    public void cache(String key, Supplier<Uni<Object>> resolver) {
+        sharedData.setWithNoTrack(key, wrapCache(resolver, key, null));
+    }
+
+    @Override
+    public void cache(String key, Duration ttl, Supplier<Uni<Object>> resolver) {
+        sharedData.setWithNoTrack(key, wrapCache(resolver, key, ttl));
+    }
+
+    private Supplier<Uni<Object>> wrapCache(Supplier<Uni<Object>> resolver, String cacheKey, Duration cacheTtl) {
+        if (cacheKey == null || cacheKey.isBlank()) return resolver;
+        return () -> cachedPropStore.compute(cacheKey, cacheTtl, resolver);
     }
 
     @Override
@@ -142,6 +226,33 @@ public class InertiaImpl implements Inertia {
     @Override
     public void once(String key, Object value, String customKey) {
         oncePropRegistry.set(key, value, customKey, null);
+    }
+
+    @Override
+    public void once(String key, Supplier<Uni<Object>> resolver) {
+        oncePropRegistry.setLazy(key, resolver);
+    }
+
+    @Override
+    public void once(String key, Supplier<Uni<Object>> resolver, String customKey) {
+        oncePropRegistry.setLazy(key, resolver, customKey);
+    }
+
+    @Override
+    public void once(String key, Supplier<Uni<Object>> resolver, String customKey, Instant expiresAt) {
+        oncePropRegistry.setLazy(key, resolver, customKey, expiresAt);
+    }
+
+    @Override
+    public void shareOnce(String key, Object value) {
+        sharedData.set(key, value);
+        oncePropRegistry.set(key, value);
+    }
+
+    @Override
+    public void shareOnce(String key, Supplier<Uni<Object>> resolver) {
+        sharedData.set(key, resolver);
+        oncePropRegistry.setLazy(key, resolver);
     }
 
     @Override
@@ -172,8 +283,26 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public void scroll(String key, Object value, Map<String, Object> metadata) {
+        sharedData.addScrollProp(key, value, "data", metadata);
+    }
+
+    @Override
+    public void scroll(String key, Object value, Map<String, Object> metadata, String wrapper) {
+        sharedData.addScrollProp(key, value, wrapper, metadata);
+    }
+
+    @Override
     public void rescue(String key) {
         sharedData.addRescuedProp(key);
+    }
+
+    @Override
+    public void handleErrorUsing(ErrorMapper mapper) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            ctx.putLocal(ErrorResponseFactory.CONTEXT_KEY, mapper);
+        }
     }
 
     @Override

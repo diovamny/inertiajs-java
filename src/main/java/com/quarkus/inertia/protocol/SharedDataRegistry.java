@@ -25,9 +25,16 @@ public class SharedDataRegistry {
     private final List<String> deepMergePropKeys = new java.util.ArrayList<>();
     private final List<String> matchPropKeys = new java.util.ArrayList<>();
     private final Set<String> sharedKeys = new LinkedHashSet<>();
-    private final Map<String, Map<String, Object>> scrollProps = new HashMap<>();
+    private final Map<String, ScrollSpec> scrollProps = new HashMap<>();
     private final Map<String, Object> meta = new HashMap<>();
     private final List<String> rescuedProps = new java.util.ArrayList<>();
+
+    public record ScrollSpec(Object value, String wrapper, Map<String, Object> metadata) {
+
+        public static ScrollSpec metadataOnly(Map<String, Object> metadata) {
+            return new ScrollSpec(null, null, new HashMap<>(metadata));
+        }
+    }
 
     public void set(String key, Object value) {
         data.put(key, value);
@@ -189,13 +196,25 @@ public class SharedDataRegistry {
     }
 
     public void addScrollProp(String key, Map<String, Object> metadata) {
-        scrollProps.put(key, new HashMap<>(metadata));
+        scrollProps.put(key, ScrollSpec.metadataOnly(metadata));
+    }
+
+    public void addScrollProp(String key, Object value, String wrapper, Map<String, Object> metadata) {
+        scrollProps.put(key, new ScrollSpec(value, wrapper != null ? wrapper : "data", new HashMap<>(metadata)));
+    }
+
+    public Map<String, ScrollSpec> getScrollSpecs() {
+        var result = new HashMap<String, ScrollSpec>();
+        for (var entry : scrollProps.entrySet()) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return java.util.Collections.unmodifiableMap(result);
     }
 
     public Map<String, Map<String, Object>> getScrollProps() {
         var result = new HashMap<String, Map<String, Object>>();
         for (var entry : scrollProps.entrySet()) {
-            result.put(entry.getKey(), java.util.Collections.unmodifiableMap(entry.getValue()));
+            result.put(entry.getKey(), java.util.Collections.unmodifiableMap(entry.getValue().metadata()));
         }
         return java.util.Collections.unmodifiableMap(result);
     }

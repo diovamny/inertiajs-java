@@ -74,6 +74,25 @@ class RedirectProcessorUnitTest {
     }
 
     @Test
+    void shouldReturn409ForFullPageRedirectWhenInertia() {
+        asInertia();
+        var result = processor.process("/admin", true);
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(409);
+        assertThat(response.getHeaderString("X-Inertia-Location")).isEqualTo("/admin");
+        assertThat(response.getHeaderString("Location")).isNull();
+    }
+
+    @Test
+    void shouldReturn302ForFullPageRedirectWhenNonInertia() {
+        var result = processor.process("/admin", true);
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/admin");
+        assertThat(response.getHeaderString("X-Inertia-Location")).isNull();
+    }
+
+    @Test
     void shouldReturn302ForSameHostLocationWhenInertia() {
         asInertia();
         var result = processor.external("http://localhost:8080/other");
