@@ -146,17 +146,17 @@ public class InertiaImpl implements Inertia {
 
     @Override
     public void merge(String key, Object value) {
-        sharedData.addMergePropKey(key);
-        sharedData.set(key, value);
+        sharedData.merge(key, value, false);
     }
 
     @Override
     public void merge(String key, Object value, boolean deep) {
-        sharedData.addMergePropKey(key);
-        if (deep) {
-            sharedData.addDeepMergePropKey(key);
-        }
-        sharedData.set(key, value);
+        sharedData.merge(key, value, deep);
+    }
+
+    @Override
+    public void merge(String key, Object value, boolean deep, String... matchOn) {
+        sharedData.merge(key, value, deep, matchOn);
     }
 
     @Override
@@ -274,6 +274,11 @@ public class InertiaImpl implements Inertia {
     @Override
     public Map<String, Object> getShared() {
         return sharedData.getShared();
+    }
+
+    @Override
+    public Object getShared(String key, Object defaultValue) {
+        return sharedData.getShared(key, defaultValue);
     }
 
     @Override

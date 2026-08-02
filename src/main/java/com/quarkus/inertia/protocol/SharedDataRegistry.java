@@ -119,6 +119,19 @@ public class SharedDataRegistry {
         mergePropKeys.add(key);
     }
 
+    public void merge(String key, Object value, boolean deep, String... matchOn) {
+        mergePropKeys.add(key);
+        if (deep) {
+            deepMergePropKeys.add(key);
+        }
+        for (var field : matchOn) {
+            if (field != null && !field.isBlank()) {
+                matchPropKeys.add(key + "." + field);
+            }
+        }
+        set(key, value);
+    }
+
     public List<String> getMergePropKeys() {
         return List.copyOf(mergePropKeys);
     }
@@ -159,6 +172,13 @@ public class SharedDataRegistry {
             }
         }
         return java.util.Collections.unmodifiableMap(result);
+    }
+
+    public Object getShared(String key, Object defaultValue) {
+        if (sharedKeys.contains(key) && data.containsKey(key)) {
+            return data.get(key);
+        }
+        return defaultValue;
     }
 
     public void flushShared() {

@@ -48,6 +48,8 @@ public interface Inertia {
 
     void merge(String key, Object value, boolean deep);
 
+    void merge(String key, Object value, boolean deep, String... matchOn);
+
     void prepend(String key, Object value);
 
     void scroll(String key, Map<String, Object> metadata);
@@ -71,6 +73,8 @@ public interface Inertia {
     void disableSsr();
 
     Map<String, Object> getShared();
+
+    Object getShared(String key, Object defaultValue);
 
     void flushShared();
 

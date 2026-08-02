@@ -107,7 +107,7 @@ createInertiaApp({
 - [x] Partial reloads (X-Inertia-Partial-Component/Data/Except, X-Inertia-Reset)
 - [x] Deferred props con grupos (Map<String, List<String>>)
 - [x] Optional props (`optional(...)` — solo se resuelven si el partial reload las pide explícitamente)
-- [x] Merge props — append (`mergeProps`), prepend (`prependProps`), deep (`deepMergeProps`), `matchPropsOn`
+- [x] Merge props — append (`mergeProps`), prepend (`prependProps`), deep (`deepMergeProps`), `matchPropsOn` (`merge(key, value, deep, matchOn...)`)
 - [x] Once props con custom key y expiración (`X-Inertia-Except-Once-Props`)
 - [x] Scroll props + `X-Inertia-Infinite-Scroll-Merge-Intent` (append/prepend)
 - [x] Shared props
@@ -203,12 +203,13 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 | `version(version)` / `getVersion()` | `Inertia::version()` / `getVersion()` | `inertia_version` |
 | `setRootView(name)` | `Inertia::setRootView()` | `inertia_layout` |
 | `share(key, value)` / `share(map)` | `Inertia::share()` | `inertia_share` |
-| `getShared()` / `flushShared()` | `Inertia::getShared()` / `flushShared()` | — |
+| `getShared()` / `flushShared()` / `getShared(key, default)` | `Inertia::getShared()` / `flushShared()` | — |
 | `always(key, value)` | `Inertia::always()` | `always_prop` |
 | `deferred(group, name, resolver)` | `Inertia::defer(cb, group)` | `defer` |
 | `optional(key, resolver)` | `Inertia::optional()` | `optional_prop` |
 | `once(key, value[, customKey])` | `Inertia::once()` / `shareOnce()` | `once_prop` |
 | `merge(key, value[, deep])` / `prepend(key, value)` | `Inertia::merge()` / `prepend()` | `merge_prop` |
+| `merge(key, value, deep, matchOn...)` | `Inertia::merge()->matchOn()` | — |
 | `scroll(key, metadata)` | `Inertia::scroll()` | `scroll_prop` |
 | `rescue(key)` | `Inertia::rescue()` | — |
 | `meta(key, value)` | props `meta` | `inertia_meta_tags` |

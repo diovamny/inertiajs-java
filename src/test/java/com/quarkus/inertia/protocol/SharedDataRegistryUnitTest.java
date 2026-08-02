@@ -156,4 +156,56 @@ class SharedDataRegistryUnitTest {
         registry.flushShared();
         assertThat(registry.getAll()).containsOnlyKeys("untracked");
     }
+
+    @Test
+    void getSharedWithDefaultReturnsValueForTrackedKey() {
+        var registry = new SharedDataRegistry();
+        registry.set("user", "jane");
+        assertThat(registry.getShared("user", "fallback")).isEqualTo("jane");
+    }
+
+    @Test
+    void getSharedWithDefaultReturnsDefaultForMissingKey() {
+        var registry = new SharedDataRegistry();
+        assertThat(registry.getShared("missing", "fallback")).isEqualTo("fallback");
+    }
+
+    @Test
+    void getSharedWithDefaultReturnsDefaultForUntrackedKey() {
+        var registry = new SharedDataRegistry();
+        registry.setWithNoTrack("untracked", "value");
+        assertThat(registry.getShared("untracked", "fallback")).isEqualTo("fallback");
+    }
+
+    @Test
+    void mergeRegistersKeyValueAndMatchOn() {
+        var registry = new SharedDataRegistry();
+        registry.merge("items", java.util.List.of(1), false, "id");
+        assertThat(registry.getMergePropKeys()).containsExactly("items");
+        assertThat(registry.getMatchPropKeys()).containsExactly("items.id");
+        assertThat(registry.get("items")).isEqualTo(java.util.List.of(1));
+    }
+
+    @Test
+    void mergeWithDeepRegistersDeepMergeKey() {
+        var registry = new SharedDataRegistry();
+        registry.merge("profile", java.util.Map.of("name", "jane"), true, "id");
+        assertThat(registry.getDeepMergePropKeys()).containsExactly("profile");
+        assertThat(registry.getMatchPropKeys()).containsExactly("profile.id");
+    }
+
+    @Test
+    void mergeWithoutMatchOnLeavesMatchPropsEmpty() {
+        var registry = new SharedDataRegistry();
+        registry.merge("items", java.util.List.of(1), false);
+        assertThat(registry.getMatchPropKeys()).isEmpty();
+        assertThat(registry.getMergePropKeys()).containsExactly("items");
+    }
+
+    @Test
+    void mergeWithMultipleMatchOnFields() {
+        var registry = new SharedDataRegistry();
+        registry.merge("items", java.util.List.of(1), false, "id", "sku");
+        assertThat(registry.getMatchPropKeys()).containsExactly("items.id", "items.sku");
+    }
 }

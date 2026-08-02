@@ -31,6 +31,11 @@ Inertia.js v3 (validado contra `inertia-laravel` / `inertia-rails`).
 - **`back()` ergonómico**: `back(fallback)` y `back(status, fallback)`
   (equivalente al `back(status, headers, fallback)` de Laravel).
 - **Inspección de shared data**: `getShared()` y `flushShared()`.
+- **`getShared(key, default)`**: lectura puntual con fallback (equivalente a
+  `Inertia::getShared($key, $default)`).
+- **`merge(key, value, deep, matchOn...)`**: registra `matchPropsOn`
+  (`key.campo`) junto con merge/deep-merge (equivalente a
+  `Inertia::merge()->matchOn()`).
 - **Versión runtime**: `version(version)` (override persistente sobre la
   estrategia configurada — `sha256`/`vite-manifest`/`custom`).
 - **Root view por request**: `setRootView(name)` — prioridad sobre
