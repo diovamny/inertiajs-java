@@ -102,6 +102,20 @@ public final class InertiaPage {
         return !deferredProps().isEmpty();
     }
 
+    public InertiaPage assertNoDeferredProps() {
+        if (hasDeferredProps()) {
+            throw new AssertionError("Expected no deferred props but were " + deferredProps());
+        }
+        return this;
+    }
+
+    public InertiaPage assertNoOnceProps() {
+        if (!onceProps().isEmpty()) {
+            throw new AssertionError("Expected no once props but were " + onceProps());
+        }
+        return this;
+    }
+
     private static Map<String, Object> toPlainMap(Map<String, ?> source) {
         if (source == null) return new LinkedHashMap<>();
         return new LinkedHashMap<>(source);
@@ -112,6 +126,31 @@ public final class InertiaPage {
     public InertiaPage assertComponent(String expected) {
         if (!component().equals(expected)) {
             throw new AssertionError("Expected component <" + expected + "> but was <" + component() + ">");
+        }
+        return this;
+    }
+
+    public InertiaPage assertUrl(String expected) {
+        if (!expected.equals(url())) {
+            throw new AssertionError("Expected url <" + expected + "> but was <" + url() + ">");
+        }
+        return this;
+    }
+
+    public InertiaPage assertVersion(String expected) {
+        if (!expected.equals(version())) {
+            throw new AssertionError("Expected version <" + expected + "> but was <" + version() + ">");
+        }
+        return this;
+    }
+
+    public InertiaPage assertProp(String key, Object expected) {
+        if (!hasProp(key)) {
+            throw new AssertionError("Expected prop <" + key + "> to be present but it was absent");
+        }
+        var actual = prop(key);
+        if (!expected.equals(actual)) {
+            throw new AssertionError("Expected prop <" + key + "> to equal <" + expected + "> but was <" + actual + ">");
         }
         return this;
     }

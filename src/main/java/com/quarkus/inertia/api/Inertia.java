@@ -32,6 +32,16 @@ public interface Inertia {
 
     Uni<Object> back(int status, String fallback);
 
+    Uni<Object> back(int status, Map<String, String> headers);
+
+    Uni<Object> back(int status, Map<String, String> headers, String fallback);
+
+    void header(String name, Object value);
+
+    void headers(Map<String, Object> headers);
+
+    void shareInstanceProps(Object instance);
+
     void share(String key, Object value);
 
     void share(Map<String, Object> values);

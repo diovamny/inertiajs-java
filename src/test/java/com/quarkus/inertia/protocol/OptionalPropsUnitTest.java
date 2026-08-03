@@ -81,7 +81,7 @@ class OptionalPropsUnitTest {
 
         var page = builder.build("Component", Map.of("base", "x"), true).await().indefinitely();
 
-        assertThat(page.props()).containsOnlyKeys("expensive");
+        assertThat(page.props()).containsOnlyKeys("expensive", "errors");
         assertThat(page.props()).containsEntry("expensive", "resolved-expensive");
         assertThat(calls.get()).isEqualTo(1);
     }

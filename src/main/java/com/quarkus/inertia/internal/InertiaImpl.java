@@ -109,6 +109,44 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Uni<Object> back(int status, Map<String, String> headers) {
+        return redirectProcessor.back(status, headers);
+    }
+
+    @Override
+    public Uni<Object> back(int status, Map<String, String> headers, String fallback) {
+        return redirectProcessor.back(status, headers, fallback);
+    }
+
+    @Override
+    public void header(String name, Object value) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx == null || name == null || value == null) return;
+        @SuppressWarnings("unchecked")
+        var headers = (Map<String, Object>) ctx.getLocal("inertia-response-headers");
+        if (headers == null) {
+            headers = new java.util.LinkedHashMap<>();
+            ctx.putLocal("inertia-response-headers", headers);
+        }
+        headers.put(name, value);
+    }
+
+    @Override
+    public void headers(Map<String, Object> headers) {
+        if (headers == null) return;
+        for (var entry : headers.entrySet()) {
+            header(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @Override
+    public void shareInstanceProps(Object instance) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx == null || instance == null) return;
+        ctx.putLocal("inertia-instance-props", instance);
+    }
+
+    @Override
     public Uni<Object> location(String url) {
         return redirectProcessor.external(url);
     }
@@ -215,7 +253,8 @@ public class InertiaImpl implements Inertia {
 
     private Supplier<Uni<Object>> wrapCache(Supplier<Uni<Object>> resolver, String cacheKey, Duration cacheTtl) {
         if (cacheKey == null || cacheKey.isBlank()) return resolver;
-        return () -> cachedPropStore.compute(cacheKey, cacheTtl, resolver);
+        var namespaced = "inertia_rails/" + cacheKey;
+        return () -> cachedPropStore.compute(namespaced, cacheTtl, resolver);
     }
 
     @Override

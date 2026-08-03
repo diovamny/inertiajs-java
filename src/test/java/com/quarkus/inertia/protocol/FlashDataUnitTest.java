@@ -85,20 +85,21 @@ class FlashDataUnitTest {
     }
 
     @Test
-    void shouldNotIncludeErrorsByDefaultWhenNone() {
-        var page = builder.build("Home", Map.of(), false).await().indefinitely();
-
-        assertThat(page.props()).doesNotContainKey("errors");
-    }
-
-    @Test
-    void shouldAlwaysIncludeEmptyErrorsWhenConfigured() {
-        when(config.alwaysIncludeErrors()).thenReturn(true);
-
+    void shouldAlwaysIncludeEmptyErrorsWhenNone() {
         var page = builder.build("Home", Map.of(), false).await().indefinitely();
 
         assertThat(page.props()).containsKey("errors");
         assertThat(page.props().get("errors")).isInstanceOf(Map.class);
         assertThat((Map<?, ?>) page.props().get("errors")).isEmpty();
+    }
+
+    @Test
+    void shouldAlwaysIncludeErrorsFromFlash() {
+        when(flashStore.hasData()).thenReturn(true);
+        when(flashStore.drain()).thenReturn(Map.of("errors", Map.of("name", "required")));
+
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.props().get("errors")).isEqualTo(Map.of("name", "required"));
     }
 }

@@ -101,4 +101,63 @@ class PartialReloadProcessorUnitTest {
         var result = processor.apply(page, context);
         assertThat(result.props()).containsKey("role");
     }
+
+    @Test
+    void shouldPruneNestedPropsWithDotNotationData() {
+        var page = new PageObject("Users", Map.of(
+            "auth", Map.of("user", Map.of("id", 1, "name", "John"), "email", "john@test.com"),
+            "other", "value"
+        ), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of("auth.user"), Set.of(), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsOnlyKeys("auth");
+        assertThat(result.props().get("auth")).isEqualTo(Map.of("user", Map.of("id", 1, "name", "John")));
+    }
+
+    @Test
+    void shouldKeepWholeSubtreeWhenParentRequested() {
+        var page = new PageObject("Users", Map.of(
+            "auth", Map.of("user", Map.of("id", 1), "email", "john@test.com"),
+            "other", "value"
+        ), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of("auth"), Set.of(), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsOnlyKeys("auth");
+        assertThat(result.props().get("auth")).isEqualTo(Map.of("user", Map.of("id", 1), "email", "john@test.com"));
+    }
+
+    @Test
+    void shouldPruneNestedPropsWithDotNotationExcept() {
+        var page = new PageObject("Users", Map.of(
+            "auth", Map.of("user", Map.of("id", 1), "email", "john@test.com"),
+            "other", "value"
+        ), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of(), Set.of("auth.user"), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsKeys("auth", "other");
+        assertThat(result.props().get("auth")).isEqualTo(Map.of("email", "john@test.com"));
+    }
+
+    @Test
+    void shouldRemoveWholeSubtreeWhenParentExcepted() {
+        var page = new PageObject("Users", Map.of(
+            "auth", Map.of("user", Map.of("id", 1), "email", "john@test.com"),
+            "other", "value"
+        ), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of(), Set.of("auth"), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsOnlyKeys("other");
+    }
+
+    @Test
+    void shouldKeepErrorsAlwaysEvenInNestedPartial() {
+        var page = new PageObject("Users", Map.of(
+            "auth", Map.of("user", Map.of("id", 1), "email", "john@test.com"),
+            "errors", AlwaysProp.of(Map.of("name", "Required"))
+        ), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of("auth.user"), Set.of(), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsKeys("auth", "errors");
+        assertThat(result.props().get("errors")).isEqualTo(Map.of("name", "Required"));
+    }
 }

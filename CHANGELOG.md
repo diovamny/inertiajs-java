@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.0.2 (2026-08-03)
+
+Refinamiento de paridad con los adaptadores oficiales (validado contra
+`inertia-laravel` Middleware/ResponseFactory y `inertia-rails`
+props_resolver/PropCacheable).
+
+### Protocolo HTTP
+
+- **303 selectivo**: la conversión `302 → 303` solo aplica a PUT/PATCH/DELETE y
+  solo cuando el status previo es exactamente 302 (antes: cualquier no-GET con
+  status 302/303). Extraído `normalizeRedirectStatus(method, status)` estático
+  en `InertiaResponseFilter` (paridad con `Middleware.php:168-170`).
+- **`errors` siempre presente**: el page object siempre incluye `errors`
+  (paridad con el Middleware de inertia-laravel que hace
+  `'errors' => Inertia::always(...)`); los errores flasheados se envuelven en
+  `AlwaysProp` y sobreviven a partial reloads.
+- **Headers custom por request**: `header(name, value)` / `headers(map)` en la
+  interfaz `Inertia`, almacenados en context local Vert.x y aplicados por
+  `InertiaResponseFilter` a toda respuesta (JSON, redirects y 409).
+- **`back(status, headers)` y `back(status, headers, fallback)`**: firmas
+  completas equivalentes a `ResponseFactory::back` de Laravel (referer →
+  fallback → `/`); headers también en conflictos 409.
+
+### Props
+
+- **Dot-notation**: `PartialReloadProcessor` filtra con semántica de prefijo
+  (`data.path` incluye `data.path.sub`, `except` con prefijo excluye
+  subpropiedades) y `PageObjectBuilder` expande claves con `.` a mapas
+  anidados (paridad `expand_dot_notation` de inertia-rails).
+- **`shareInstanceProps(instance)`**: equivalente de
+  `use_inertia_instance_props` — los getters del bean pasan a ser props cuando
+  `render()` no recibe props manuales (igual que `view_assigns` de Rails).
+- **Cached props con namespace**: las claves de `CachedPropStore` se prefijan
+  con `inertia_rails/...` (paridad `PropCacheable#derive_cache_key`).
+
+### Validación
+
+- Flujo de validación (no precognition) verificado end-to-end:
+  `ConstraintViolationException` en peticiones Inertia → `302` back + `errors`
+  flash; precognition sigue devolviendo `422`.
+
+### Testing helper
+
+- Nuevas aserciones en `InertiaPage`: `assertUrl`, `assertVersion`,
+  `assertProp(key, value)`, `assertNoDeferredProps`, `assertNoOnceProps`.
+
+### Tests
+
+- Adapter: **179** (unitarios + integración). Demo-app: **86** — total **265**,
+  todos pasan.
+
 ## 0.0.1 (2026-08-02)
 
 Primera release del adaptador `quarkus-inertia`, en paridad con el protocolo

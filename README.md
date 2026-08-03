@@ -116,25 +116,30 @@ createInertiaApp({
 - [x] Rescued props (fallos silenciosos)
 - [x] Meta del page (`inertia.meta(...)`) renderizable en el root template (`pageMeta`/`pageTitle`)
 - [x] `encryptHistory`/`clearHistory`/`preserveFragment` (omitidos si `false`)
-- [x] Redirect interno → 303 PUT/PATCH/DELETE, 302 GET
+- [x] Redirect interno → 302 en GET/POST; 303 solo en PUT/PATCH/DELETE cuando el status previo es 302 (paridad exacta con el Middleware de inertia-laravel)
 - [x] Redirect externo → 409 + X-Inertia-Location (solo GET+302)
 - [x] Fragment redirect → 409 + X-Inertia-Redirect
 - [x] Empty response → redirect a referer
 - [x] Version mismatch → 409 + X-Inertia-Location + X-Inertia-Version (flash preservado)
+- [x] `errors` siempre presente en el page (paridad con el Middleware de inertia-laravel); errores flasheados sobreviven partial reloads vía AlwaysProp
+- [x] Dot-notation: props con `.` en la clave se expanden a mapas anidados (paridad `expand_dot_notation` de inertia-rails) y `X-Inertia-Partial-Data`/`-Except` soportan prefijos de clave
 - [x] Version strategies: sha256, vite-manifest, custom
 - [x] Precognition header-based (`Precognition`, `Precognition-Validate-Only`) — 204 éxito / 422 errores
 - [x] Prefetch (`Purpose: prefetch` / `X-Inertia-Prefetch`)
 - [x] CSRF on-by-default (`inertia.csrf.enabled`, default `true`) — 419 en mismatch
 - [x] Flash data via FlashStore SPI (sesión Vert.x)
 - [x] `getFlash(key)` / `pullFlash(key)` con allowlist (`inertia.flash-keys`) y `inertia.always-include-errors`
-- [x] Cached props (`inertia.cache(key, ttl, resolver)`) con TTL por `CachedPropStore` (`@ApplicationScoped`)
+- [x] Cached props (`inertia.cache(key, ttl, resolver)`) con TTL por `CachedPropStore` (`@ApplicationScoped`) y claves con namespace `inertia_rails/...` (paridad inertia-rails)
 - [x] Component/URL hooks (`ComponentTransformer`, `UrlResolver` SPI) y `render(Enum)`
 - [x] `redirect(url, fullPage)` → 409 + `X-Inertia-Location` en peticiones Inertia
 - [x] Error handling configurable (`handleErrorUsing(ErrorMapper)`, `ErrorResponseFactory`) + `InertiaExceptionMapper` (530/500)
 - [x] SSR por `SsrHandler` (POST a `ssrUrl` + `/render` con fallback a CSR automático, `{ssrHead}`/`{ssrBody}` en el root template)
 - [x] ETag sleepy (`inertia.lazy-etag-enabled`, default `true`) — 304 en GET si `If-None-Match` coincide
-- [x] Testing helper `InertiaPage`: parsea el page JSON y aserciones `assertComponent`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/`assertDeferredProps`/`assertOnceProps`/`assertScrollProps`/`assertMeta`/…
+- [x] Testing helper `InertiaPage`: parsea el page JSON y aserciones `assertComponent`/`assertUrl`/`assertVersion`/`assertProp`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/`assertDeferredProps`/`assertOnceProps`/`assertScrollProps`/`assertMeta`/`assertNoDeferredProps`/`assertNoOnceProps`/…
 - [x] AlwaysProp (errores sobreviven partial reloads)
+- [x] `shareInstanceProps(instance)` — equivalente de `use_inertia_instance_props` de Rails: los getters del bean se convierten en props cuando `render()` no recibe props manuales
+- [x] Headers de respuesta por request: `header(name, value)` / `headers(map)` (aplicados por `InertiaResponseFilter` en toda respuesta)
+- [x] Validación auto: `ConstraintViolationException` en peticiones Inertia → 302 back + `errors` flash (paridad con `validate()` de Laravel); con `Precognition` sigue siendo 422
 - [x] JSON-B primario, Jackson como alternativa
 - [x] Vary: X-Inertia / Precognition headers
 - [x] Error-Bag y Scroll-Merge-Intent headers
@@ -149,14 +154,14 @@ createInertiaApp({
 
 ```bash
 # Adapter
-mvn test                    # 150 tests (unitarios + integración)
+mvn test                    # 179 tests (unitarios + integración)
 
 # Demo App
 cd examples/demo-app
 mvn test                    # 86 tests (incluye seed de 10k registros)
 ```
 
-Total: **236 tests** — todos pasan.
+Total: **265 tests** — todos pasan.
 
 ### Testing del adapter
 
@@ -174,8 +179,11 @@ var body = given()
 
 InertiaPage.fromJson(body)
     .assertComponent("Persons/Index")
+    .assertUrl("/persons")
+    .assertVersion("1.0.0")
     .assertHasProps("persons", "total")                 // presencia
     .assertHasProps(Map.of("active", "true"))           // subconjunto con valores
+    .assertProp("total", 10)                            // una prop con valor
     .assertHasExactProps(Map.of(...))                    // mapa exacto
     .assertDeferredProps("analytics")                  // en cualquier grupo
     .assertDeferredPropsInGroup("slow", "statistics")  // en grupo concreto
@@ -239,7 +247,8 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 |-----------------|-----------------|---------------|
 | `render(component, props)` | `Inertia::render()` | `render inertia: {...}` |
 | `redirect(url)` / `back()` | `redirect()` / `back()` | `redirect_to` / `redirect_back` |
-| `back(fallback)` / `back(status, fallback)` | `back(status, headers, fallback)` | `redirect_back` |
+| `back(fallback)` / `back(status, headers)` / `back(status, headers, fallback)` | `back(status, headers, fallback)` | `redirect_back` |
+| `header(name, value)` / `headers(map)` | headers de redirect (`->withHeaders()`) | `response.headers` |
 | `location(url)` (409 + `X-Inertia-Location`) | `Inertia::location()` | `inertia_location()` |
 | `version(version)` / `getVersion()` | `Inertia::version()` / `getVersion()` | `inertia_version` |
 | `setRootView(name)` | `Inertia::setRootView()` | `inertia_layout` |
@@ -256,7 +265,8 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 | `meta(key, value)` | props `meta` | `inertia_meta_tags` |
 | `flash(key, value)` | `Inertia::flash()` | `inertia_flash` |
 | `getFlash(key, default)` / `pullFlash(key, default)` | — | `flash` del page |
-| `cache(key, ttl, resolver)` / `optional(…, cacheKey, ttl)` | `Inertia::lazy()` con prop dorado | `cache_prop` |
+| `cache(key, ttl, resolver)` / `optional(…, cacheKey, ttl)` (claves `inertia_rails/...`) | `Inertia::lazy()` con prop dorado | `cache_prop` |
+| `shareInstanceProps(instance)` | — | `use_inertia_instance_props` (view_assigns) |
 | `handleErrorUsing(mapper)` | `Inertia::handle()` | — |
 | `render(Enum)` / `redirect(url, fullPage)` | `Inertia::render()`/`Inertia::location()` | `redirect_to inertia` |
 | `withoutSsr(paths)` / `disableSsr()` | `Inertia::withoutSsr()` / `disableSsr()` | — |

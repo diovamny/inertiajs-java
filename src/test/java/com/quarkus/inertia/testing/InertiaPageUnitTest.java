@@ -71,6 +71,35 @@ class InertiaPageUnitTest {
     }
 
     @Test
+    void shouldAssertUrlAndVersion() {
+        InertiaPage.fromJson(PAGE).assertUrl("/persons").assertVersion("1.0.0");
+        assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertUrl("/other"))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertVersion("2.0.0"))
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void shouldAssertPropValue() {
+        InertiaPage.fromJson(PAGE).assertProp("total", 10).assertProp("success", "creada correctamente");
+        assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertProp("total", 99))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertProp("missing", 1))
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void shouldAssertAbsenceOfDeferredAndOnce() {
+        var page = InertiaPage.from(new com.quarkus.inertia.model.PageObject(
+            "Home", Map.of("user", "alice"), "/", "v1"));
+        page.assertNoDeferredProps().assertNoOnceProps();
+        assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertNoDeferredProps())
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertNoOnceProps())
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
     void shouldAssertPropsPartialMatch() {
         InertiaPage.fromJson(PAGE)
             .assertHasProps("persons", "total")

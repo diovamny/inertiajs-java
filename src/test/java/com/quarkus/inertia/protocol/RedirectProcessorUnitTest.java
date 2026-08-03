@@ -135,4 +135,51 @@ class RedirectProcessorUnitTest {
         assertThat(response.getStatus()).isEqualTo(303);
         assertThat(response.getHeaderString("Location")).isEqualTo("/previous");
     }
+
+    @Test
+    void shouldBackWithHeaders() {
+        var result = processor.back(303, java.util.Map.of("X-Custom", "custom-value", "X-Another", "another"));
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(303);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/");
+        assertThat(response.getHeaderString("X-Custom")).isEqualTo("custom-value");
+        assertThat(response.getHeaderString("X-Another")).isEqualTo("another");
+    }
+
+    @Test
+    void shouldBackWithStatusHeadersAndFallback() {
+        when(httpRequest.getHeader("Referer")).thenReturn("/previous");
+        var result = processor.back(302, java.util.Map.of("X-Custom", "custom-value"), "/fallback");
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/previous");
+        assertThat(response.getHeaderString("X-Custom")).isEqualTo("custom-value");
+    }
+
+    @Test
+    void shouldBackWithFallbackWhenNoReferer() {
+        var result = processor.back(302, java.util.Map.of("X-Custom", "custom-value"), "/fallback");
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/fallback");
+        assertThat(response.getHeaderString("X-Custom")).isEqualTo("custom-value");
+    }
+
+    @Test
+    void shouldPreserveCustomHeadersOnConflict() {
+        asInertia();
+        var result = processor.process("https://example.com", java.util.Map.of("X-Custom", "custom-value"));
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(409);
+        assertThat(response.getHeaderString("X-Inertia-Location")).isEqualTo("https://example.com");
+        assertThat(response.getHeaderString("X-Custom")).isEqualTo("custom-value");
+    }
+
+    @Test
+    void shouldReturn303ForNonGetRedirect() {
+        when(httpRequest.method()).thenReturn(HttpMethod.POST);
+        var result = processor.process("/home");
+        var response = (Response) result.await().indefinitely();
+        assertThat(response.getStatus()).isEqualTo(303);
+    }
 }

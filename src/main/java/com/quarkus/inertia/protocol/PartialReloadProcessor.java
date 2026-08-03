@@ -1,6 +1,7 @@
 package com.quarkus.inertia.protocol;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import jakarta.enterprise.context.RequestScoped;
@@ -21,16 +22,13 @@ public class PartialReloadProcessor {
         for (var entry : page.props().entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
-
-            boolean isAlways = value instanceof AlwaysProp;
-
-            boolean matchesData = !context.hasData() || context.data().contains(key);
-            boolean matchesExcept = context.hasExcept() && context.except().contains(key);
-
-            if (isAlways) {
+            if (value instanceof AlwaysProp) {
                 filteredProps.put(key, ((AlwaysProp<?>) value).value());
-            } else if (matchesData && !matchesExcept) {
-                filteredProps.put(key, value);
+            } else {
+                var kept = filterNode(key, value, context);
+                if (kept != null) {
+                    filteredProps.put(key, kept);
+                }
             }
         }
 
@@ -41,6 +39,50 @@ public class PartialReloadProcessor {
         }
 
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object filterNode(String path, Object value, PartialReloadContext context) {
+        if (context.hasData() && !isRequested(path, context.data())) {
+            return null;
+        }
+        if (context.hasExcept() && isExceptExcluded(path, context.except())) {
+            return null;
+        }
+        if (value instanceof Map<?, ?> map) {
+            var filtered = new LinkedHashMap<String, Object>();
+            for (var entry : map.entrySet()) {
+                if (entry.getKey() == null) continue;
+                var childPath = path + "." + entry.getKey();
+                var kept = filterNode(childPath, entry.getValue(), context);
+                if (kept != null) {
+                    filtered.put((String) entry.getKey(), kept);
+                }
+            }
+            if (filtered.isEmpty()) return null;
+            return Map.copyOf(filtered);
+        }
+        return value;
+    }
+
+    private boolean isRequested(String path, Set<String> keys) {
+        for (var key : keys) {
+            if (path.equals(key)
+                    || path.startsWith(key + ".")
+                    || key.startsWith(path + ".")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isExceptExcluded(String path, Set<String> exceptKeys) {
+        for (var key : exceptKeys) {
+            if (path.equals(key) || path.startsWith(key + ".")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private PageObject stripResetKeys(PageObject page, Set<String> resetKeys) {

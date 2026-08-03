@@ -8,6 +8,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
+import java.util.Map;
+
 @RequestScoped
 public class RedirectProcessor {
 
@@ -25,37 +27,59 @@ public class RedirectProcessor {
     public Uni<Object> process(String url, boolean fullPage) {
         if (fullPage && isInertiaRequest()) {
             return Uni.createFrom().item(
-                Response.status(Response.Status.CONFLICT)
-                    .header("X-Inertia-Location", url)
-                    .header("Vary", "X-Inertia")
-                    .build()
+                buildConflict(url, java.util.Map.of())
             );
         }
-        var status = isNonGetRequest() ? Response.Status.SEE_OTHER : Response.Status.FOUND;
         return Uni.createFrom().item(
-            Response.status(status)
-                .header("Location", url)
-                .header("Vary", "X-Inertia")
-                .build()
+            buildRedirect(url, isNonGetRequest(), java.util.Map.of())
+        );
+    }
+
+    public Uni<Object> process(String url, Map<String, String> headers) {
+        if (isInertiaRequest() && isExternal(url)) {
+            return Uni.createFrom().item(
+                buildConflict(url, headers)
+            );
+        }
+        return Uni.createFrom().item(
+            buildRedirect(url, isNonGetRequest(), headers)
         );
     }
 
     public Uni<Object> external(String url) {
         if (isInertiaRequest() && isExternal(url)) {
             return Uni.createFrom().item(
-                Response.status(Response.Status.CONFLICT)
-                    .header("X-Inertia-Location", url)
-                    .header("Vary", "X-Inertia")
-                    .build()
+                buildConflict(url, java.util.Map.of())
             );
         }
-        var status = isNonGetRequest() ? Response.Status.SEE_OTHER : Response.Status.FOUND;
         return Uni.createFrom().item(
-            Response.status(status)
-                .header("Location", url)
-                .header("Vary", "X-Inertia")
-                .build()
+            buildRedirect(url, isNonGetRequest(), java.util.Map.of())
         );
+    }
+
+    private jakarta.ws.rs.core.Response buildRedirect(String url, boolean nonGet, Map<String, String> headers) {
+        var status = nonGet ? Response.Status.SEE_OTHER : Response.Status.FOUND;
+        var builder = Response.status(status)
+            .header("Location", url)
+            .header("Vary", "X-Inertia");
+        applyHeaders(builder, headers);
+        return builder.build();
+    }
+
+    private jakarta.ws.rs.core.Response buildConflict(String url, Map<String, String> headers) {
+        var builder = Response.status(Response.Status.CONFLICT)
+            .header("X-Inertia-Location", url)
+            .header("Vary", "X-Inertia");
+        applyHeaders(builder, headers);
+        return builder.build();
+    }
+
+    private void applyHeaders(Response.ResponseBuilder builder, Map<String, String> headers) {
+        if (headers == null) return;
+        for (var entry : headers.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) continue;
+            builder.header(entry.getKey(), entry.getValue());
+        }
     }
 
     private boolean isExternal(String url) {
@@ -80,27 +104,34 @@ public class RedirectProcessor {
     }
 
     public Uni<Object> back(String fallback) {
-        return back0(fallback, -1);
+        return back0(fallback, -1, java.util.Map.of());
     }
 
     public Uni<Object> back(int status, String fallback) {
-        return back0(fallback, status);
+        return back0(fallback, status, java.util.Map.of());
     }
 
-    private Uni<Object> back0(String fallback, int forcedStatus) {
+    public Uni<Object> back(int status, Map<String, String> headers) {
+        return back0("/", status, headers);
+    }
+
+    public Uni<Object> back(int status, Map<String, String> headers, String fallback) {
+        return back0(fallback, status, headers);
+    }
+
+    private Uni<Object> back0(String fallback, int forcedStatus, Map<String, String> headers) {
         var referer = getRefererUrl();
         var url = (referer != null && !referer.isBlank())
             ? referer
             : (fallback != null && !fallback.isBlank()) ? fallback : "/";
         if (forcedStatus > 0) {
-            return Uni.createFrom().item(
-                Response.status(forcedStatus)
-                    .header("Location", url)
-                    .header("Vary", "X-Inertia")
-                    .build()
-            );
+            var builder = Response.status(forcedStatus)
+                .header("Location", url)
+                .header("Vary", "X-Inertia");
+            applyHeaders(builder, headers);
+            return Uni.createFrom().item(builder.build());
         }
-        return process(url);
+        return process(url, headers);
     }
 
     private boolean isInertiaRequest() {

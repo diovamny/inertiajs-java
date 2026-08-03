@@ -14,6 +14,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 import com.quarkus.inertia.config.InertiaConfig;
 
@@ -29,6 +30,8 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext request, ContainerResponseContext response) {
         var ctx = Vertx.currentContext();
         if (ctx == null) return;
+
+        applyCustomHeaders(response, ctx);
 
         var isInertia = Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
         int status = response.getStatus();
@@ -54,6 +57,16 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
             } else {
                 handleConditionalRequest(request, response, ctx, entity);
             }
+        }
+    }
+
+    private void applyCustomHeaders(ContainerResponseContext response, io.vertx.core.Context ctx) {
+        @SuppressWarnings("unchecked")
+        var headers = (Map<String, Object>) ctx.getLocal("inertia-response-headers");
+        if (headers == null || headers.isEmpty()) return;
+        for (var entry : headers.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) continue;
+            response.getHeaders().putSingle(entry.getKey(), String.valueOf(entry.getValue()));
         }
     }
 
@@ -162,9 +175,16 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
             return;
         }
 
-        if (method != null && isNonGet(method) && currStatus != 303 && currStatus != 302) {
+        if (method != null && isPutPatchDelete(method) && currStatus == 302) {
             response.setStatus(303);
         }
+    }
+
+    static int normalizeRedirectStatus(String method, int status) {
+        if (method != null && isPutPatchDelete(method) && status == 302) {
+            return 303;
+        }
+        return status;
     }
 
     private void handleEmptyResponse(ContainerResponseContext response, io.vertx.core.Context ctx) {
@@ -179,9 +199,8 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
         return status == 301 || status == 302 || status == 303 || status == 307 || status == 308;
     }
 
-    private boolean isNonGet(String method) {
-        return "POST".equalsIgnoreCase(method) ||
-               "PUT".equalsIgnoreCase(method) ||
+    static boolean isPutPatchDelete(String method) {
+        return "PUT".equalsIgnoreCase(method) ||
                "PATCH".equalsIgnoreCase(method) ||
                "DELETE".equalsIgnoreCase(method);
     }

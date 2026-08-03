@@ -81,7 +81,11 @@ public class PageObjectBuilder {
     public Uni<PageObject> build(String component, Map<String, Object> props, boolean isPartial) {
         var resolvedComponent = resolveComponent(component);
         var allProps = new HashMap<String, Object>();
-        if (props != null) allProps.putAll(props);
+        if (props != null && !props.isEmpty()) {
+            allProps.putAll(props);
+        } else {
+            allProps.putAll(instanceProps());
+        }
         allProps.putAll(sharedData.getAll());
 
         if (flashStore.hasData() && !isGetVersionMismatch()) {
@@ -95,9 +99,9 @@ public class PageObjectBuilder {
                             filtered.put(key, flashed.get(key));
                         }
                     }
-                    allProps.putAll(filtered);
+                    mergeFlashed(allProps, filtered);
                 } else {
-                    allProps.putAll(flashed);
+                    mergeFlashed(allProps, flashed);
                 }
             }
         }
@@ -116,7 +120,7 @@ public class PageObjectBuilder {
         wrapScrollPropValues(allProps);
 
         var errors = resolveErrors();
-        if (!errors.isEmpty() || config.alwaysIncludeErrors()) {
+        if (!allProps.containsKey("errors")) {
             allProps.put("errors", AlwaysProp.of(errors));
         }
 
@@ -172,6 +176,8 @@ public class PageObjectBuilder {
                 deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut, onceProps,
                 scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
                 encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
+
+            page = expandDotNotation(page);
 
             if (partialContext != null) {
                 page = partialReloadProcessor.apply(page, partialContext);
@@ -293,6 +299,27 @@ public class PageObjectBuilder {
         return null;
     }
 
+    private Map<String, Object> instanceProps() {
+        var ctx = Vertx.currentContext();
+        if (ctx == null) return Map.of();
+        var instance = ctx.getLocal("inertia-instance-props");
+        if (instance == null) return Map.of();
+        try {
+            var info = java.beans.Introspector.getBeanInfo(instance.getClass(), Object.class);
+            var result = new LinkedHashMap<String, Object>();
+            for (var descriptor : info.getPropertyDescriptors()) {
+                var method = descriptor.getReadMethod();
+                if (method == null || method.getParameterCount() != 0) continue;
+                var value = method.invoke(instance);
+                if (value == null) continue;
+                result.put(descriptor.getName(), value);
+            }
+            return result;
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
     private boolean isGetVersionMismatch() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return false;
@@ -314,6 +341,13 @@ public class PageObjectBuilder {
             if (!trimmed.isEmpty()) keys.add(trimmed);
         }
         return keys;
+    }
+
+    private void mergeFlashed(Map<String, Object> target, Map<String, Object> flashed) {
+        for (var entry : flashed.entrySet()) {
+            var value = entry.getValue();
+            target.put(entry.getKey(), "errors".equals(entry.getKey()) ? AlwaysProp.of(value) : value);
+        }
     }
 
     private Map<String, Object> resolveErrors() {
@@ -455,6 +489,48 @@ public class PageObjectBuilder {
             return Boolean.TRUE.equals(val);
         }
         return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private PageObject expandDotNotation(PageObject page) {
+        var props = page.props();
+        boolean hasDotted = props.keySet().stream().anyMatch(k -> k != null && k.contains("."));
+        if (!hasDotted) return page;
+
+        var expanded = new LinkedHashMap<String, Object>();
+        for (var entry : props.entrySet()) {
+            var key = entry.getKey();
+            var value = entry.getValue();
+            if (key != null && key.contains(".")) {
+                var parts = key.split("\\.");
+                Map<String, Object> current = expanded;
+                for (int i = 0; i < parts.length - 1; i++) {
+                    var part = parts[i];
+                    var existing = current.get(part);
+                    Map<String, Object> next;
+                    if (existing instanceof Map<?, ?> map) {
+                        next = new LinkedHashMap<>();
+                        map.forEach((k, v) -> next.put(String.valueOf(k), v));
+                    } else {
+                        next = new LinkedHashMap<>();
+                    }
+                    current.put(part, next);
+                    current = next;
+                }
+                current.put(parts[parts.length - 1], value);
+            } else {
+                var existing = expanded.get(key);
+                if (existing instanceof Map<?, ?> map && value instanceof Map<?, ?> vmap) {
+                    var merged = new LinkedHashMap<String, Object>();
+                    map.forEach((k, v) -> merged.put(String.valueOf(k), v));
+                    vmap.forEach((k, v) -> merged.put(String.valueOf(k), v));
+                    expanded.put(key, merged);
+                } else {
+                    expanded.put(key, value);
+                }
+            }
+        }
+        return page.withProps(Map.copyOf(expanded));
     }
 
     private PageObject unwrapAlwaysProps(PageObject page) {
