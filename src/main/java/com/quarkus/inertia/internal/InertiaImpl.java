@@ -2,7 +2,6 @@ package com.quarkus.inertia.internal;
 
 import java.time.Instant;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import jakarta.enterprise.context.RequestScoped;

@@ -96,7 +96,12 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
 
         var referer = (String) ctx.getLocal("referer-url");
         var location = (referer != null && !referer.isBlank()) ? referer : "/";
-        return Response.status(Response.Status.FOUND)
+        var nonGet = "POST".equalsIgnoreCase((String) ctx.getLocal("request-method"))
+            || "PUT".equalsIgnoreCase((String) ctx.getLocal("request-method"))
+            || "PATCH".equalsIgnoreCase((String) ctx.getLocal("request-method"))
+            || "DELETE".equalsIgnoreCase((String) ctx.getLocal("request-method"));
+        var status = nonGet ? Response.Status.SEE_OTHER : Response.Status.FOUND;
+        return Response.status(status)
             .header("Location", location)
             .header("Vary", "Accept")
             .build();

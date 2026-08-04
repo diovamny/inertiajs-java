@@ -29,7 +29,7 @@ class ValidationQuarkusTest {
             .when().post("/validation-test")
             .then()
                 .log().ifValidationFails()
-                .statusCode(302)
+                .statusCode(303)
                 .header("Location", endsWith("/validation-test"));
 
         given()
