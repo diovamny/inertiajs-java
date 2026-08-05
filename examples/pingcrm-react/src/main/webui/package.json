@@ -1,0 +1,33 @@
+{
+  "name": "pingcrm-react",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:ssr": "vite build --ssr resources/js/ssr.tsx --outDir dist-ssr",
+    "ssr": "node dist-ssr/assets/ssr.js",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@inertiajs/react": "^3.6.1",
+    "@inertiajs/vite": "^3.6.1",
+    "@popperjs/core": "^2.11.8",
+    "lodash": "^4.17.21",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "~5.9.0",
+    "vite": "^8.0.0"
+  }
+}

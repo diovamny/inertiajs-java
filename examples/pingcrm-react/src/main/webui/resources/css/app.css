@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@import "./buttons.css";
+@import "./form.css";
+
+@theme {
+  --color-indigo-100: #e6e8ff;
+  --color-indigo-300: #b2b7ff;
+  --color-indigo-400: #7886d7;
+  --color-indigo-500: #6574cd;
+  --color-indigo-600: #5661b3;
+  --color-indigo-800: #2f365f;
+  --color-indigo-900: #191e38;
+  --font-sans: "Cerebri Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --shadow-outline: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}

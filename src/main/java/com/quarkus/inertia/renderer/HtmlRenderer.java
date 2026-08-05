@@ -71,12 +71,20 @@ public class HtmlRenderer {
         var raw = ssr.getValue("head");
         if (raw == null) return null;
         var sb = new StringBuilder();
-        if (raw instanceof List<?> list) {
+        if (raw instanceof io.vertx.core.json.JsonArray arr) {
+            for (var item : arr) {
+                if (item instanceof String s) {
+                    sb.append(s).append("\n");
+                } else if (item instanceof io.vertx.core.json.JsonArray node) {
+                    sb.append(renderHeadNode(node)).append("\n");
+                }
+            }
+        } else if (raw instanceof List<?> list) {
             for (var item : list) {
                 if (item instanceof String s) {
                     sb.append(s).append("\n");
-                } else if (item instanceof io.vertx.core.json.JsonArray arr) {
-                    sb.append(renderHeadNode(arr)).append("\n");
+                } else if (item instanceof io.vertx.core.json.JsonArray node) {
+                    sb.append(renderHeadNode(node)).append("\n");
                 }
             }
         } else if (raw instanceof String s) {

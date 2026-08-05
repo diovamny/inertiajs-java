@@ -1,0 +1,9 @@
+target/
+.idea/
+*.iml
+*.log
+data/
+src/main/webui/node_modules/
+src/main/webui/node/
+src/main/webui/dist-ssr/
+src/main/resources/META-INF/resources/
