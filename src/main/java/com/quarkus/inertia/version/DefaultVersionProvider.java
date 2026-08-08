@@ -1,6 +1,5 @@
 package com.quarkus.inertia.version;
 
-import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;

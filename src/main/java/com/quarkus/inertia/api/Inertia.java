@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 import io.smallrye.mutiny.Uni;
 
-import com.quarkus.inertia.model.AlwaysProp;
 import com.quarkus.inertia.model.RawJson;
 import com.quarkus.inertia.spi.ErrorMapper;
 

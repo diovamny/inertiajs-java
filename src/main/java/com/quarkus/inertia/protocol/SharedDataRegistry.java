@@ -10,8 +10,6 @@ import jakarta.enterprise.context.RequestScoped;
 
 import io.smallrye.mutiny.Uni;
 
-import com.quarkus.inertia.model.AlwaysProp;
-
 /**
  * Request-scoped accumulator for everything the current page carries
  * besides the controller props: shared props (including

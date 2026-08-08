@@ -1,6 +1,5 @@
 package com.quarkus.inertia.renderer;
 
-import java.util.ArrayList;
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
