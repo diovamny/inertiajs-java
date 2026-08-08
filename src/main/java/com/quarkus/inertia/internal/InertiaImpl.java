@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
 
 import com.quarkus.inertia.api.Inertia;
+import com.quarkus.inertia.api.InertiaRedirect;
 import com.quarkus.inertia.cache.CachedPropStore;
 import com.quarkus.inertia.config.InertiaConfig;
 import com.quarkus.inertia.model.AlwaysProp;
@@ -23,6 +24,11 @@ import com.quarkus.inertia.spi.FlashStore;
 import com.quarkus.inertia.spi.ErrorMapper;
 import com.quarkus.inertia.version.VersionProvider;
 
+/**
+ * Default {@link Inertia} implementation (request-scoped): forwards every
+ * operation to the page builder, shared-data registry, redirect processor
+ * and response processor that assemble the final page object.
+ */
 @RequestScoped
 public class InertiaImpl implements Inertia {
 
@@ -83,38 +89,38 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
-    public Uni<Object> redirect(String url) {
-        return redirectProcessor.process(url);
+    public InertiaRedirect redirect(String url) {
+        return new InertiaRedirect(redirectProcessor.process(url), flashStore);
     }
 
     @Override
-    public Uni<Object> redirect(String url, boolean fullPage) {
-        return redirectProcessor.process(url, fullPage);
+    public InertiaRedirect redirect(String url, boolean fullPage) {
+        return new InertiaRedirect(redirectProcessor.process(url, fullPage), flashStore);
     }
 
     @Override
-    public Uni<Object> back() {
-        return redirectProcessor.back();
+    public InertiaRedirect back() {
+        return new InertiaRedirect(redirectProcessor.back(), flashStore);
     }
 
     @Override
-    public Uni<Object> back(String fallback) {
-        return redirectProcessor.back(fallback);
+    public InertiaRedirect back(String fallback) {
+        return new InertiaRedirect(redirectProcessor.back(fallback), flashStore);
     }
 
     @Override
-    public Uni<Object> back(int status, String fallback) {
-        return redirectProcessor.back(status, fallback);
+    public InertiaRedirect back(int status, String fallback) {
+        return new InertiaRedirect(redirectProcessor.back(status, fallback), flashStore);
     }
 
     @Override
-    public Uni<Object> back(int status, Map<String, String> headers) {
-        return redirectProcessor.back(status, headers);
+    public InertiaRedirect back(int status, Map<String, String> headers) {
+        return new InertiaRedirect(redirectProcessor.back(status, headers), flashStore);
     }
 
     @Override
-    public Uni<Object> back(int status, Map<String, String> headers, String fallback) {
-        return redirectProcessor.back(status, headers, fallback);
+    public InertiaRedirect back(int status, Map<String, String> headers, String fallback) {
+        return new InertiaRedirect(redirectProcessor.back(status, headers, fallback), flashStore);
     }
 
     @Override

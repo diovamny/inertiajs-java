@@ -58,8 +58,7 @@ public class AuthController {
         var user = form.email != null ? userRepository.findByEmail(form.email) : null;
         if (user == null || user.deletedAt != null || user.password == null
                 || !AuthService.matches(form.password, user.password)) {
-            inertia.flash("errors", Map.of("email", "These credentials do not match our records."));
-            return inertia.back("/login");
+            return inertia.back("/login").withErrors(Map.of("email", "These credentials do not match our records."));
         }
 
         auth.login(user);

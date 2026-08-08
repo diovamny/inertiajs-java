@@ -90,6 +90,7 @@ Inertia reciben JSON directo y montan el componente **sin recargar** la página.
 | Frontend               | Vue 3 + Tailwind                | **idéntico** (port 1:1)             |
 | CSRF                   | sí (Laravel)                    | **no** (fetch v3 no envía X-XSRF)   |
 | Validación             | FormRequest + redirects         | Bean Validation + `PrecognitionExceptionMapper` |
+| Redirect con flash     | `Redirect::back()->with(...)->withErrors(...)` | `inertia.back().with(...)->withErrors(...)` (`InertiaRedirect`); igual con `inertia.redirect(url)` |
 
 El objetivo del port es que el **frontend del pingcrm oficial corra sin
 modificaciones** salvo el wiring de Inertia v3 (`useForm`, `router.*`).
@@ -595,8 +596,7 @@ public class OrganizationsController {
         normalize(form);
         FormValidator.validate(validator, form);             // Bean Validation
         organizations.create(auth.accountId(), toValues(form));
-        inertia.flash("success", "Organization created.");
-        return inertia.redirect("/organizations");         // 303 en non-GET
+        return inertia.redirect("/organizations").with("success", "Organization created."); // 303 en non-GET
     }
 
     @PUT
@@ -607,8 +607,7 @@ public class OrganizationsController {
         normalize(form);
         FormValidator.validate(validator, form);
         organizations.update(organization, toValues(form));
-        inertia.flash("success", "Organization updated.");
-        return inertia.back();                              // 303 al Referer
+        return inertia.back().with("success", "Organization updated."); // 303 al Referer + flash
     }
     // … destroy, restore, edit …
 }
@@ -625,14 +624,17 @@ Observaciones:
 - **`inertia.redirect()`** devuelve 303 si el request es non-GET (estándar
   Inertia), 302 si es GET.
 - **`inertia.back()`** usa el header `Referer` o un fallback — útil después de
-  PUT/DELETE para volver al form.
+  PUT/DELETE para volver al form. Tanto `back()` como `redirect()` devuelven un
+  `InertiaRedirect` (que *es* un `Uni`), por lo que admiten encadenado estilo
+  Laravel sin perder compatibilidad:
+  `inertia.back().with("success", ...).withErrors(...)` o
+  `inertia.redirect("/x").with("success", ...)`.
 
 El demo user está "protegido" en `UsersController` con un guard simple:
 
 ```java
 if (user.isDemoUser()) {
-    inertia.flash("error", "Updating the demo user is not allowed.");
-    return inertia.back();
+    return inertia.back().with("error", "Updating the demo user is not allowed.");
 }
 ```
 

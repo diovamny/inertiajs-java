@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Redirect encadenado estilo Laravel
+
+- **`InertiaRedirect`** (antes `BackRedirect`): todas las variantes de `back()`
+  **y `redirect()`** devuelven ahora un `InertiaRedirect`, que implementa
+  `Uni<Object>` por delegación (source-compatible con el código existente) y
+  admite encadenado estilo Laravel:
+  - `back().with("success", "Registro actualizado correctamente.")` /
+    `redirect(url).with("success", ...)` — equivalente a
+    `Redirect::back()->with(...)` / `Redirect::to(url)->with(...)`.
+  - `.withErrors(Map.of("email", "invalid"))` — equivalente a
+    `->withErrors([...])`.
+  - `.withInput(Map.of(...))` — equivalente a `->withInput()`.
+  - `flash(key, value)` / `flash(map)` como alias de `with(...)`.
+  - El flash se escribe en el `FlashStore` en el momento del encadenado (mismo
+    request que el redirect), así que `props.success` / `props.errors` llegan al
+    frontend tras el 303.
+- **Renombrado**: `BackRedirect` → `InertiaRedirect` (API nueva de este ciclo,
+  sin usos externos; los tests y el demo se actualizaron).
+
 ## 0.0.2 (2026-08-03)
 
 Refinamiento de paridad con los adaptadores oficiales (validado contra

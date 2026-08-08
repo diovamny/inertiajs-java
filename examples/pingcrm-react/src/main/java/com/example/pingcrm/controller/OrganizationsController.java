@@ -70,8 +70,7 @@ public class OrganizationsController {
         normalize(form);
         FormValidator.validate(validator, form);
         organizations.create(auth.accountId(), toValues(form));
-        inertia.flash("success", "Organization created.");
-        return inertia.redirect("/organizations");
+        return inertia.redirect("/organizations").with("success", "Organization created.");
     }
 
     @GET
@@ -98,8 +97,7 @@ public class OrganizationsController {
         normalize(form);
         FormValidator.validate(validator, form);
         organizations.update(organization, toValues(form));
-        inertia.flash("success", "Organization updated.");
-        return inertia.back();
+        return inertia.back().with("success", "Organization updated.");
     }
 
     @DELETE
@@ -111,8 +109,7 @@ public class OrganizationsController {
             return notFound();
         }
         organizations.softDelete(organization);
-        inertia.flash("success", "Organization deleted.");
-        return inertia.back();
+        return inertia.back().with("success", "Organization deleted.");
     }
 
     @PUT
@@ -124,8 +121,7 @@ public class OrganizationsController {
             return notFound();
         }
         organizations.restore(organization);
-        inertia.flash("success", "Organization restored.");
-        return inertia.back();
+        return inertia.back().with("success", "Organization restored.");
     }
 
     private com.example.pingcrm.entity.Organization findOwned(long id) {
@@ -137,8 +133,7 @@ public class OrganizationsController {
     }
 
     private Uni<Object> notFound() {
-        inertia.flash("error", "Organization not found.");
-        return inertia.redirect("/organizations");
+        return inertia.redirect("/organizations").with("error", "Organization not found.");
     }
 
     private LinkedHashMap<String, Object> filters(String search, String trashed) {

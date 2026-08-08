@@ -91,8 +91,7 @@ public class UsersController {
         }
         users.create(auth.accountId(), form.first_name, form.last_name, form.email,
             form.password, "true".equals(form.owner), photoPath);
-        inertia.flash("success", "User created.");
-        return inertia.redirect("/users");
+        return inertia.redirect("/users").with("success", "User created.");
     }
 
     @GET
@@ -116,8 +115,7 @@ public class UsersController {
             return notFound();
         }
         if (user.isDemoUser()) {
-            inertia.flash("error", "Updating the demo user is not allowed.");
-            return inertia.back();
+            return inertia.back().with("error", "Updating the demo user is not allowed.");
         }
         normalize(form);
         FormValidator.validate(validator, form);
@@ -130,8 +128,7 @@ public class UsersController {
         }
         users.update(user, form.first_name, form.last_name, form.email,
             form.password, "true".equals(form.owner), photoPath);
-        inertia.flash("success", "User updated.");
-        return inertia.back();
+        return inertia.back().with("success", "User updated.");
     }
 
     @DELETE
@@ -143,12 +140,10 @@ public class UsersController {
             return notFound();
         }
         if (user.isDemoUser()) {
-            inertia.flash("error", "Deleting the demo user is not allowed.");
-            return inertia.back();
+            return inertia.back().with("error", "Deleting the demo user is not allowed.");
         }
         users.softDelete(user);
-        inertia.flash("success", "User deleted.");
-        return inertia.back();
+        return inertia.back().with("success", "User deleted.");
     }
 
     @PUT
@@ -160,8 +155,7 @@ public class UsersController {
             return notFound();
         }
         users.restore(user);
-        inertia.flash("success", "User restored.");
-        return inertia.back();
+        return inertia.back().with("success", "User restored.");
     }
 
     private User findOwned(long id) {
@@ -173,18 +167,15 @@ public class UsersController {
     }
 
     private Uni<Object> notFound() {
-        inertia.flash("error", "User not found.");
-        return inertia.redirect("/users");
+        return inertia.redirect("/users").with("error", "User not found.");
     }
 
     private Uni<Object> emailTaken() {
-        inertia.flash("errors", Map.of("email", "The email has already been taken."));
-        return inertia.back();
+        return inertia.back().withErrors(Map.of("email", "The email has already been taken."));
     }
 
     private Uni<Object> invalidImage() {
-        inertia.flash("errors", Map.of("photo", "The photo must be an image."));
-        return inertia.back();
+        return inertia.back().withErrors(Map.of("photo", "The photo must be an image."));
     }
 
     private void normalize(UserForm form) {

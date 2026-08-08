@@ -248,6 +248,7 @@ El adaptador implementa el protocolo Inertia v3 según la especificación y vali
 | `render(component, props)` | `Inertia::render()` | `render inertia: {...}` |
 | `redirect(url)` / `back()` | `redirect()` / `back()` | `redirect_to` / `redirect_back` |
 | `back(fallback)` / `back(status, headers)` / `back(status, headers, fallback)` | `back(status, headers, fallback)` | `redirect_back` |
+| `redirect(url)` / `back()` encadenados: `.with(key, value)` / `.withErrors(map)` / `.withInput(map)` (`InertiaRedirect`, también sobre cualquier variante de `back(...)`) | `Redirect::to(url)->with(...)->withErrors(...)->withInput()` / `Redirect::back()->...` | — |
 | `header(name, value)` / `headers(map)` | headers de redirect (`->withHeaders()`) | `response.headers` |
 | `location(url)` (409 + `X-Inertia-Location`) | `Inertia::location()` | `inertia_location()` |
 | `version(version)` / `getVersion()` | `Inertia::version()` / `getVersion()` | `inertia_version` |

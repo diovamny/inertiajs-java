@@ -47,6 +47,20 @@ class InertiaRenderQuarkusTest {
     }
 
     @Test
+    void shouldBackReturnChainableUni() {
+        var result = inertia.back().with("success", "Registro actualizado correctamente.");
+        assertThat(result).isNotNull();
+        assertThat(result).isInstanceOf(com.quarkus.inertia.api.InertiaRedirect.class);
+    }
+
+    @Test
+    void shouldRedirectReturnChainableUni() {
+        var result = inertia.redirect("/login").with("success", "Registro actualizado correctamente.");
+        assertThat(result).isNotNull();
+        assertThat(result).isInstanceOf(com.quarkus.inertia.api.InertiaRedirect.class);
+    }
+
+    @Test
     void shouldHandleErrorUsingMapperReturnUni() {
         assertThatCode(() -> inertia.handleErrorUsing(error -> null)).doesNotThrowAnyException();
     }

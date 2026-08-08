@@ -82,8 +82,7 @@ public class ContactsController {
             return invalidOrganization();
         }
         contacts.create(auth.accountId(), toValues(form));
-        inertia.flash("success", "Contact created.");
-        return inertia.redirect("/contacts");
+        return inertia.redirect("/contacts").with("success", "Contact created.");
     }
 
     @GET
@@ -114,8 +113,7 @@ public class ContactsController {
             return invalidOrganization();
         }
         contacts.update(contact, toValues(form));
-        inertia.flash("success", "Contact updated.");
-        return inertia.back();
+        return inertia.back().with("success", "Contact updated.");
     }
 
     @DELETE
@@ -127,8 +125,7 @@ public class ContactsController {
             return notFound();
         }
         contacts.softDelete(contact);
-        inertia.flash("success", "Contact deleted.");
-        return inertia.back();
+        return inertia.back().with("success", "Contact deleted.");
     }
 
     @PUT
@@ -140,8 +137,7 @@ public class ContactsController {
             return notFound();
         }
         contacts.restore(contact);
-        inertia.flash("success", "Contact restored.");
-        return inertia.back();
+        return inertia.back().with("success", "Contact restored.");
     }
 
     private Contact findOwned(long id) {
@@ -153,13 +149,11 @@ public class ContactsController {
     }
 
     private Uni<Object> notFound() {
-        inertia.flash("error", "Contact not found.");
-        return inertia.redirect("/contacts");
+        return inertia.redirect("/contacts").with("error", "Contact not found.");
     }
 
     private Uni<Object> invalidOrganization() {
-        inertia.flash("errors", Map.of("organization_id", "The selected organization is invalid."));
-        return inertia.back("/contacts");
+        return inertia.back("/contacts").withErrors(Map.of("organization_id", "The selected organization is invalid."));
     }
 
     private Long parseId(String value) {
