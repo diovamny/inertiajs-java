@@ -1,24 +1,5 @@
 package com.example.pingcrm.controller;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
-import jakarta.inject.Inject;
-import jakarta.validation.Validator;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.resteasy.reactive.MultipartForm;
-
 import com.example.pingcrm.dto.FormValidator;
 import com.example.pingcrm.dto.UserForm;
 import com.example.pingcrm.entity.User;
@@ -28,10 +9,21 @@ import com.example.pingcrm.service.UserService;
 import com.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
+import jakarta.inject.Inject;
+import jakarta.validation.Validator;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.resteasy.reactive.MultipartForm;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Path("/users")
 
 @Blocking
+@SuppressWarnings("removal")
 public class UsersController {
 
     private static final java.util.Set<String> IMAGE_EXTENSIONS =

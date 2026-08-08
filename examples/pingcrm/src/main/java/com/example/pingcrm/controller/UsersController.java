@@ -32,6 +32,7 @@ import io.smallrye.mutiny.Uni;
 @Path("/users")
 
 @Blocking
+@SuppressWarnings("removal")
 public class UsersController {
 
     private static final java.util.Set<String> IMAGE_EXTENSIONS =
