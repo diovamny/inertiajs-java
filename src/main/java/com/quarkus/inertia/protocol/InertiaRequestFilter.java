@@ -8,6 +8,11 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import io.vertx.core.Vertx;
 
+/**
+ * Request filter that captures the referer of the current request into the
+ * Vert.x context, so {@code inertia.back()} can redirect to the previous
+ * page. Runs as a header decorator on every request.
+ */
 @ApplicationScoped
 @Provider
 @Priority(Priorities.HEADER_DECORATOR)

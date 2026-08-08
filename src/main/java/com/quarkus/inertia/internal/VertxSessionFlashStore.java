@@ -9,6 +9,12 @@ import io.vertx.ext.web.RoutingContext;
 
 import com.quarkus.inertia.spi.FlashStore;
 
+/**
+ * Default {@link FlashStore} implementation storing flash data inside the
+ * Vert.x session under a reserved key; data survives the redirect and is
+ * drained when the next page is rendered. Request-scoped and bound to the
+ * current routing context.
+ */
 @RequestScoped
 public class VertxSessionFlashStore implements FlashStore {
 

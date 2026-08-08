@@ -10,6 +10,12 @@ import jakarta.enterprise.context.RequestScoped;
 
 import com.quarkus.inertia.model.OnceProp;
 
+/**
+ * Request-scoped registry of once props: props that are sent to the client
+ * only once (e.g. flash notifications). Resolved values are drained into
+ * the page props, and metadata of fresh entries informs the client's
+ * history tracking.
+ */
 @RequestScoped
 public class OncePropRegistry {
 

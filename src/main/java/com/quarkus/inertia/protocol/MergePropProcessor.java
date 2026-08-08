@@ -4,6 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 
+/**
+ * Deep-merge utility for incoming prop values over existing ones; nested
+ * maps are merged recursively, other values are replaced. Used for
+ * mergeable and deep-mergeable props.
+ */
 @ApplicationScoped
 public class MergePropProcessor {
 

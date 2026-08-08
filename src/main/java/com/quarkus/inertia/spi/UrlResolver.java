@@ -6,5 +6,12 @@ package com.quarkus.inertia.spi;
  */
 @FunctionalInterface
 public interface UrlResolver {
+
+    /**
+     * Resolve the page URL before it is sent to the client.
+     *
+     * @param url the original URL
+     * @return the resolved URL
+     */
     String resolve(String url);
 }

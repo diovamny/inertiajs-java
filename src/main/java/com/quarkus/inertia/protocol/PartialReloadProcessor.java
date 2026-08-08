@@ -9,6 +9,11 @@ import jakarta.enterprise.context.RequestScoped;
 import com.quarkus.inertia.model.AlwaysProp;
 import com.quarkus.inertia.model.PageObject;
 
+/**
+ * Applies a partial reload: keeps only the props requested by the client
+ * ({@code X-Inertia-Partial-Data}/{@code Except}/{@code Reset} headers),
+ * always retaining {@link AlwaysProp} values.
+ */
 @RequestScoped
 public class PartialReloadProcessor {
 

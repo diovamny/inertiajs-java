@@ -12,6 +12,13 @@ import io.smallrye.mutiny.Uni;
 
 import com.quarkus.inertia.model.AlwaysProp;
 
+/**
+ * Request-scoped accumulator for everything the current page carries
+ * besides the controller props: shared props (including
+ * no-track/flash/always variants), deferred and optional props, once,
+ * merge/prepend/deep-merge/match props, scroll props, metadata and
+ * rescued props. Consumed by {@link PageObjectBuilder}.
+ */
 @RequestScoped
 public class SharedDataRegistry {
 
@@ -29,6 +36,14 @@ public class SharedDataRegistry {
     private final Map<String, Object> meta = new HashMap<>();
     private final List<String> rescuedProps = new java.util.ArrayList<>();
 
+    /**
+     * Specification of a scroll prop: its value, the DOM element the client
+     * should scroll to, and additional metadata.
+     *
+     * @param value    the scroll value
+     * @param wrapper  the DOM selector of the scroll container
+     * @param metadata extra scroll metadata
+     */
     public record ScrollSpec(Object value, String wrapper, Map<String, Object> metadata) {
 
         public static ScrollSpec metadataOnly(Map<String, Object> metadata) {

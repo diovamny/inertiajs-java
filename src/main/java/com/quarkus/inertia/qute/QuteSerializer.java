@@ -8,6 +8,11 @@ import io.smallrye.mutiny.Uni;
 import com.quarkus.inertia.model.PageObject;
 import com.quarkus.inertia.spi.JsonProvider;
 
+/**
+ * Serializes a {@link PageObject} to its JSON string for embedding in the
+ * root template or serving directly; unwraps {@code RawJson} values so raw
+ * documents are embedded as-is.
+ */
 @ApplicationScoped
 public class QuteSerializer {
 
@@ -18,6 +23,13 @@ public class QuteSerializer {
         this.jsonProvider = jsonProvider;
     }
 
+    /**
+     * Serialize the page object to JSON, embedding {@code RawJson} values
+     * as-is.
+     *
+     * @param page the page object
+     * @return the JSON document as a Uni
+     */
     public Uni<String> serialize(PageObject page) {
         return Uni.createFrom().item(() -> {
             if (!com.quarkus.inertia.internal.RawJsonUnwrapper.containsRawJson(page.props())) {

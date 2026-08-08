@@ -19,6 +19,12 @@ public class ErrorResponseFactory {
 
     static final String CONTEXT_KEY = "inertia-error-mapper";
 
+    /**
+     * Produce the error response for a server-side exception.
+     *
+     * @param error the exception thrown while handling the request
+     * @return the response to send
+     */
     public Response handle(Throwable error) {
         var mapper = resolveMapper();
         if (mapper != null) {
@@ -27,6 +33,11 @@ public class ErrorResponseFactory {
         return defaultErrorResponse(error);
     }
 
+    /**
+     * The mapper registered for the current request, if any.
+     *
+     * @return the mapper, or {@code null}
+     */
     public ErrorMapper resolveMapper() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {

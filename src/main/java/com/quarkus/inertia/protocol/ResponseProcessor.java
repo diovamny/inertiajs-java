@@ -15,6 +15,12 @@ import com.quarkus.inertia.renderer.HtmlRenderer;
 import com.quarkus.inertia.response.JsonResponseProcessor;
 import com.quarkus.inertia.version.VersionProvider;
 
+/**
+ * Turns a finished {@link PageObject} into the actual HTTP response:
+ * JSON (200) for Inertia requests, JSON (304) for precognition requests,
+ * and HTML (200) for regular page loads. Adds the asset version and
+ * {@code X-Inertia} headers.
+ */
 @RequestScoped
 public class ResponseProcessor {
 
@@ -33,6 +39,12 @@ public class ResponseProcessor {
         this.versionProvider = versionProvider;
     }
 
+    /**
+     * Serialize and return the HTTP response for the given page object.
+     *
+     * @param page the finished page object
+     * @return the HTTP response as a Uni
+     */
     public Uni<Object> process(PageObject page) {
         if (isPrecognition()) {
             return jsonProcessor.serialize(page)

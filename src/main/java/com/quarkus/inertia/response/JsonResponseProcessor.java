@@ -9,6 +9,11 @@ import io.smallrye.mutiny.Uni;
 import com.quarkus.inertia.model.PageObject;
 import com.quarkus.inertia.qute.QuteSerializer;
 
+/**
+ * Serializes a page object into the JSON response of an Inertia visit,
+ * decorating it with the {@code X-Inertia} headers and the partial-reload
+ * component header.
+ */
 @RequestScoped
 public class JsonResponseProcessor {
 
@@ -19,10 +24,22 @@ public class JsonResponseProcessor {
         this.serializer = serializer;
     }
 
+    /**
+     * Serialize a page object to its JSON string.
+     *
+     * @param page the page object
+     * @return the JSON document as a Uni
+     */
     public Uni<String> serialize(PageObject page) {
         return serializer.serialize(page);
     }
 
+    /**
+     * Build the decorated JSON response for an Inertia visit.
+     *
+     * @param page the page object
+     * @return the HTTP response as a Uni
+     */
     public Uni<Response> write(PageObject page) {
         return serialize(page)
             .map(json -> {

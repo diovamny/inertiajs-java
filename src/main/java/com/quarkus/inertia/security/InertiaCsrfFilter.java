@@ -18,6 +18,12 @@ import io.vertx.ext.web.RoutingContext;
 
 import com.quarkus.inertia.config.InertiaConfig;
 
+/**
+ * CSRF protection for Inertia requests: issues an {@code XSRF-TOKEN} cookie
+ * and validates the matching header on non-GET requests (skipped when
+ * {@code inertia.csrf-enabled=false}). Keeps the session token synchronized
+ * across requests.
+ */
 @ApplicationScoped
 @Provider
 @Priority(Priorities.HEADER_DECORATOR + 5)

@@ -18,6 +18,13 @@ public final class RawJsonUnwrapper {
     private RawJsonUnwrapper() {
     }
 
+    /**
+     * Recursively replace every {@link RawJson} in the value tree by its
+     * parsed JSON structure.
+     *
+     * @param value the value to convert
+     * @return a copy of the value without {@link RawJson} wrappers
+     */
     public static Object unwrap(Object value) {
         if (value instanceof RawJson raw) {
             return parse(raw.value());
@@ -39,6 +46,12 @@ public final class RawJsonUnwrapper {
         return value;
     }
 
+    /**
+     * Whether the value tree contains any {@link RawJson} wrapper.
+     *
+     * @param value the value to inspect
+     * @return {@code true} when at least one wrapper is present
+     */
     public static boolean containsRawJson(Object value) {
         if (value instanceof RawJson) return true;
         if (value instanceof Map<?, ?> map) {

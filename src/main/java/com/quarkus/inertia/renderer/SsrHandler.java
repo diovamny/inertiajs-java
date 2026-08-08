@@ -15,6 +15,11 @@ import io.vertx.core.json.JsonObject;
 
 import com.quarkus.inertia.config.InertiaConfig;
 
+/**
+ * Client for the server-side rendering server: forwards the page object as
+ * JSON to the configured SSR endpoint ({@code inertia.ssr-url}) and returns
+ * the rendered HTML, honoring {@code inertia.ssr-exclude-paths}.
+ */
 @ApplicationScoped
 public class SsrHandler {
 
@@ -33,6 +38,12 @@ public class SsrHandler {
         this(config, currentVertxRequest, null);
     }
 
+    /**
+     * Whether SSR should apply to the current request: enabled in the
+     * config, not temporarily disabled, and not excluded by path.
+     *
+     * @return {@code true} when SSR applies
+     */
     public boolean isSsrEnabled() {
         if (!config.ssrEnabled()) return false;
 
@@ -103,6 +114,12 @@ public class SsrHandler {
         });
     }
 
+    /**
+     * The SSR URL for the current request, resolved from the configured URL
+     * and the {@code X-Inertia-SSR-Base-URL} request header.
+     *
+     * @return the SSR URL, or {@code null} when unknown
+     */
     public String resolveSsrUrl() {
         var base = config.ssrUrl();
         if (base == null || base.isBlank()) return base;

@@ -17,6 +17,15 @@ public class CachedPropStore {
 
     private final Map<String, Entry> cache = new ConcurrentHashMap<>();
 
+    /**
+     * Resolve a value, reusing the cached one when the key is present and not
+     * expired.
+     *
+     * @param key      the cache key
+     * @param ttl      time-to-live; {@code null} never expires
+     * @param resolver lazily evaluated on cache miss
+     * @return the cached or freshly computed value
+     */
     public Uni<Object> compute(String key, Duration ttl, java.util.function.Supplier<Uni<Object>> resolver) {
         var now = Instant.now();
         var existing = cache.get(key);
@@ -31,14 +40,28 @@ public class CachedPropStore {
         }
     }
 
+    /**
+     * Remove all cached values.
+     */
     public void flush() {
         cache.clear();
     }
 
+    /**
+     * Remove the entry of a single key.
+     *
+     * @param key the cache key
+     */
     public void evict(String key) {
         cache.remove(key);
     }
 
+    /**
+     * Whether the key currently holds a non-expired value.
+     *
+     * @param key the cache key
+     * @return {@code true} when present and not expired
+     */
     public boolean contains(String key) {
         var entry = cache.get(key);
         return entry != null && !entry.expired(Instant.now());

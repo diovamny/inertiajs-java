@@ -5,6 +5,11 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import io.quarkus.runtime.StartupEvent;
 
+/**
+ * Validates the Inertia configuration at application startup: the root
+ * template must not be blank and the version strategy must be one of the
+ * supported values.
+ */
 @ApplicationScoped
 public class InertiaConfigValidator {
 

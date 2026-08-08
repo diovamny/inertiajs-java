@@ -8,6 +8,11 @@ import jakarta.inject.Inject;
 
 import com.quarkus.inertia.spi.JsonProvider;
 
+/**
+ * Jackson-backed {@link JsonProvider}, selected with priority 1 when the
+ * application also registers {@link JsonbJsonProvider}; uses the request's
+ * {@link ObjectMapper} and unwraps {@link RawJson} values beforehand.
+ */
 @Alternative
 @Priority(1)
 @ApplicationScoped

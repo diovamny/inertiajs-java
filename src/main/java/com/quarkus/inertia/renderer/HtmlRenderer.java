@@ -14,6 +14,11 @@ import com.quarkus.inertia.config.InertiaConfig;
 import com.quarkus.inertia.model.PageObject;
 import com.quarkus.inertia.qute.QuteSerializer;
 
+/**
+ * Renders the full HTML document for non-Inertia requests by injecting the
+ * serialized page object into the root Qute template; delegates to
+ * {@link SsrHandler} when server-side rendering is enabled.
+ */
 @ApplicationScoped
 public class HtmlRenderer {
 
@@ -37,6 +42,13 @@ public class HtmlRenderer {
         this.ssrHandler = ssrHandler;
     }
 
+    /**
+     * Render the full HTML document for the page, using SSR when enabled
+     * (falling back to client-side rendering on failure).
+     *
+     * @param page the page object
+     * @return the HTML document as a Uni
+     */
     public Uni<String> render(PageObject page) {
         return serializer.serialize(page)
             .chain(json -> {

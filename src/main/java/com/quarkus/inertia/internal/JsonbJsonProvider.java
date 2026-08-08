@@ -6,6 +6,10 @@ import jakarta.json.bind.Jsonb;
 
 import com.quarkus.inertia.spi.JsonProvider;
 
+/**
+ * JSON-B backed {@link JsonProvider}, the default when Jackson is not
+ * installed as a CDI bean; unwraps {@link RawJson} values beforehand.
+ */
 @ApplicationScoped
 public class JsonbJsonProvider implements JsonProvider {
 

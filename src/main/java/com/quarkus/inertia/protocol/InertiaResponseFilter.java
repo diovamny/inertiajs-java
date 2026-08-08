@@ -18,9 +18,15 @@ import java.util.Map;
 
 import com.quarkus.inertia.config.InertiaConfig;
 
+/**
+ * Response filter that implements the lazy-response optimization: when the
+ * client revalidates with {@code If-None-Match} and the generated page
+ * object still matches, the body is replaced with a 304 response. Honors
+ * {@code inertia.lazy-etag-enabled}.
+ */
 @ApplicationScoped
 @Provider
-@Priority(Priorities.HEADER_DECORATOR + 20)
+@Priority(Priorities.HEADER_DECORATOR)
 public class InertiaResponseFilter implements ContainerResponseFilter {
 
     @Inject

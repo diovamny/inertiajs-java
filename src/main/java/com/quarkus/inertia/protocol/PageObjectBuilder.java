@@ -23,6 +23,12 @@ import com.quarkus.inertia.spi.FlashStore;
 import com.quarkus.inertia.spi.UrlResolver;
 import com.quarkus.inertia.version.VersionProvider;
 
+/**
+ * Request-scoped assembler of the {@link PageObject}: collects shared,
+ * optional, once, merge, scroll and flash props, drains the flash store,
+ * applies partial reloads and component/URL transformers, and produces the
+ * final page object consumed by the response processors.
+ */
 @RequestScoped
 public class PageObjectBuilder {
 

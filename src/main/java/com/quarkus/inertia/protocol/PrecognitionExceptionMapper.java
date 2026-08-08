@@ -15,6 +15,13 @@ import io.vertx.core.Vertx;
 import com.quarkus.inertia.api.Inertia;
 import com.quarkus.inertia.spi.JsonProvider;
 
+/**
+ * Maps a {@link ConstraintViolationException} (thrown by CDI bean
+ * validation) into an Inertia precognition response: 304 with the
+ * per-field errors flashed and passed back as the {@code errors} prop,
+ * mimicking the Laravel-inertia demo behavior. Only applies to Inertia
+ * requests.
+ */
 @Provider
 @Priority(Priorities.HEADER_DECORATOR + 10)
 public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
