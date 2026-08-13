@@ -9,6 +9,6 @@
 <body>
     <div id="app" {#if ssrBody}data-server-rendered="true"{/if}>{#if ssrBody}{ssrBody}{/if}</div>
     <script type="application/json" data-page="app">{dataPage}</script>
-    <script src="/assets/app.js"></script>
+    <script type="module" src="/assets/app.js"></script>
 </body>
 </html>

@@ -5,22 +5,27 @@ import static org.mockito.Mockito.*;
 
 import jakarta.ws.rs.core.Response;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.quarkus.inertia.spi.FlashStore;
+
 class RedirectProcessorUnitTest {
 
     private RedirectProcessor processor;
     private HttpServerRequest httpRequest;
     private RoutingContext routingContext;
+    private FlashStore flashStore;
 
     @BeforeEach
     void setUp() {
         var currentVertxRequest = mock(CurrentVertxRequest.class);
         httpRequest = mock(HttpServerRequest.class);
+        flashStore = mock(FlashStore.class);
         when(httpRequest.getHeader("X-Inertia")).thenReturn(null);
         when(httpRequest.method()).thenReturn(HttpMethod.GET);
         when(httpRequest.host()).thenReturn("localhost:8080");
@@ -30,7 +35,7 @@ class RedirectProcessorUnitTest {
         when(routingContext.request()).thenReturn(httpRequest);
         when(currentVertxRequest.getCurrent()).thenReturn(routingContext);
 
-        processor = new RedirectProcessor(currentVertxRequest);
+        processor = new RedirectProcessor(currentVertxRequest, flashStore);
     }
 
     private void asInertia() {
@@ -181,5 +186,42 @@ class RedirectProcessorUnitTest {
         var result = processor.process("/home");
         var response = (Response) result.await().indefinitely();
         assertThat(response.getStatus()).isEqualTo(303);
+    }
+
+    @Test
+    void shouldReturn204WithPrecognitionHeadersForValidateOnlyRequests() throws Exception {
+        var vertx = Vertx.vertx();
+        var done = new java.util.concurrent.CompletableFuture<Response>();
+        vertx.getOrCreateContext().runOnContext(v -> {
+            var ctx = io.vertx.core.Vertx.currentContext();
+            ctx.putLocal("inertia-precognition", Boolean.TRUE);
+            ctx.putLocal("inertia-precognition-validate-fields", "username,email");
+            var result = processor.process("/home");
+            done.complete((Response) result.await().indefinitely());
+        });
+        var response = done.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(response.getStatus()).isEqualTo(204);
+        assertThat(response.getHeaderString("Precognition")).isEqualTo("true");
+        assertThat(response.getHeaderString("Precognition-Success")).isEqualTo("true");
+        assertThat(response.getHeaderString("Location")).isNull();
+        verify(flashStore).drain();
+        vertx.close();
+    }
+
+    @Test
+    void shouldReturn302ForValidateOnlyWithoutPrecognitionHeader() throws Exception {
+        var vertx = Vertx.vertx();
+        var done = new java.util.concurrent.CompletableFuture<Response>();
+        vertx.getOrCreateContext().runOnContext(v -> {
+            var ctx = io.vertx.core.Vertx.currentContext();
+            ctx.putLocal("inertia-precognition-validate-fields", "username,email");
+            var result = processor.process("/home");
+            done.complete((Response) result.await().indefinitely());
+        });
+        var response = done.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/home");
+        verify(flashStore, never()).drain();
+        vertx.close();
     }
 }

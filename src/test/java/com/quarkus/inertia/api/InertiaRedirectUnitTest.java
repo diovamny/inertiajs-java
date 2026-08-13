@@ -36,7 +36,7 @@ class InertiaRedirectUnitTest {
         when(routingContext.request()).thenReturn(httpRequest);
         when(currentVertxRequest.getCurrent()).thenReturn(routingContext);
 
-        processor = new RedirectProcessor(currentVertxRequest);
+        processor = new RedirectProcessor(currentVertxRequest, flashStore);
     }
 
     private InertiaRedirect back() {

@@ -135,6 +135,15 @@ public class HtmlRenderer {
             if (template != null) return template;
         }
 
+        var rootView = config.rootView();
+        if (rootView.isPresent() && !rootView.get().isBlank()) {
+            var template = engine.getTemplate(rootView.get());
+            if (template == null) {
+                template = engine.getTemplate(rootView.get() + ".html");
+            }
+            if (template != null) return template;
+        }
+
         var configured = config.rootTemplate();
         if (configured == null || configured.isBlank() || "index.html".equals(configured)) {
             return defaultRootTemplate;

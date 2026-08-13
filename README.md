@@ -128,11 +128,11 @@ createInertiaApp({
 - [x] Prefetch (`Purpose: prefetch` / `X-Inertia-Prefetch`)
 - [x] CSRF on-by-default (`inertia.csrf.enabled`, default `true`) — 419 en mismatch
 - [x] Flash data via FlashStore SPI (sesión Vert.x)
-- [x] `getFlash(key)` / `pullFlash(key)` con allowlist (`inertia.flash-keys`) y `inertia.always-include-errors`
+- [x] `getFlash(key)` / `pullFlash(key)` con allowlist (`inertia.flash-keys`) y `inertia.always-include-errors` (cableada: controla si `errors` se incluye siempre, default `true`)
 - [x] Cached props (`inertia.cache(key, ttl, resolver)`) con TTL por `CachedPropStore` (`@ApplicationScoped`) y claves con namespace `inertia_rails/...` (paridad inertia-rails)
 - [x] Component/URL hooks (`ComponentTransformer`, `UrlResolver` SPI) y `render(Enum)`
 - [x] `redirect(url, fullPage)` → 409 + `X-Inertia-Location` en peticiones Inertia
-- [x] Error handling configurable (`handleErrorUsing(ErrorMapper)`, `ErrorResponseFactory`) + `InertiaExceptionMapper` (530/500)
+- [x] Error handling configurable (`handleErrorUsing(ErrorMapper)`, `ErrorResponseFactory`) + `InertiaExceptionMapper` → página Inertia con status real (403/404/500, configurable vía `inertia.error-status` / `inertia.error-component`)
 - [x] SSR por `SsrHandler` (POST a `ssrUrl` + `/render` con fallback a CSR automático, `{ssrHead}`/`{ssrBody}` en el root template)
 - [x] ETag sleepy (`inertia.lazy-etag-enabled`, default `true`) — 304 en GET si `If-None-Match` coincide
 - [x] Testing helper `InertiaPage`: parsea el page JSON y aserciones `assertComponent`/`assertUrl`/`assertVersion`/`assertProp`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/`assertDeferredProps`/`assertOnceProps`/`assertScrollProps`/`assertMeta`/`assertNoDeferredProps`/`assertNoOnceProps`/…
@@ -144,8 +144,8 @@ createInertiaApp({
 - [x] Vary: X-Inertia / Precognition headers
 - [x] Error-Bag y Scroll-Merge-Intent headers
 - [x] camelizeProps (snake_case → camelCase)
-- [x] Root template configurable (`inertia.root-template`) + `setRootView(name)` por request
-- [x] Versión runtime (`version(...)`) sobre la estrategia configurada
+- [x] Root template configurable (`inertia.root-template`) + `setRootView(name)` por request + `inertia.root-view`
+- [x] Versión runtime (`version(...)`) sobre la estrategia configurada; `sha256` content-based (hash de `META-INF/resources`)
 - [x] SSR por ruta: `withoutSsr(paths)` / `disableSsr()` + `inertia.ssr-exclude-paths`
 - [x] HTML + JSON responses
 - [x] Native Image ready (@RegisterForReflection)

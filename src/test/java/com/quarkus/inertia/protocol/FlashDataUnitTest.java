@@ -37,7 +37,7 @@ class FlashDataUnitTest {
         config = mock(InertiaConfig.class);
         when(config.encryptHistory()).thenReturn(false);
         when(config.camelizeProps()).thenReturn(false);
-        when(config.alwaysIncludeErrors()).thenReturn(false);
+        when(config.alwaysIncludeErrors()).thenReturn(true);
 
         var routingContext = mock(RoutingContext.class);
         var httpRequest = mock(HttpServerRequest.class);

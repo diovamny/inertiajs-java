@@ -100,6 +100,59 @@ public interface Inertia {
      */
     Uni<Object> render(Enum<?> component, Map<String, Object> props);
 
+    /**
+     * Render an Inertia page with the given props and an explicit HTTP
+     * status code.
+     *
+     * <p>The status is applied to both the JSON page response (Inertia
+     * requests) and the HTML document (regular browser requests), enabling
+     * error pages such as {@code 403}/{@code 404}/{@code 500} that render a
+     * frontend component (Laravel's {@code Inertia::render(..., status)}
+     * parity).</p>
+     *
+     * @param component the frontend component name
+     * @param props     the page props
+     * @param status    the HTTP status of the response
+     * @return a Uni resolving to the response object
+     * @see #render(String, Map)
+     */
+    Uni<Object> render(String component, Map<String, Object> props, int status);
+
+    /**
+     * Render an Inertia page with no props and an explicit HTTP status.
+     *
+     * @param component the frontend component name
+     * @param status    the HTTP status of the response
+     * @return a Uni resolving to the response object
+     * @see #render(String, Map, int)
+     */
+    Uni<Object> render(String component, int status);
+
+    /**
+     * Render an Inertia page whose component name comes from an enum
+     * constant, with an explicit HTTP status.
+     *
+     * @param component the enum constant; its {@link Enum#name() name} is used
+     *                  as the component name
+     * @param status    the HTTP status of the response
+     * @return a Uni resolving to the response object
+     * @see #render(String, int)
+     */
+    Uni<Object> render(Enum<?> component, int status);
+
+    /**
+     * Render an Inertia page whose component name comes from an enum
+     * constant, with the given props and an explicit HTTP status.
+     *
+     * @param component the enum constant; its {@link Enum#name() name} is used
+     *                  as the component name
+     * @param props     the page props
+     * @param status    the HTTP status of the response
+     * @return a Uni resolving to the response object
+     * @see #render(String, Map, int)
+     */
+    Uni<Object> render(Enum<?> component, Map<String, Object> props, int status);
+
     // ---------------------------------------------------------------------
     // Redirects
     // ---------------------------------------------------------------------

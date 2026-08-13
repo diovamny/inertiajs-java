@@ -127,7 +127,10 @@ public class PageObjectBuilder {
 
         var errors = resolveErrors();
         if (!allProps.containsKey("errors")) {
-            allProps.put("errors", AlwaysProp.of(errors));
+            boolean hasErrors = errors instanceof Map<?, ?> errs && !errs.isEmpty();
+            if (config.alwaysIncludeErrors() || hasErrors) {
+                allProps.put("errors", AlwaysProp.of(errors));
+            }
         }
 
         var url = resolveUrl(currentUrl());
@@ -156,10 +159,15 @@ public class PageObjectBuilder {
         }
 
         var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
+        var resetKeys = resetProps();
         var mergeProps = new java.util.ArrayList<>(sharedData.getMergePropKeys());
+        mergeProps.removeIf(resetKeys::contains);
         var prependProps = new java.util.ArrayList<>(sharedData.getPrependPropKeys());
+        prependProps.removeIf(resetKeys::contains);
         var deepMergeProps = new java.util.ArrayList<>(sharedData.getDeepMergePropKeys());
+        deepMergeProps.removeIf(resetKeys::contains);
         var matchPropsOn = new java.util.ArrayList<>(sharedData.getMatchPropKeys());
+        matchPropsOn.removeIf(resetKeys::contains);
         var onceProps = onceMetadata.isEmpty() ? null : onceMetadata;
         var scrollProps = sharedData.hasScrollProps()
             ? buildScrollProps(mergeProps, prependProps, matchPropsOn)
@@ -178,7 +186,7 @@ public class PageObjectBuilder {
         return resolveSupplierProps(allProps, partialContext).map(resolvedProps -> {
             var rescuedProps = sharedData.hasRescuedProps() ? sharedData.getRescuedProps() : null;
 
-            var page = new PageObject(resolvedComponent, Map.copyOf(resolvedProps), url, version,
+            var page = new PageObject(resolvedComponent, copyOfNullTolerant(resolvedProps), url, version,
                 deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut, onceProps,
                 scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
                 encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
@@ -252,6 +260,7 @@ public class PageObjectBuilder {
             List<String> prependProps, List<String> matchPropsOn) {
         var result = new LinkedHashMap<String, Map<String, Object>>();
         var intent = scrollMergeIntent();
+        var resetProps = resetProps();
         for (var entry : sharedData.getScrollSpecs().entrySet()) {
             var key = entry.getKey();
             var spec = entry.getValue();
@@ -280,9 +289,23 @@ public class PageObjectBuilder {
                     clean.put(name, metadata.get(name));
                 }
             }
+            clean.put("reset", resetProps.contains(key));
             result.put(key, java.util.Collections.unmodifiableMap(clean));
         }
         return java.util.Collections.unmodifiableMap(result);
+    }
+
+    private java.util.Set<String> resetProps() {
+        var ctx = Vertx.currentContext();
+        if (ctx == null) return java.util.Set.of();
+        var raw = (String) ctx.getLocal("inertia-reset");
+        if (raw == null || raw.isBlank()) return java.util.Set.of();
+        var keys = new HashSet<String>();
+        for (var part : raw.split(",")) {
+            var trimmed = part.trim();
+            if (!trimmed.isEmpty()) keys.add(trimmed);
+        }
+        return keys;
     }
 
     private void wrapScrollPropValues(Map<String, Object> allProps) {
@@ -290,8 +313,7 @@ public class PageObjectBuilder {
         for (var entry : sharedData.getScrollSpecs().entrySet()) {
             var spec = entry.getValue();
             if (spec.value() != null) {
-                var wrapper = spec.wrapper() != null ? spec.wrapper() : "data";
-                allProps.put(entry.getKey(), Map.of(wrapper, spec.value()));
+                allProps.put(entry.getKey(), spec.value());
             }
         }
     }
@@ -370,6 +392,14 @@ public class PageObjectBuilder {
             return Map.of(errorBag, rawErrors);
         }
         return rawErrors;
+    }
+
+    private static Map<String, Object> copyOfNullTolerant(Map<String, Object> source) {
+        var copy = new HashMap<String, Object>();
+        if (source != null) {
+            copy.putAll(source);
+        }
+        return java.util.Collections.unmodifiableMap(copy);
     }
 
     private String resolveComponent(String component) {
@@ -536,7 +566,7 @@ public class PageObjectBuilder {
                 }
             }
         }
-        return page.withProps(Map.copyOf(expanded));
+        return page.withProps(copyOfNullTolerant(expanded));
     }
 
     private PageObject unwrapAlwaysProps(PageObject page) {
@@ -549,7 +579,7 @@ public class PageObjectBuilder {
             var value = entry.getValue();
             unwrapped.put(entry.getKey(), value instanceof AlwaysProp<?> a ? a.value() : value);
         }
-        return page.withProps(Map.copyOf(unwrapped));
+        return page.withProps(copyOfNullTolerant(unwrapped));
     }
 
     @SuppressWarnings("unchecked")
@@ -559,7 +589,7 @@ public class PageObjectBuilder {
         for (var entry : props.entrySet()) {
             camelized.put(toCamelCase(entry.getKey()), camelizeValue(entry.getValue()));
         }
-        return page.withProps(Map.copyOf(camelized));
+        return page.withProps(copyOfNullTolerant(camelized));
     }
 
     @SuppressWarnings("unchecked")

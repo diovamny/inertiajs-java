@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import io.vertx.ext.web.RoutingContext;
 
 import com.quarkus.inertia.model.OnceProp;
 
@@ -15,9 +18,20 @@ import com.quarkus.inertia.model.OnceProp;
  * only once (e.g. flash notifications). Resolved values are drained into
  * the page props, and metadata of fresh entries informs the client's
  * history tracking.
+ *
+ * <p>When a Vert.x session is available, delivered once props are remembered
+ * in the session (under {@value #SESSION_PREFIX}): a later request that
+ * registers the same once prop does not resolve it again, so the client
+ * keeps the value from its history — mirroring Laravel's
+ * {@code Inertia::once()} semantics.</p>
  */
 @RequestScoped
 public class OncePropRegistry {
+
+    static final String SESSION_PREFIX = "__inertia_once:";
+
+    @Inject
+    Instance<RoutingContext> routingContext;
 
     private final Map<String, OnceEntry> onceProps = new HashMap<>();
 
@@ -26,21 +40,35 @@ public class OncePropRegistry {
     }
 
     public void set(String key, Object value, String customKey, Instant expiresAt) {
+        var onceKey = customKey != null ? customKey : key;
+        if (alreadyDelivered(onceKey, expiresAt)) return;
         onceProps.put(key, new OnceEntry(value, customKey, expiresAt));
+        markDelivered(onceKey, expiresAt);
     }
 
     public void setLazy(String key, Supplier<io.smallrye.mutiny.Uni<Object>> resolver) {
-        onceProps.put(key, new OnceEntry(resolver, null, null));
+        setLazy(key, resolver, null, null);
     }
 
     public void setLazy(String key, Supplier<io.smallrye.mutiny.Uni<Object>> resolver,
             String customKey) {
-        onceProps.put(key, new OnceEntry(resolver, customKey, null));
+        setLazy(key, resolver, customKey, null);
     }
 
     public void setLazy(String key, Supplier<io.smallrye.mutiny.Uni<Object>> resolver,
             String customKey, Instant expiresAt) {
-        onceProps.put(key, new OnceEntry(resolver, customKey, expiresAt));
+        var onceKey = customKey != null ? customKey : key;
+        if (alreadyDelivered(onceKey, expiresAt)) return;
+        onceProps.put(key, new OnceEntry(wrapDelivered(onceKey, expiresAt, resolver), customKey, expiresAt));
+        markDelivered(onceKey, expiresAt);
+    }
+
+    private Supplier<io.smallrye.mutiny.Uni<Object>> wrapDelivered(String onceKey,
+            Instant expiresAt, Supplier<io.smallrye.mutiny.Uni<Object>> resolver) {
+        return () -> resolver.get().map(value -> {
+            markDelivered(onceKey, expiresAt);
+            return value;
+        });
     }
 
     public Set<String> propKeys(Set<String> onceKeys) {
@@ -120,6 +148,41 @@ public class OncePropRegistry {
     private void purgeExpired() {
         var now = Instant.now();
         onceProps.values().removeIf(e -> e.expiresAt() != null && e.expiresAt().isBefore(now));
+    }
+
+    private io.vertx.ext.web.Session getSession() {
+        if (routingContext == null) return null;
+        try {
+            var rc = routingContext.get();
+            return rc != null ? rc.session() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private boolean alreadyDelivered(String onceKey, Instant expiresAt) {
+        var session = getSession();
+        if (session == null) return false;
+        Object raw = session.get(SESSION_PREFIX + onceKey);
+        if (!(raw instanceof Map<?, ?> stored)) return false;
+        Object expires = stored.get("expiresAt");
+        if (expires instanceof Number n && n.longValue() > 0L) {
+            var expiry = Instant.ofEpochMilli(n.longValue());
+            if (expiry.isBefore(Instant.now())) {
+                session.remove(SESSION_PREFIX + onceKey);
+                return false;
+            }
+        }
+        if (expires == null) return false;
+        return true;
+    }
+
+    private void markDelivered(String onceKey, Instant expiresAt) {
+        var session = getSession();
+        if (session == null) return;
+        var stored = new HashMap<String, Object>();
+        stored.put("expiresAt", expiresAt != null ? expiresAt.toEpochMilli() : 0L);
+        session.put(SESSION_PREFIX + onceKey, stored);
     }
 
     private record OnceEntry(Object value, String customKey, Instant expiresAt, boolean fresh) {

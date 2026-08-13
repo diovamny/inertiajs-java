@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Páginas con status HTTP y páginas de error Inertia
+
+- **`render(component, props, status)`** (y overloads `render(component, status)`,
+  `render(enum, ...)`): permite renderizar una página con un código HTTP explícito
+  (403/404/500, etc.) tanto en la respuesta JSON de requests Inertia como en el
+  HTML de requests regulares (paridad con `Inertia::render(..., status)`).
+- **Errores como página Inertia**: `InertiaExceptionMapper` y
+  `ErrorResponseFactory` ahora producen una página Inertia
+  (`{component, props: {status, message}, url, version}`) con el status real del
+  error para requests Inertia — `WebApplicationException` (403/404) usa su
+  status; excepciones sin manejar usan `inertia.error-status` (default `500`).
+  Antes se devolvía un payload `530`/plano. Los requests no-Inertia mantienen el
+  comportamiento previo (500 plano / passthrough).
+- **Nueva config**: `inertia.error-status` (default `500`; para el comportamiento
+  `530` anterior configurar `inertia.error-status=530`) e
+  `inertia.error-component` (default `ErrorPage`).
+- **`inertia.always-include-errors` cableada**: ahora controla si `errors` se
+  incluye siempre (default `true`, comportamiento previo) o solo cuando hay
+  errores. Antes estaba declarada pero no se leía.
+- **`inertia.root-view` cableada**: usado como template por defecto del
+  documento HTML cuando no hay override por request (default: `root-template`).
+  Antes estaba declarada pero no se leía.
+- **`ssr-bundle` eliminada**: propiedad declarada pero nunca consumida; se
+  elimina de `InertiaConfig`.
+- **Versión `sha256` content-based**: la estrategia `sha256` por defecto ahora
+  hashea el contenido de `META-INF/resources` (cambia al reconstruir el
+  frontend) en lugar de un timestamp de arranque. Sin webroot, mantiene el
+  fallback anterior (hash por arranque).
+
 ### Redirect encadenado estilo Laravel
 
 - **`InertiaRedirect`** (antes `BackRedirect`): todas las variantes de `back()`

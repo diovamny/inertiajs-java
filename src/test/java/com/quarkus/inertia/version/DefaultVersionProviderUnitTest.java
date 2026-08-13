@@ -21,9 +21,10 @@ class DefaultVersionProviderUnitTest {
             @Override public boolean camelizeProps() { return false; }
             @Override public boolean csrfEnabled() { return true; }
             @Override public Optional<String> rootView() { return Optional.empty(); }
-            @Override public Optional<String> ssrBundle() { return Optional.empty(); }
             @Override public Optional<java.util.List<String>> flashKeys() { return Optional.empty(); }
-            @Override public boolean alwaysIncludeErrors() { return false; }
+            @Override public boolean alwaysIncludeErrors() { return true; }
+            @Override public int errorStatus() { return 500; }
+            @Override public String errorComponent() { return "ErrorPage"; }
             @Override public boolean lazyEtagEnabled() { return true; }
             @Override public Optional<java.util.List<String>> ssrExcludePaths() { return Optional.empty(); }
         };

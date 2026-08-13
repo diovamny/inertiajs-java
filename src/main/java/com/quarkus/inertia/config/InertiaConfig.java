@@ -108,14 +108,6 @@ public interface InertiaConfig {
     java.util.Optional<String> rootView();
 
     /**
-     * Path of the SSR bundle produced by the frontend build.
-     * <p>Property: {@code inertia.ssr-bundle}.</p>
-     *
-     * @return the bundle path, empty when not configured
-     */
-    java.util.Optional<String> ssrBundle();
-
-    /**
      * Keys whose flash values are surfaced as client-visible props (in
      * addition to the default handling).
      * <p>Property: {@code inertia.flash-keys} (comma separated).</p>
@@ -129,10 +121,30 @@ public interface InertiaConfig {
      * object, even when empty (Laravel-compatible behavior).
      * <p>Property: {@code inertia.always-include-errors}.</p>
      *
-     * @return {@code true} to always include, default {@code false}
+     * @return {@code true} to always include, default {@code true}
      */
-    @WithDefault("false")
+    @WithDefault("true")
     boolean alwaysIncludeErrors();
+
+    /**
+     * HTTP status used for Inertia error pages when an unhandled exception
+     * reaches the exception mapper.
+     * <p>Property: {@code inertia.error-status}.</p>
+     *
+     * @return the error status, default {@code 500}
+     */
+    @WithDefault("500")
+    int errorStatus();
+
+    /**
+     * Frontend component rendered when an unhandled exception reaches the
+     * exception mapper.
+     * <p>Property: {@code inertia.error-component}.</p>
+     *
+     * @return the error component name, default {@code ErrorPage}
+     */
+    @WithDefault("ErrorPage")
+    String errorComponent();
 
     /**
      * Whether the ETag lazy-response optimization is enabled.

@@ -37,6 +37,7 @@ class OptionalPropsUnitTest {
         var config = mock(InertiaConfig.class);
         when(config.encryptHistory()).thenReturn(false);
         when(config.camelizeProps()).thenReturn(false);
+        when(config.alwaysIncludeErrors()).thenReturn(true);
 
         var routingContext = mock(RoutingContext.class);
         httpRequest = mock(HttpServerRequest.class);

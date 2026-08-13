@@ -70,9 +70,16 @@ public class ResponseProcessor {
 
         if (!isInertiaRequest()) {
             return htmlRenderer.render(page)
-                .map(html -> Response.ok(html, MediaType.TEXT_HTML_TYPE)
-                    .header("Vary", "X-Inertia")
-                    .build())
+                .map(html -> {
+                    Integer status = pageStatus();
+                    var builder = (status != null && status != 200)
+                        ? Response.status(status)
+                        : Response.ok();
+                    return builder.entity(html)
+                        .type(MediaType.TEXT_HTML_TYPE)
+                        .header("Vary", "X-Inertia")
+                        .build();
+                })
                 .map(Object.class::cast);
         }
 
@@ -139,6 +146,15 @@ public class ResponseProcessor {
             return Boolean.TRUE.equals(val);
         }
         return false;
+    }
+
+    private Integer pageStatus() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var status = ctx.getLocal("inertia-page-status");
+            if (status instanceof Integer i) return i;
+        }
+        return null;
     }
 
     private HttpServerRequest resolveRequest() {

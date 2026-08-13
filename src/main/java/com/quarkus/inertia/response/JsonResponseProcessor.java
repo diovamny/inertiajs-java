@@ -43,8 +43,11 @@ public class JsonResponseProcessor {
     public Uni<Response> write(PageObject page) {
         return serialize(page)
             .map(json -> {
-                var builder = Response.ok(json, MediaType.APPLICATION_JSON)
-                    .header("X-Inertia", "true")
+                Integer status = pageStatus();
+                var builder = (status != null && status != 200)
+                    ? Response.status(status).entity(json).type(MediaType.APPLICATION_JSON)
+                    : Response.ok(json, MediaType.APPLICATION_JSON);
+                builder.header("X-Inertia", "true")
                     .header("X-Inertia-Component", page.component())
                     .header("Vary", "X-Inertia");
                 var partialComponent = partialComponent();
@@ -53,6 +56,15 @@ public class JsonResponseProcessor {
                 }
                 return builder.build();
             });
+    }
+
+    private Integer pageStatus() {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            var status = ctx.getLocal("inertia-page-status");
+            if (status instanceof Integer i) return i;
+        }
+        return null;
     }
 
     private String partialComponent() {

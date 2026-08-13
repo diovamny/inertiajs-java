@@ -8,6 +8,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
+import com.quarkus.inertia.spi.FlashStore;
+
 import java.util.Map;
 
 /**
@@ -15,15 +17,25 @@ import java.util.Map;
  * GET requests, 303 for non-GET, and 409 conflict responses
  * ({@code X-Inertia-Location}) when an external/full-page redirect is
  * requested from an Inertia client.
+ *
+ * <p>Precognition validate-only requests never receive a redirect: when the
+ * request carries the {@code Precognition-Validate-Only} header (and the
+ * {@code Precognition} header), every redirect the controller produces is
+ * replaced by a 204 response with {@code Precognition-Success: true}, and
+ * any flash data written by the controller is drained so it does not leak
+ * into the next visit (Laravel's {@code HandlePrecognitionRequests}
+ * middleware parity).</p>
  */
 @RequestScoped
 public class RedirectProcessor {
 
     private final CurrentVertxRequest currentVertxRequest;
+    private final FlashStore flashStore;
 
     @Inject
-    public RedirectProcessor(CurrentVertxRequest currentVertxRequest) {
+    public RedirectProcessor(CurrentVertxRequest currentVertxRequest, FlashStore flashStore) {
         this.currentVertxRequest = currentVertxRequest;
+        this.flashStore = flashStore;
     }
 
     /**
@@ -45,14 +57,12 @@ public class RedirectProcessor {
      * @return the redirect or conflict response as a Uni
      */
     public Uni<Object> process(String url, boolean fullPage) {
-        if (fullPage && isInertiaRequest()) {
-            return Uni.createFrom().item(
-                buildConflict(url, java.util.Map.of())
-            );
-        }
-        return Uni.createFrom().item(
-            buildRedirect(url, isNonGetRequest(), java.util.Map.of())
-        );
+        return Uni.createFrom().deferred(() -> {
+            if (fullPage && isInertiaRequest()) {
+                return Uni.createFrom().item(buildConflict(url, java.util.Map.of()));
+            }
+            return Uni.createFrom().item(buildRedirect(url, isNonGetRequest(), java.util.Map.of()));
+        });
     }
 
     /**
@@ -64,14 +74,12 @@ public class RedirectProcessor {
      * @return the redirect or conflict response as a Uni
      */
     public Uni<Object> process(String url, Map<String, String> headers) {
-        if (isInertiaRequest() && isExternal(url)) {
-            return Uni.createFrom().item(
-                buildConflict(url, headers)
-            );
-        }
-        return Uni.createFrom().item(
-            buildRedirect(url, isNonGetRequest(), headers)
-        );
+        return Uni.createFrom().deferred(() -> {
+            if (isInertiaRequest() && isExternal(url)) {
+                return Uni.createFrom().item(buildConflict(url, headers));
+            }
+            return Uni.createFrom().item(buildRedirect(url, isNonGetRequest(), headers));
+        });
     }
 
     /**
@@ -81,23 +89,43 @@ public class RedirectProcessor {
      * @return the redirect response as a Uni
      */
     public Uni<Object> external(String url) {
-        if (isInertiaRequest() && isExternal(url)) {
-            return Uni.createFrom().item(
-                buildConflict(url, java.util.Map.of())
-            );
-        }
-        return Uni.createFrom().item(
-            buildRedirect(url, isNonGetRequest(), java.util.Map.of())
-        );
+        return Uni.createFrom().deferred(() -> {
+            if (isInertiaRequest() && isExternal(url)) {
+                return Uni.createFrom().item(buildConflict(url, java.util.Map.of()));
+            }
+            return Uni.createFrom().item(buildRedirect(url, isNonGetRequest(), java.util.Map.of()));
+        });
     }
 
     private jakarta.ws.rs.core.Response buildRedirect(String url, boolean nonGet, Map<String, String> headers) {
+        if (isPrecognitionValidateOnly()) {
+            flashStore.drain();
+            return Response.status(Response.Status.NO_CONTENT)
+                .header("Precognition", "true")
+                .header("Precognition-Success", "true")
+                .build();
+        }
         var status = nonGet ? Response.Status.SEE_OTHER : Response.Status.FOUND;
         var builder = Response.status(status)
             .header("Location", url)
             .header("Vary", "X-Inertia");
         applyHeaders(builder, headers);
         return builder.build();
+    }
+
+    private boolean isPrecognitionValidateOnly() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var precognition = ctx.getLocal("inertia-precognition");
+            var fields = ctx.getLocal("inertia-precognition-validate-fields");
+            if (precognition != null || fields != null) {
+                return Boolean.TRUE.equals(precognition) && fields != null;
+            }
+        }
+        var request = resolveRequest();
+        if (request == null) return false;
+        return "true".equalsIgnoreCase(request.getHeader("Precognition"))
+            && request.getHeader("Precognition-Validate-Only") != null;
     }
 
     private jakarta.ws.rs.core.Response buildConflict(String url, Map<String, String> headers) {
@@ -193,11 +221,13 @@ public class RedirectProcessor {
             ? referer
             : (fallback != null && !fallback.isBlank()) ? fallback : "/";
         if (forcedStatus > 0) {
-            var builder = Response.status(forcedStatus)
-                .header("Location", url)
-                .header("Vary", "X-Inertia");
-            applyHeaders(builder, headers);
-            return Uni.createFrom().item(builder.build());
+            return Uni.createFrom().deferred(() -> {
+                var builder = Response.status(forcedStatus)
+                    .header("Location", url)
+                    .header("Vary", "X-Inertia");
+                applyHeaders(builder, headers);
+                return Uni.createFrom().item(builder.build());
+            });
         }
         return process(url, headers);
     }

@@ -1,6 +1,7 @@
 package com.quarkus.inertia.protocol;
 
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.annotation.Priority;
@@ -13,11 +14,11 @@ import com.quarkus.inertia.internal.ErrorResponseFactory;
 
 /**
  * Catch-all mapper that turns server-side exceptions into Inertia error
- * responses (530 with an {@code error} payload, or the response produced by
- * a user-provided {@link com.quarkus.inertia.spi.ErrorMapper} registered via
- * {@code Inertia.handleErrorUsing(mapper)}). Only applies to Inertia
- * requests or when a custom mapper is registered; other errors fall back to
- * a plain 500 so non-Inertia clients keep default behavior.
+ * responses: an Inertia page (component {@code ErrorPage} by default, status
+ * from the exception) for Inertia requests, or the response produced by a
+ * user-provided {@link com.quarkus.inertia.spi.ErrorMapper} registered via
+ * {@code Inertia.handleErrorUsing(mapper)}. Non-Inertia requests keep default
+ * behavior (plain 500 or the {@code WebApplicationException} response).
  */
 @Provider
 @Priority(Priorities.USER)
@@ -26,15 +27,17 @@ public class InertiaExceptionMapper implements ExceptionMapper<Throwable> {
     @Inject
     ErrorResponseFactory errorResponseFactory;
 
+    private static final Logger LOG = Logger.getLogger(InertiaExceptionMapper.class);
+
     @Override
     public Response toResponse(Throwable exception) {
         if (exception instanceof WebApplicationException wae && wae.getResponse() != null) {
-            return wae.getResponse();
+            return handleWebApplicationException(wae);
         }
         if (exception != null) {
             var cause = exception.getCause();
             if (cause instanceof WebApplicationException wae && wae.getResponse() != null) {
-                return wae.getResponse();
+                return handleWebApplicationException(wae);
             }
         }
 
@@ -45,7 +48,15 @@ public class InertiaExceptionMapper implements ExceptionMapper<Throwable> {
                 .build();
         }
 
+        LOG.error("InertiaExceptionMapper caught exception during request", exception);
         return errorResponseFactory.handle(exception);
+    }
+
+    private Response handleWebApplicationException(WebApplicationException wae) {
+        if (isInertiaRequest()) {
+            return errorResponseFactory.handle(wae, wae.getResponse().getStatus());
+        }
+        return wae.getResponse();
     }
 
     private boolean isInertiaRequest() {

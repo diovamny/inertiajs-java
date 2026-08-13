@@ -89,6 +89,34 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Uni<Object> render(String component, Map<String, Object> props, int status) {
+        storePageStatus(status);
+        return render(component, props);
+    }
+
+    @Override
+    public Uni<Object> render(String component, int status) {
+        return render(component, Map.of(), status);
+    }
+
+    @Override
+    public Uni<Object> render(Enum<?> component, int status) {
+        return render(component.name(), Map.of(), status);
+    }
+
+    @Override
+    public Uni<Object> render(Enum<?> component, Map<String, Object> props, int status) {
+        return render(component.name(), props, status);
+    }
+
+    private void storePageStatus(int status) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            ctx.putLocal("inertia-page-status", status);
+        }
+    }
+
+    @Override
     public InertiaRedirect redirect(String url) {
         return new InertiaRedirect(redirectProcessor.process(url), flashStore);
     }
