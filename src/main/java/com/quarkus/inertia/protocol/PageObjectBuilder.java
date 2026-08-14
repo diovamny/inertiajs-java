@@ -94,23 +94,7 @@ public class PageObjectBuilder {
         }
         allProps.putAll(sharedData.getAll());
 
-        if (flashStore.hasData() && !isGetVersionMismatch()) {
-            var flashed = flashStore.drain();
-            if (!flashed.isEmpty()) {
-                var allowed = config.flashKeys().orElse(null);
-                if (allowed != null) {
-                    var filtered = new HashMap<String, Object>();
-                    for (var key : allowed) {
-                        if (flashed.containsKey(key)) {
-                            filtered.put(key, flashed.get(key));
-                        }
-                    }
-                    mergeFlashed(allProps, filtered);
-                } else {
-                    mergeFlashed(allProps, flashed);
-                }
-            }
-        }
+        var flashOut = resolveFlashData(allProps);
 
         var onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
@@ -187,8 +171,8 @@ public class PageObjectBuilder {
             var rescuedProps = sharedData.hasRescuedProps() ? sharedData.getRescuedProps() : null;
 
             var page = new PageObject(resolvedComponent, copyOfNullTolerant(resolvedProps), url, version,
-                deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut, onceProps,
-                scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
+                flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
+                onceProps, scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
                 encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
 
             page = expandDotNotation(page);
@@ -205,6 +189,45 @@ public class PageObjectBuilder {
 
             return page;
         });
+    }
+
+    /**
+     * Drain the flash store and return the flash data delivered to the
+     * client as the top-level {@code flash} page key, or {@code null}
+     * when there is nothing to deliver.
+     *
+     * <p>The {@code errors} key is kept in the page props (where the
+     * validation machinery consumes it) but excluded from the top-level
+     * flash so it never fires the client's {@code flash} event.</p>
+     *
+     * @param allProps the accumulated page props (mutated in place with
+     *                 the drained flash keys, mirroring the legacy flat
+     *                 prop contract)
+     * @return the top-level flash map, or {@code null} when empty
+     */
+    private Map<String, Object> resolveFlashData(Map<String, Object> allProps) {
+        if (!flashStore.hasData() || isGetVersionMismatch()) {
+            return null;
+        }
+        var flashed = flashStore.drain();
+        if (flashed.isEmpty()) {
+            return null;
+        }
+        var allowed = config.flashKeys().orElse(null);
+        var target = flashed;
+        if (allowed != null) {
+            var filtered = new HashMap<String, Object>();
+            for (var key : allowed) {
+                if (flashed.containsKey(key)) {
+                    filtered.put(key, flashed.get(key));
+                }
+            }
+            target = filtered;
+        }
+        mergeFlashed(allProps, target);
+        var flashData = new HashMap<>(target);
+        flashData.remove("errors");
+        return flashData.isEmpty() ? null : Map.copyOf(flashData);
     }
 
     @SuppressWarnings("unchecked")

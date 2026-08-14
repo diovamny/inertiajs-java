@@ -43,8 +43,12 @@ public class InertiaExceptionMapper implements ExceptionMapper<Throwable> {
 
         var hasMapper = errorResponseFactory.resolveMapper() != null;
         if (!hasMapper && !isInertiaRequest()) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("Internal Server Error")
+            var status = errorResponseFactory.statusFor(exception);
+            var message = exception != null && exception.getMessage() != null
+                ? exception.getMessage()
+                : "Internal Server Error";
+            return Response.status(status)
+                .entity(message)
                 .build();
         }
 

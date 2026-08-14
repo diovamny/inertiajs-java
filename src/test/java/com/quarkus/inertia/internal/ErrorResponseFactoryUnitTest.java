@@ -3,6 +3,7 @@ package com.quarkus.inertia.internal;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -40,7 +41,7 @@ class ErrorResponseFactoryUnitTest {
     @Test
     void returnsErrorPageWithConfiguredStatusWithoutMapper() {
         var factory = factory(500, "ErrorPage", "v1.0.0");
-        var response = factory.handle(new IllegalStateException("boom"));
+        var response = factory.handle(new RuntimeException("boom"));
 
         assertThat(response.getStatus()).isEqualTo(500);
         assertThat(response.getHeaderString("X-Inertia")).isEqualTo("true");
@@ -81,5 +82,37 @@ class ErrorResponseFactoryUnitTest {
 
         assertThat(response.getStatus()).isEqualTo(500);
         assertThat(response.getEntity()).isEqualTo("custom");
+    }
+
+    @Test
+    void mapsBusinessExceptionsToSemanticStatuses() {
+        var factory = factory(500, "ErrorPage", "v1.0.0");
+
+        assertThat(factory.statusFor(new IllegalArgumentException("bad")))
+            .isEqualTo(400);
+        assertThat(factory.statusFor(new SecurityException("denied")))
+            .isEqualTo(403);
+        assertThat(factory.statusFor(new IllegalStateException("state")))
+            .isEqualTo(409);
+        assertThat(factory.statusFor(new jakarta.validation.ValidationException("rule")))
+            .isEqualTo(422);
+    }
+
+    @Test
+    void mapsCauseWhenWrapped() {
+        var factory = factory(500, "ErrorPage", "v1.0.0");
+
+        assertThat(factory.statusFor(new RuntimeException(new IllegalArgumentException("bad"))))
+            .isEqualTo(400);
+    }
+
+    @Test
+    void fallsBackToConfiguredStatusForUnknownExceptions() {
+        var factory = factory(500, "ErrorPage", "v1.0.0");
+
+        assertThat(factory.statusFor(new RuntimeException("boom"))).isEqualTo(500);
+        assertThat(factory.statusFor(null)).isEqualTo(500);
+        assertThat(factory.statusFor(new jakarta.validation.ConstraintViolationException("cve", Set.of())))
+            .isEqualTo(500);
     }
 }

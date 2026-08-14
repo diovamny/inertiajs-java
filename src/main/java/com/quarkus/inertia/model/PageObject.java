@@ -18,6 +18,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  * @param props            the page props
  * @param url              the resolved request URL
  * @param version          the asset version used for cache-busting
+ * @param flash            one-time flash data delivered to the client
+ *                         ({@code page.flash}), {@code null} when empty
  * @param deferredProps    deferred groups ({@code group -> member names})
  * @param mergeProps       mergeable prop names
  * @param prependProps     prependable prop names
@@ -39,6 +41,7 @@ public record PageObject(
     Map<String, Object> props,
     String url,
     String version,
+    Map<String, Object> flash,
     Map<String, List<String>> deferredProps,
     List<String> mergeProps,
     List<String> prependProps,
@@ -81,7 +84,7 @@ public record PageObject(
             String url,
             String version) {
         this(component, props, url, version,
-            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, null, null, null,
             false, false, false);
     }
 
@@ -93,7 +96,7 @@ public record PageObject(
      */
     public PageObject withProps(Map<String, Object> newProps) {
         return new PageObject(component, newProps, url, version,
-            deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
             encryptHistory, clearHistory, preserveFragment);
     }
@@ -110,7 +113,7 @@ public record PageObject(
     public PageObject withMergeMetadata(List<String> newMergeProps, List<String> newPrependProps,
             List<String> newDeepMergeProps, List<String> newMatchPropsOn) {
         return new PageObject(component, props, url, version,
-            deferredProps, newMergeProps, newPrependProps, newDeepMergeProps, newMatchPropsOn, onceProps,
+            flash, deferredProps, newMergeProps, newPrependProps, newDeepMergeProps, newMatchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
             encryptHistory, clearHistory, preserveFragment);
     }
@@ -123,7 +126,7 @@ public record PageObject(
      */
     public PageObject withVersion(String newVersion) {
         return new PageObject(component, props, url, newVersion,
-            deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
             encryptHistory, clearHistory, preserveFragment);
     }
@@ -136,7 +139,7 @@ public record PageObject(
      */
     public PageObject withUrl(String newUrl) {
         return new PageObject(component, props, newUrl, version,
-            deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
             encryptHistory, clearHistory, preserveFragment);
     }

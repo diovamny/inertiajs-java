@@ -104,10 +104,37 @@ onUnmounted(() => {
                 </FeatureCard>
 
                 <FeatureCard
+                    title="Java Exceptions"
+                    description="Business exceptions are mapped to their semantic HTTP status by the adapter and render the ErrorPage component, just like HTTP exceptions."
+                >
+                    <div class="flex flex-wrap gap-2">
+                        <Button as-child variant="outline" size="sm">
+                            <Link href="/features/errors/java-exceptions/400">
+                                400 IllegalArgumentException
+                            </Link>
+                        </Button>
+                        <Button as-child variant="outline" size="sm">
+                            <Link href="/features/errors/java-exceptions/403">
+                                403 SecurityException
+                            </Link>
+                        </Button>
+                        <Button as-child variant="outline" size="sm">
+                            <Link href="/features/errors/java-exceptions/409">
+                                409 IllegalStateException
+                            </Link>
+                        </Button>
+                        <Button as-child variant="outline" size="sm">
+                            <Link href="/features/errors/java-exceptions/422">
+                                422 ValidationException
+                            </Link>
+                        </Button>
+                    </div>
+                </FeatureCard>
+
+                <FeatureCard
                     title="Client-Side Interception"
                     description="Errors NOT handled server-side trigger the httpException event. Enable interception to suppress the default error modal and stay on this page."
-                >
-                    <div class="space-y-4">
+                >                    <div class="space-y-4">
                         <div class="flex items-center gap-3">
                             <Button
                                 :variant="

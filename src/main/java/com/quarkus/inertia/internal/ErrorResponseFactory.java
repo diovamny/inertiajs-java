@@ -39,7 +39,52 @@ public class ErrorResponseFactory {
      * @return the response to send
      */
     public Response handle(Throwable error) {
-        return handle(error, config.errorStatus());
+        return handle(error, statusFor(error));
+    }
+
+    /**
+     * The HTTP status to use for a server-side exception. Known business
+     * exception types are mapped to their semantic status; everything else
+     * falls back to {@code inertia.error-status} (default {@code 500}).
+     *
+     * <p>Mapping:</p>
+     * <ul>
+     * <li>{@link IllegalArgumentException} → 400 (datos inválidos)</li>
+     * <li>{@link SecurityException} → 403 (seguridad)</li>
+     * <li>{@link IllegalStateException} → 409 (estado inválido)</li>
+     * <li>{@code jakarta.validation.ValidationException} → 422 (validación de
+     * negocio). The {@code ConstraintViolationException} subclass is excluded
+     * so form validation keeps its own flow (precognition/form errors).</li>
+     * <li>anything else → {@code inertia.error-status}</li>
+     * </ul>
+     *
+     * @param error the exception thrown while handling the request
+     * @return the mapped HTTP status
+     */
+    public int statusFor(Throwable error) {
+        if (error == null) {
+            return config.errorStatus();
+        }
+        var cause = unwrapCause(error);
+        if (cause instanceof IllegalArgumentException) {
+            return Response.Status.BAD_REQUEST.getStatusCode();
+        }
+        if (cause instanceof SecurityException) {
+            return Response.Status.FORBIDDEN.getStatusCode();
+        }
+        if (cause instanceof IllegalStateException) {
+            return Response.Status.CONFLICT.getStatusCode();
+        }
+        if (cause instanceof jakarta.validation.ValidationException
+                && !(cause instanceof jakarta.validation.ConstraintViolationException)) {
+            return 422;
+        }
+        return config.errorStatus();
+    }
+
+    private Throwable unwrapCause(Throwable error) {
+        var cause = error.getCause();
+        return cause != null && cause != error ? cause : error;
     }
 
     /**

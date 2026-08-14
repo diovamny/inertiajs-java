@@ -42,6 +42,30 @@ public class ErrorTestResource {
     @GET
     @Path("/throw-500")
     public Uni<Object> throw500() {
-        throw new IllegalStateException("boom");
+        throw new RuntimeException("boom");
+    }
+
+    @GET
+    @Path("/throw-400")
+    public Uni<Object> throw400() {
+        throw new IllegalArgumentException("invalid input");
+    }
+
+    @GET
+    @Path("/throw-409")
+    public Uni<Object> throw409() {
+        throw new IllegalStateException("invalid state");
+    }
+
+    @GET
+    @Path("/throw-422")
+    public Uni<Object> throw422() {
+        throw new jakarta.validation.ValidationException("business rule");
+    }
+
+    @GET
+    @Path("/throw-security")
+    public Uni<Object> throwSecurity() {
+        throw new SecurityException("denied");
     }
 }

@@ -63,7 +63,7 @@ class PageObjectUnitTest {
     @Test
     void shouldAcceptMetadataFields() {
         var page = new PageObject("Home", Map.of(), "/", "v1",
-            Map.of("default", List.of("lazyData")), List.of("items"), List.of("prependItem"),
+            null, Map.of("default", List.of("lazyData")), List.of("items"), List.of("prependItem"),
             null, null, null, null, null, null, null,
             false, false, false);
         assertThat(page.deferredProps()).containsKey("default");
@@ -77,7 +77,7 @@ class PageObjectUnitTest {
         var plain = new PageObject("Home", Map.of(), "/", "v1");
         assertThat(plain.hasMetadata()).isFalse();
         var withMeta = new PageObject("Home", Map.of(), "/", "v1",
-            Map.of("default", List.of("data")), null, null, null,
+            null, Map.of("default", List.of("data")), null, null, null,
             null, null, null, null, null, null,
             false, false, false);
         assertThat(withMeta.hasMetadata()).isTrue();
@@ -86,7 +86,7 @@ class PageObjectUnitTest {
     @Test
     void shouldDetectPrependPropsMetadata() {
         var page = new PageObject("Home", Map.of(), "/", "v1",
-            null, null, List.of("items"), null,
+            null, null, null, List.of("items"), null,
             null, null, null, null, null, null,
             false, false, false);
         assertThat(page.hasMetadata()).isTrue();
@@ -96,7 +96,7 @@ class PageObjectUnitTest {
     @Test
     void shouldDetectMatchPropsOnMetadata() {
         var page = new PageObject("Home", Map.of(), "/", "v1",
-            null, null, null, null, List.of("items.id"),
+            null, null, null, null, null, List.of("items.id"),
             null, null, null, null, null,
             false, false, false);
         assertThat(page.hasMetadata()).isTrue();
@@ -106,7 +106,7 @@ class PageObjectUnitTest {
     @Test
     void shouldDetectRescuedPropsMetadata() {
         var page = new PageObject("Home", Map.of(), "/", "v1",
-            null, null, null, null,
+            null, null, null, null, null,
             null, null, null, null, List.of("failedProp"), null,
             false, false, false);
         assertThat(page.hasMetadata()).isTrue();
@@ -124,7 +124,7 @@ class PageObjectUnitTest {
     @Test
     void shouldAcceptHistoryBooleansAsTrue() {
         var page = new PageObject("Home", Map.of(), "/", "v1",
-            null, null, null, null,
+            null, null, null, null, null,
             null, null, null, null, null, null,
             true, true, true);
         assertThat(page.encryptHistory()).isTrue();

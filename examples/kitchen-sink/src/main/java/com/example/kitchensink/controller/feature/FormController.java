@@ -2,15 +2,13 @@ package com.example.kitchensink.controller.feature;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.validation.Validator;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
@@ -28,7 +26,8 @@ import com.example.kitchensink.service.Resources;
 import com.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
-import io.vertx.ext.web.RoutingContext;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Path("/features/forms")
 @Blocking
@@ -89,11 +88,17 @@ public class FormController {
     @Path("file-uploads")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Blocking
-    public Uni<Object> submitFileUploads(@Context RoutingContext rc) {
-        var uploads = rc.fileUploads();
-        var fileCount = uploads.size();
-        return inertia.back().with("message", "Uploaded " + fileCount + " file(s) successfully!");
+    public Uni<Object> submitFileUploads(@RestForm("files") List<FileUpload> files,
+        @RestForm("photo") FileUpload photo) {
+        var fileList = files == null ? List.<FileUpload>of() : files;
+        if (fileList.size() > 5) {
+            return inertia.back().withErrors(Map.of("files",
+                "The files field must not have more than 5 items."));
+        }
+        var count = fileList.size() + (photo != null ? 1 : 0);
+        return inertia.back().with("message", "Uploaded " + count + " file(s) successfully!");
     }
+
 
     @GET
     @Path("validation")

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router  } from '@inertiajs/vue3';
 import { Upload, X } from 'lucide-vue-next';
 import FeatureCard from '@/components/FeatureCard.vue';
 import FeatureHeader from '@/components/FeatureHeader.vue';
@@ -32,15 +32,35 @@ function onFilesChange(event: Event) {
 
 function removeFile(index: number) {
     form.files.splice(index, 1);
+  if (form.files.length <= 5) {
+    form.clearErrors('files');
+  }
 }
 
 function submit() {
-    form.submit('post', '/features/forms/file-uploads', {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset();
-        },
-    });
+  const formData = new FormData();
+  if (form.photo) {
+    formData.append('photo', form.photo);
+  }
+  form.files.forEach((file) => {
+    formData.append('files', file); // mismo nombre repetido, cuantos sean
+  });
+
+  router.post('/features/forms/file-uploads', formData, {
+    forceFormData: true,
+    preserveScroll: true,
+    onStart: () => { form.processing = true; },
+    onProgress: (event) => { form.progress = event ?? null; },
+    onSuccess: () => {
+      form.processing = false;
+      form.reset();
+    },
+    onError: (errors) => {
+      form.processing = false;
+      form.errors = errors;
+    },
+    onFinish: () => { form.processing = false; },
+  });
 }
 
 function formatFileSize(bytes: number): string {

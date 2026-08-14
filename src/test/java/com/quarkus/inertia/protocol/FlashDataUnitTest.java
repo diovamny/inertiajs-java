@@ -68,6 +68,9 @@ class FlashDataUnitTest {
         assertThat(page.props())
             .containsEntry("success", "creado")
             .containsEntry("warning", "cuidado");
+        assertThat(page.flash())
+            .containsEntry("success", "creado")
+            .containsEntry("warning", "cuidado");
     }
 
     @Test
@@ -81,6 +84,8 @@ class FlashDataUnitTest {
         assertThat(page.props())
             .containsEntry("success", "creado")
             .doesNotContainKey("warning");
+        assertThat(page.flash())
+            .containsExactlyEntriesOf(Map.of("success", "creado"));
     }
 
     @Test
@@ -100,5 +105,27 @@ class FlashDataUnitTest {
         var page = builder.build("Home", Map.of(), false).await().indefinitely();
 
         assertThat(page.props().get("errors")).isEqualTo(Map.of("name", "required"));
+        assertThat(page.flash()).isNull();
+    }
+
+    @Test
+    void shouldExcludeErrorsFromTopLevelFlash() {
+        when(flashStore.hasData()).thenReturn(true);
+        when(flashStore.drain()).thenReturn(Map.of(
+            "message", "Registro actualizado.",
+            "errors", Map.of("name", "required")));
+
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.flash())
+            .containsExactlyEntriesOf(Map.of("message", "Registro actualizado."));
+        assertThat(page.props().get("errors")).isEqualTo(Map.of("name", "required"));
+    }
+
+    @Test
+    void shouldOmitFlashWhenStoreEmpty() {
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.flash()).isNull();
     }
 }

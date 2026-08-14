@@ -17,14 +17,14 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Redirects' },
 ];
 
+const page = usePage();
 const flashMessage = ref<string | null>(null);
 
 watch(
-    () => usePage().props,
+    () => page.flash,
     () => {
-        const message = usePage<{ flash?: { message?: string } }>().props.flash
-            ?.message;
-        if (message) {
+        const message = page.flash?.message;
+        if (typeof message === 'string' && message) {
             flashMessage.value = message;
         }
     },
@@ -32,9 +32,8 @@ watch(
 );
 
 router.on('success', () => {
-    const message = usePage<{ flash?: { message?: string } }>().props.flash
-        ?.message;
-    if (message) {
+    const message = page.flash?.message;
+    if (typeof message === 'string' && message) {
         flashMessage.value = message;
     }
 });

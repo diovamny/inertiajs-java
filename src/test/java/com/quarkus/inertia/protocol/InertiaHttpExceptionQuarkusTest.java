@@ -83,4 +83,87 @@ class InertiaHttpExceptionQuarkusTest {
             .then()
                 .statusCode(500);
     }
+
+    @Test
+    void illegalArgumentExceptionBecomes400ErrorPageForInertiaRequests() {
+        var body = given()
+            .header("X-Inertia", "true")
+            .when().get("/error-test/throw-400")
+            .then()
+                .statusCode(400)
+                .header("X-Inertia", "true")
+                .extract().jsonPath();
+
+        assertThat(body.getString("component")).isEqualTo("ErrorPage");
+        assertThat(body.getInt("props.status")).isEqualTo(400);
+        assertThat(body.getString("props.message")).isEqualTo("invalid input");
+    }
+
+    @Test
+    void securityExceptionBecomes403ErrorPageForInertiaRequests() {
+        var body = given()
+            .header("X-Inertia", "true")
+            .when().get("/error-test/throw-security")
+            .then()
+                .statusCode(403)
+                .header("X-Inertia", "true")
+                .extract().jsonPath();
+
+        assertThat(body.getString("component")).isEqualTo("ErrorPage");
+        assertThat(body.getInt("props.status")).isEqualTo(403);
+        assertThat(body.getString("props.message")).isEqualTo("denied");
+    }
+
+    @Test
+    void illegalStateExceptionBecomes409ErrorPageForInertiaRequests() {
+        var body = given()
+            .header("X-Inertia", "true")
+            .when().get("/error-test/throw-409")
+            .then()
+                .statusCode(409)
+                .header("X-Inertia", "true")
+                .extract().jsonPath();
+
+        assertThat(body.getString("component")).isEqualTo("ErrorPage");
+        assertThat(body.getInt("props.status")).isEqualTo(409);
+        assertThat(body.getString("props.message")).isEqualTo("invalid state");
+    }
+
+    @Test
+    void validationExceptionBecomes422ErrorPageForInertiaRequests() {
+        var body = given()
+            .header("X-Inertia", "true")
+            .when().get("/error-test/throw-422")
+            .then()
+                .statusCode(422)
+                .header("X-Inertia", "true")
+                .extract().jsonPath();
+
+        assertThat(body.getString("component")).isEqualTo("ErrorPage");
+        assertThat(body.getInt("props.status")).isEqualTo(422);
+        assertThat(body.getString("props.message")).isEqualTo("business rule");
+    }
+
+    @Test
+    void mappedExceptionsKeepSemanticStatusForRegularRequests() {
+        given()
+            .when().get("/error-test/throw-400")
+            .then()
+                .statusCode(400);
+
+        given()
+            .when().get("/error-test/throw-409")
+            .then()
+                .statusCode(409);
+
+        given()
+            .when().get("/error-test/throw-422")
+            .then()
+                .statusCode(422);
+
+        given()
+            .when().get("/error-test/throw-security")
+            .then()
+                .statusCode(403);
+    }
 }

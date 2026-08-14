@@ -50,6 +50,34 @@ public class NetworkErrorController {
     }
 
     @GET
+    @Path("java-exceptions/400")
+    @Blocking
+    public Uni<Object> javaException400() {
+        throw new IllegalArgumentException("Datos inválidos recibidos");
+    }
+
+    @GET
+    @Path("java-exceptions/403")
+    @Blocking
+    public Uni<Object> javaException403() {
+        throw new SecurityException("Acceso denegado");
+    }
+
+    @GET
+    @Path("java-exceptions/409")
+    @Blocking
+    public Uni<Object> javaException409() {
+        throw new IllegalStateException("Estado inválido para la operación");
+    }
+
+    @GET
+    @Path("java-exceptions/422")
+    @Blocking
+    public Uni<Object> javaException422() {
+        throw new jakarta.validation.ValidationException("Regla de negocio violada");
+    }
+
+    @GET
     @Path("network-errors")
     @Blocking
     public Uni<Object> networkErrors() {

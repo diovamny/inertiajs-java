@@ -36,7 +36,8 @@ class InertiaRedirectQuarkusTest {
             .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body("props.success", equalTo("Registro actualizado correctamente."));
+                .body("props.success", equalTo("Registro actualizado correctamente."))
+                .body("flash.success", equalTo("Registro actualizado correctamente."));
     }
 
     @Test
@@ -66,7 +67,8 @@ class InertiaRedirectQuarkusTest {
             .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body("props.errors.email", equalTo("El correo electrónico no es válido."));
+                .body("props.errors.email", equalTo("El correo electrónico no es válido."))
+                .body("$", not(hasKey("flash")));
     }
 
     @Test
@@ -96,6 +98,8 @@ class InertiaRedirectQuarkusTest {
                 .log().ifValidationFails()
                 .statusCode(200)
                 .body("props.success", equalTo("ok"))
+                .body("flash.success", equalTo("ok"))
+                .body("flash", not(hasKey("errors")))
                 .body("props.errors.email", equalTo("invalid"));
     }
 
@@ -125,6 +129,7 @@ class InertiaRedirectQuarkusTest {
             .then()
                 .log().ifValidationFails()
                 .statusCode(200)
-                .body("props.success", equalTo("Contact created."));
+                .body("props.success", equalTo("Contact created."))
+                .body("flash.success", equalTo("Contact created."));
     }
 }
