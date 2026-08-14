@@ -47,25 +47,23 @@ public class ResponseProcessor {
      */
     public Uni<Object> process(PageObject page) {
         if (isPrecognition()) {
-            return jsonProcessor.serialize(page)
-                .map(json -> {
-                    var rawErrors = page.props().get("errors");
-                    boolean hasErrors = rawErrors instanceof Map && !((Map<?, ?>) rawErrors).isEmpty();
-                    if (hasErrors) {
-                        return Response.status(422)
-                            .entity(json)
-                            .type(MediaType.APPLICATION_JSON_TYPE)
-                            .header("X-Inertia", "true")
-                            .header("Vary", "Precognition")
-                            .build();
-                    }
-                    return Response.noContent()
-                        .header("X-Inertia", "true")
-                        .header("Precognition-Success", "true")
-                        .header("Vary", "Precognition")
-                        .build();
-                })
-                .map(Object.class::cast);
+            var rawErrors = page.props().get("errors");
+            boolean hasErrors = rawErrors instanceof Map && !((Map<?, ?>) rawErrors).isEmpty();
+            if (hasErrors) {
+                return Uni.createFrom().item(Response.status(422)
+                    .entity(Map.of("errors", rawErrors))
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .header("X-Inertia", "true")
+                    .header("Precognition", "true")
+                    .header("Vary", "Precognition")
+                    .build());
+            }
+            return Uni.createFrom().item(Response.noContent()
+                .header("X-Inertia", "true")
+                .header("Precognition", "true")
+                .header("Precognition-Success", "true")
+                .header("Vary", "Precognition")
+                .build());
         }
 
         if (!isInertiaRequest()) {

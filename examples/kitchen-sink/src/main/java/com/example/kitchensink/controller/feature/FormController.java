@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import com.example.kitchensink.dto.DottedKeysRequest;
 import com.example.kitchensink.dto.FormValidator;
@@ -130,6 +133,9 @@ public class FormController {
         return inertia.back().with("message", "Secondary form submitted successfully!");
     }
 
+    private static final Set<String> PRECOGNITION_FIELDS =
+        Set.of("username", "email", "password", "password_confirmation");
+
     @GET
     @Path("precognition")
     @Blocking
@@ -146,12 +152,55 @@ public class FormController {
         form.email = FormValidator.blankToNull(form.email);
         form.password = FormValidator.blankToNull(form.password);
         form.password_confirmation = FormValidator.blankToNull(form.password_confirmation);
+
+        if (isPrecognition()) {
+            return precognitionResponse(form);
+        }
+
+        FormValidator.validate(validator, form);
         if (form.password != null && !form.password.equals(form.password_confirmation)) {
             return inertia.back().withErrors(Map.of(
                 "password_confirmation", "The password confirmation does not match."));
         }
-        FormValidator.validate(validator, form);
         return inertia.back().with("message", "Account created for " + form.username + "!");
+    }
+
+    /**
+     * Field-by-field validation for precognition requests: only the fields
+     * listed in {@code Precognition-Validate-Only} are validated (the
+     * {@code password}/{@code password_confirmation} pair always together).
+     * Responds 204 when every validated field is valid, or 422 with the
+     * errors wrapped as {@code {"errors": {...}}} — the laravel-precognition
+     * client contract.
+     */
+    private Uni<Object> precognitionResponse(PrecognitionRequest form) {
+        var ctx = Vertx.currentContext();
+        var validateOnly = ctx != null
+            ? (String) ctx.getLocal("inertia-precognition-validate-fields")
+            : null;
+        var fields = FormValidator.precognitionFields(validateOnly, PRECOGNITION_FIELDS);
+        var errors = FormValidator.fieldErrors(validator, form, fields);
+        if (fields.contains("password_confirmation")
+                && form.password != null && !form.password.equals(form.password_confirmation)) {
+            errors.put("password_confirmation", "The password confirmation does not match.");
+        }
+        if (errors.isEmpty()) {
+            return Uni.createFrom().item(Response.noContent()
+                .header("Precognition", "true")
+                .header("Precognition-Success", "true")
+                .build());
+        }
+        return Uni.createFrom().item(Response.status(422)
+            .entity(Map.of("errors", errors))
+            .type(MediaType.APPLICATION_JSON_TYPE)
+            .header("Precognition", "true")
+            .header("Vary", "Precognition")
+            .build());
+    }
+
+    private boolean isPrecognition() {
+        var ctx = Vertx.currentContext();
+        return ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
     }
 
     @GET

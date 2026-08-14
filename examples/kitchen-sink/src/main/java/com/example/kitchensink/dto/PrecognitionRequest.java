@@ -7,20 +7,20 @@ import jakarta.validation.constraints.Size;
 
 public class PrecognitionRequest {
 
-    @NotBlank(message = "required")
-    @Size(min = 3, max = 20, message = "size")
-    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "format")
+    @NotBlank(message = "The username field is required.")
+    @Size(min = 3, max = 20, message = "The username field must be between 3 and 20 characters.")
+    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "The username field format is invalid.")
     public String username;
 
-    @NotBlank(message = "required")
-    @Email(message = "invalid")
-    @Size(max = 255, message = "max")
+    @NotBlank(message = "The email field is required.")
+    @Email(message = "The email field must be a valid email address.")
+    @Size(max = 255, message = "The email field must not be greater than 255 characters.")
     public String email;
 
-    @NotBlank(message = "required")
-    @Size(min = 8, message = "min")
+    @NotBlank(message = "The password field is required.")
+    @Size(min = 8, message = "The password field must be at least 8 characters.")
     public String password;
 
-    @NotBlank(message = "required")
+    @NotBlank(message = "The password confirmation field is required.")
     public String password_confirmation;
 }

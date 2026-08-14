@@ -17,10 +17,13 @@ import com.quarkus.inertia.spi.JsonProvider;
 
 /**
  * Maps a {@link ConstraintViolationException} (thrown by CDI bean
- * validation) into an Inertia precognition response: 304 with the
- * per-field errors flashed and passed back as the {@code errors} prop,
- * mimicking the Laravel-inertia demo behavior. Only applies to Inertia
- * requests.
+ * validation) into an Inertia precognition response: 422 with the
+ * per-field errors wrapped as {@code {"errors": {...}}} and the
+ * {@code Precognition: true} header, so the client only sees errors for
+ * the fields it asked to validate (see {@code Precognition-Validate-Only}).
+ * For regular form submissions the errors are flashed and the client is
+ * redirected back to the form, mimicking the Laravel-inertia demo
+ * behavior. Only applies to Inertia requests.
  */
 @Provider
 @Priority(Priorities.HEADER_DECORATOR + 10)
@@ -73,8 +76,9 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
             var body = errorBag != null && !errorBag.isBlank()
                 ? Map.of(errorBag, errors)
                 : errors;
+            var payload = Map.of("errors", body);
             try {
-                var json = jsonProvider.toJson(body);
+                var json = jsonProvider.toJson(payload);
                 return Response.status(422)
                     .entity(json)
                     .type(MediaType.APPLICATION_JSON_TYPE)
@@ -84,7 +88,7 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                     .build();
             } catch (Exception e) {
                 return Response.status(422)
-                    .entity(body)
+                    .entity(payload)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .header("X-Inertia", "true")
                     .header("Precognition", "true")

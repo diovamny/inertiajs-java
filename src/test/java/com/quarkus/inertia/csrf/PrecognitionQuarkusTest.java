@@ -30,8 +30,9 @@ class PrecognitionQuarkusTest {
                 .log().ifValidationFails()
                 .statusCode(422)
                 .header("X-Inertia", equalTo("true"))
+                .header("Precognition", equalTo("true"))
                 .header("Vary", containsString("Precognition"))
-                .body("props.errors.name", equalTo("required"));
+                .body("errors.name", equalTo("required"));
     }
 
     @Test

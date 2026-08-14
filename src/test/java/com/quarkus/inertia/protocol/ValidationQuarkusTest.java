@@ -93,4 +93,54 @@ class ValidationQuarkusTest {
                 .log().ifValidationFails()
                 .statusCode(400);
     }
+
+    @Test
+    void precognitionFailureReturns422WithWrappedErrors() {
+        var response = given()
+            .when().get("/validation-test")
+            .then()
+                .statusCode(200)
+                .extract();
+        var cookies = response.cookies();
+        var token = response.cookie("XSRF-TOKEN");
+
+        given()
+            .cookies(cookies)
+            .header("X-XSRF-TOKEN", token)
+            .header("X-Inertia", "true")
+            .header("Precognition", "true")
+            .header("Precognition-Validate-Only", "name")
+            .formParam("name", "")
+            .when().post("/validation-test")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .header("Precognition", equalTo("true"))
+                .body("errors.name", equalTo("required"));
+    }
+
+    @Test
+    void precognitionFailureIgnoresUnrequestedFields() {
+        var response = given()
+            .when().get("/validation-test")
+            .then()
+                .statusCode(200)
+                .extract();
+        var cookies = response.cookies();
+        var token = response.cookie("XSRF-TOKEN");
+
+        given()
+            .cookies(cookies)
+            .header("X-XSRF-TOKEN", token)
+            .header("X-Inertia", "true")
+            .header("Precognition", "true")
+            .header("Precognition-Validate-Only", "other")
+            .formParam("name", "")
+            .when().post("/validation-test")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .header("Precognition", equalTo("true"))
+                .body("errors", not(hasKey("name")));
+    }
 }
