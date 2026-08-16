@@ -26,25 +26,19 @@ function log(message: string) {
     }
 }
 
-function manualVisit(method: string) {
-    const fn = router[method as keyof typeof router] as (
-        ...args: unknown[]
-    ) => void;
-    if (method === 'delete') {
-        fn('/features/navigation/links', {
-            preserveScroll: true,
-            onSuccess: () => log(`router.${method}() completed`),
-        });
-    } else {
-        fn(
-            '/features/navigation/links',
-            { demo: true },
-            {
-                preserveScroll: true,
-                onSuccess: () => log(`router.${method}() completed`),
-            },
-        );
-    }
+function manualVisit(method: 'get' | 'post' | 'put' | 'patch' | 'delete') {
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => log(`router.${method}() completed`),
+    };
+    const visits: Record<string, () => void> = {
+        get: () => router.get('/features/navigation/links', { demo: true }, options),
+        post: () => router.post('/features/navigation/links', { demo: true }, options),
+        put: () => router.put('/features/navigation/links', { demo: true }, options),
+        patch: () => router.patch('/features/navigation/links', { demo: true }, options),
+        delete: () => router.delete('/features/navigation/links', options),
+    };
+    visits[method]();
 }
 </script>
 

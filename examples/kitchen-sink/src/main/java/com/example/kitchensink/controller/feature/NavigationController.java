@@ -3,9 +3,12 @@ package com.example.kitchensink.controller.feature;
 import java.util.ArrayList;
 import java.util.Map;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -27,6 +30,34 @@ public class NavigationController {
     @Blocking
     public Uni<Object> links() {
         return inertia.render("Features/Navigation/Links", Map.of("timestamp", Demo.now()));
+    }
+
+    @POST
+    @Path("links")
+    @Blocking
+    public Uni<Object> linksPost() {
+        return linksAction("POST");
+    }
+
+    @PUT
+    @Path("links")
+    @Blocking
+    public Uni<Object> linksPut() {
+        return linksAction("PUT");
+    }
+
+    @PATCH
+    @Path("links")
+    @Blocking
+    public Uni<Object> linksPatch() {
+        return linksAction("PATCH");
+    }
+
+    @DELETE
+    @Path("links")
+    @Blocking
+    public Uni<Object> linksDelete() {
+        return linksAction("DELETE");
     }
 
     @GET
@@ -83,7 +114,7 @@ public class NavigationController {
     }
 
     @POST
-    @Path("history-action")
+    @Path("history-management")
     @Blocking
     public Uni<Object> historyAction() {
         return inertia.redirect("/features/navigation/history-management");
@@ -147,7 +178,7 @@ public class NavigationController {
     }
 
     @POST
-    @Path("redirect-standard")
+    @Path("redirects/back")
     @Blocking
     public Uni<Object> redirectStandard() {
         inertia.flash("message", "Redirected back via redirect()->back()");
@@ -155,7 +186,7 @@ public class NavigationController {
     }
 
     @POST
-    @Path("redirect-to-route")
+    @Path("redirects/to-route")
     @Blocking
     public Uni<Object> redirectToRoute() {
         inertia.flash("message", "Redirected via to_route()");
@@ -163,7 +194,7 @@ public class NavigationController {
     }
 
     @POST
-    @Path("redirect-external")
+    @Path("redirects/external")
     @Blocking
     public Uni<Object> redirectExternal() {
         return inertia.location("https://cloud.laravel.com");
@@ -193,15 +224,27 @@ public class NavigationController {
             "timestamp", Demo.now()));
     }
 
-    @POST
-    @Path("redirect-with-hash")
+    @GET
+    @Path("url-fragments/redirect-hash")
     @Blocking
-    public Uni<Object> redirectWithHash() {
-        return inertia.redirect("/features/navigation/url-fragments#server-section");
+    public Uni<Object> redirectWithHashGet() {
+        return redirectWithHash();
     }
 
     @POST
-    @Path("preserve-fragment-redirect")
+    @Path("url-fragments/redirect-hash")
+    @Blocking
+    public Uni<Object> redirectWithHashPost() {
+        return redirectWithHash();
+    }
+
+    @Blocking
+    private Uni<Object> redirectWithHash() {
+        return inertia.redirect("/features/navigation/url-fragments#server-section");
+    }
+
+    @GET
+    @Path("url-fragments/preserve-redirect")
     @Blocking
     public Uni<Object> preserveFragmentRedirect() {
         inertia.preserveFragment(true);
