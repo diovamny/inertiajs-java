@@ -1,282 +1,169 @@
-# Quarkus Inertia.js v3 Adapter
+# Inertia.js v3 for Java
 
-Adaptador Inertia.js v3 para Quarkus Reactivo (Mutiny + CDI + Vert.x).
+[![CI](https://github.com/dg/inertia-java/actions/workflows/ci.yml/badge.svg)](https://github.com/dg/inertia-java/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net)
 
-## Requisitos
+Server-side Inertia.js v3 adapters for the Java ecosystem, with GraalVM
+Native support. Two adapters, one API design:
+
+| Artefacto | Coordenadas Maven | Framework | JAR |
+|---|---|---|---|
+| Quarkus | `io.github.dg.quarkus.inertia:quarkus-inertia:0.0.1` | Quarkus 3.38.x (reactive) | `quarkus-inertia-0.0.1.jar` |
+| Spring | `io.github.dg.spring.inertia:spring-inertia:0.0.1` | Spring Boot 4.1.x (Spring MVC) | `spring-inertia-0.0.1.jar` |
+
+> **English:** Server-side Inertia.js v3 adapters for Java (Quarkus 3.38
+> and Spring Boot 4.1), Java 21+, with full GraalVM Native support.
+
+## Requisitos / Requirements
 
 - Java 21+
 - Maven 3.9+
-- Node.js 22+ (solo para demo-app)
+- Node.js 22+ (solo para las demos Quarkus / only for Quarkus demos)
 
-## Arquitectura
+## Features (paridad v3)
 
-```
-com.quarkus.inertia
-├── api/           → Inertia (interfaz pública)
-├── config/        → InertiaConfig (ConfigMapping)
-├── model/         → PageObject, AlwaysProp, DeferredProp, OnceProp
-├── protocol/      → Filtros, builders, procesadores (núcleo HTTP)
-├── renderer/      → HtmlRenderer, SsrHandler
-├── response/      → JsonResponseProcessor
-├── security/      → InertiaCsrfFilter
-├── spi/           → FlashStore, JsonProvider, ComponentTransformer, UrlResolver, ErrorMapper
-├── cache/         → CachedPropStore
-├── version/       → VersionProvider, DefaultVersionProvider
-├── testing/       → InertiaPage (helper de aserciones)
-└── internal/      → InertiaImpl, JsonbJsonProvider, JacksonJsonProvider
-```
+- Render de páginas JSON/HTML, partial reloads (`X-Inertia-Partial-Data/Except`), version mismatch `409`.
+- Props v3: `always`, `shared`, `deferred` (grupos), `once`, `merge`/`prepend`/`deepMerge` con `matchPropsOn`, `optional`, `cached`, `rawJson`, scroll props, rescue props.
+- Redirects estilo Laravel: `redirect`, `back(fallback)`, `location` (full page), encadenado con `.with(...)` / `.withErrors(...)` / `.withInput(...)`.
+- Flash data por sesión, shared data por request, ETag lazy (`304`), headers custom.
+- Validación: `@Valid` / `ConstraintViolationException` → flash de errors + redirect back; **Precognition** → `422` con errores de campo.
+- CSRF con cookie `XSRF-TOKEN` (`419` en mismatch), comparación en tiempo constante.
+- SSR vía servidor externo (`ssr-url`), con exclusión por path/request.
+- GraalVM Native: hints AOT automáticos en ambos adaptadores.
+- Helpers de testing: `InertiaPage` (Quarkus) e `InertiaPage`/`InertiaResultMatchers` (Spring).
 
-## Uso
+---
 
-### 1. Añadir dependencia
+## Quickstart Spring Boot
+
+### 1. Dependencia
 
 ```xml
 <dependency>
-    <groupId>com.quarkus.inertia</groupId>
+    <groupId>io.github.dg.spring.inertia</groupId>
+    <artifactId>spring-inertia</artifactId>
+    <version>0.0.1</version>
+</dependency>
+```
+
+### 2. Configuración (`application.properties`)
+
+```properties
+inertia.version-custom=1.0.0
+inertia.ssr-enabled=false
+inertia.csrf-enabled=true
+```
+
+### 3. Controlador
+
+```java
+@Controller
+public class DashboardController {
+
+    private final Inertia inertia;
+
+    public DashboardController(Inertia inertia) {
+        this.inertia = inertia;
+    }
+
+    @GetMapping("/")
+    public Object index() {
+        inertia.deferred("dashboard", "monthlyStats", this::monthlyStats);
+        inertia.once("welcome", "Hola");
+        return inertia.render("Dashboard", Map.of(
+            "stats", Map.of("contacts", 24),
+            "welcome", inertia.shared("welcome")
+        ));
+    }
+}
+```
+
+### 4. Formulario con validación y Precognition
+
+```java
+@PostMapping("/contacts")
+public Object store(@Valid ContactForm form) {
+    contacts.save(new Contact(contacts.nextId(), form.name(), form.email(), form.phone()));
+    inertia.flash("success", "Contacto creado.");
+    return inertia.redirect("/contacts");
+}
+```
+
+Los errores de `@Valid` se flashean y redirigen de vuelta (prop `errors` en el
+siguiente render); con `X-Inertia-Precognition: true` el servidor responde
+`422` con `{errors: {campo: mensaje}}`.
+
+Demo completa: [`examples/spring-demo`](examples/spring-demo) (Vue 3).
+
+---
+
+## Quickstart Quarkus
+
+### 1. Dependencia
+
+```xml
+<dependency>
+    <groupId>io.github.dg.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
 
-### 2. Configurar
+### 2. Configuración (`application.properties`)
 
 ```properties
 inertia.root-template=index.html
 inertia.version-strategy=custom
 inertia.version-custom=1.0.0
-inertia.encrypt-history=false
-inertia.camelize-props=false
 inertia.csrf.enabled=true
 ```
 
-### 3. Usar en recursos JAX-RS
+### 3. Recurso JAX-RS
 
 ```java
-@Inject
-Inertia inertia;
+@Path("/")
+public class DashboardResource {
 
-@GET
-public Uni<Object> index() {
-    return inertia.render("Pages/Home", Map.of("users", List.of()));
-}
+    @Inject
+    Inertia inertia;
 
-@POST
-public Uni<Object> store(@Valid @BeanParam Form form) {
-    // ... guardar ...
-    inertia.flash("success", "Creado");
-    return inertia.redirect("/items");
+    @GET
+    public Uni<Object> index() {
+        return inertia.render("Pages/Home", Map.of("users", List.of()));
+    }
 }
 ```
 
-### 4. Template HTML
+Demos: [`examples/kitchen-sink`](examples/kitchen-sink) (showcase integral),
+[`examples/demo-app`](examples/demo-app), [`examples/pingcrm`](examples/pingcrm),
+[`examples/pingcrm-react`](examples/pingcrm-react).
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>App</title>
-</head>
-<body>
-    <div id="app"></div>
-    <script type="application/json" data-page="app">{dataPage}</script>
-    <script src="/assets/app.js"></script>
-</body>
-</html>
+---
+
+## Build y verificación
+
+```powershell
+# Suite completa de ambos adaptadores
+mvn clean test -T 1C
+
+# Módulos por separado
+mvn clean test -pl spring-inertia
+mvn clean test -pl quarkus-inertia
+
+# Demo Spring
+mvn clean test -pl examples/spring-demo -Pexamples
+
+# JARs de release (sources + javadoc)
+mvn clean package -Prelease -DskipTests
 ```
 
-### 5. Frontend (Vue + Inertia)
+## Licencia
 
-```js
-import { createInertiaApp } from '@inertiajs/vue3'
-import { createApp, h } from 'vue'
+Apache License 2.0 — ver [`LICENSE`](LICENSE).
 
-createInertiaApp({
-  resolve: name => {
-    const pages = import.meta.glob('./pages/**/*.vue', { eager: true })
-    return pages[`./pages/${name}.vue`]
-  },
-  setup({ el, App, props, plugin }) {
-    createApp({ render: () => h(App, props) })
-      .use(plugin)
-      .mount(el)
-  },
-})
-```
+## Contribuciones
 
-## Características
-
-- [x] PageObject con todos los campos Inertia v3 (16 campos)
-- [x] Partial reloads (X-Inertia-Partial-Component/Data/Except, X-Inertia-Reset)
-- [x] Deferred props con grupos (Map<String, List<String>>)
-- [x] Optional props (`optional(...)` — solo se resuelven si el partial reload las pide explícitamente)
-- [x] Merge props — append (`mergeProps`), prepend (`prependProps`), deep (`deepMergeProps`), `matchPropsOn` (`merge(key, value, deep, matchOn...)`)
-- [x] Once props con custom key y expiración (`X-Inertia-Except-Once-Props`)
-- [x] Scroll props + `X-Inertia-Infinite-Scroll-Merge-Intent` (append/prepend)
-- [x] Shared props
-- [x] Rescued props (fallos silenciosos)
-- [x] Meta del page (`inertia.meta(...)`) renderizable en el root template (`pageMeta`/`pageTitle`)
-- [x] `encryptHistory`/`clearHistory`/`preserveFragment` (omitidos si `false`)
-- [x] Redirect interno → 302 en GET/POST; 303 solo en PUT/PATCH/DELETE cuando el status previo es 302 (paridad exacta con el Middleware de inertia-laravel)
-- [x] Redirect externo → 409 + X-Inertia-Location (solo GET+302)
-- [x] Fragment redirect → 409 + X-Inertia-Redirect
-- [x] Empty response → redirect a referer
-- [x] Version mismatch → 409 + X-Inertia-Location + X-Inertia-Version (flash preservado)
-- [x] `errors` siempre presente en el page (paridad con el Middleware de inertia-laravel); errores flasheados sobreviven partial reloads vía AlwaysProp
-- [x] Dot-notation: props con `.` en la clave se expanden a mapas anidados (paridad `expand_dot_notation` de inertia-rails) y `X-Inertia-Partial-Data`/`-Except` soportan prefijos de clave
-- [x] Version strategies: sha256, vite-manifest, custom
-- [x] Precognition header-based (`Precognition`, `Precognition-Validate-Only`) — 204 éxito / 422 errores
-- [x] Prefetch (`Purpose: prefetch` / `X-Inertia-Prefetch`)
-- [x] CSRF on-by-default (`inertia.csrf.enabled`, default `true`) — 419 en mismatch
-- [x] Flash data via FlashStore SPI (sesión Vert.x)
-- [x] `getFlash(key)` / `pullFlash(key)` con allowlist (`inertia.flash-keys`) y `inertia.always-include-errors` (cableada: controla si `errors` se incluye siempre, default `true`)
-- [x] Cached props (`inertia.cache(key, ttl, resolver)`) con TTL por `CachedPropStore` (`@ApplicationScoped`) y claves con namespace `inertia_rails/...` (paridad inertia-rails)
-- [x] Component/URL hooks (`ComponentTransformer`, `UrlResolver` SPI) y `render(Enum)`
-- [x] `redirect(url, fullPage)` → 409 + `X-Inertia-Location` en peticiones Inertia
-- [x] Error handling configurable (`handleErrorUsing(ErrorMapper)`, `ErrorResponseFactory`) + `InertiaExceptionMapper` → página Inertia con status real (403/404/500, configurable vía `inertia.error-status` / `inertia.error-component`)
-- [x] SSR por `SsrHandler` (POST a `ssrUrl` + `/render` con fallback a CSR automático, `{ssrHead}`/`{ssrBody}` en el root template)
-- [x] ETag sleepy (`inertia.lazy-etag-enabled`, default `true`) — 304 en GET si `If-None-Match` coincide
-- [x] Testing helper `InertiaPage`: parsea el page JSON y aserciones `assertComponent`/`assertUrl`/`assertVersion`/`assertProp`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/`assertDeferredProps`/`assertOnceProps`/`assertScrollProps`/`assertMeta`/`assertNoDeferredProps`/`assertNoOnceProps`/…
-- [x] AlwaysProp (errores sobreviven partial reloads)
-- [x] `shareInstanceProps(instance)` — equivalente de `use_inertia_instance_props` de Rails: los getters del bean se convierten en props cuando `render()` no recibe props manuales
-- [x] Headers de respuesta por request: `header(name, value)` / `headers(map)` (aplicados por `InertiaResponseFilter` en toda respuesta)
-- [x] Validación auto: `ConstraintViolationException` en peticiones Inertia → 302 back + `errors` flash (paridad con `validate()` de Laravel); con `Precognition` sigue siendo 422
-- [x] JSON-B primario, Jackson como alternativa
-- [x] Vary: X-Inertia / Precognition headers
-- [x] Error-Bag y Scroll-Merge-Intent headers
-- [x] camelizeProps (snake_case → camelCase)
-- [x] Root template configurable (`inertia.root-template`) + `setRootView(name)` por request + `inertia.root-view`
-- [x] Versión runtime (`version(...)`) sobre la estrategia configurada; `sha256` content-based (hash de `META-INF/resources`)
-- [x] SSR por ruta: `withoutSsr(paths)` / `disableSsr()` + `inertia.ssr-exclude-paths`
-- [x] HTML + JSON responses
-- [x] Native Image ready (@RegisterForReflection)
-
-## Tests
-
-```bash
-# Adapter
-mvn test                    # 179 tests (unitarios + integración)
-
-# Demo App
-cd examples/demo-app
-mvn test                    # 86 tests (incluye seed de 10k registros)
-```
-
-Total: **265 tests** — todos pasan.
-
-### Testing del adapter
-
-El artefacto incluye un helper de testing (`com.quarkus.inertia.testing.InertiaPage`)
-que deserializa el page object de una respuesta Inertia (JSON) y permite
-asericiones fluidas y encadenables, similar a los helpers de `inertia-rails`:
-
-```java
-var body = given()
-    .header("X-Inertia", "true")
-    .when().get("/persons")
-    .then()
-        .statusCode(200)
-        .extract().body().asString();
-
-InertiaPage.fromJson(body)
-    .assertComponent("Persons/Index")
-    .assertUrl("/persons")
-    .assertVersion("1.0.0")
-    .assertHasProps("persons", "total")                 // presencia
-    .assertHasProps(Map.of("active", "true"))           // subconjunto con valores
-    .assertProp("total", 10)                            // una prop con valor
-    .assertHasExactProps(Map.of(...))                    // mapa exacto
-    .assertDeferredProps("analytics")                  // en cualquier grupo
-    .assertDeferredPropsInGroup("slow", "statistics")  // en grupo concreto
-    .assertOnceProps("flash")
-    .assertScrollProps("persons")
-    .assertMeta("title", "Persons");
-```
-
-También hay aserciones para `mergeProps`/`prependProps`/`deepMergeProps`/
-`matchPropsOn` y acceso directo a `props()`/`component()`/`url()`/`version()`/
-`deferredProps()`/`meta()`. `InertiaPage.from(...)` acepta también un
-`PageObject` construido manualmente.
-
-## Demo App
-
-La demo-app incluye:
-
-- **Person CRUD** — Lista paginada, búsqueda, crear/editar/eliminar
-- **Employee DataTable** — Lazy loading con PrimeVue DataTable, filtros, ordenación
-- **Seed data** — 10k persons + 10k employees via Java Faker (seed 42)
-- **Validación** — Hibernate Validator + Precognition
-- **Flash messages** — Success/error vía Inertia flash
-- **PrimeVue 4** — Aura theme, Toast, Confirmation
-
-Para ejecutar:
-
-```bash
-cd examples/demo-app
-mvn quarkus:dev
-# Abrir http://localhost:8080/persons
-#      http://localhost:8080/employees
-```
-
-## Protocolo Inertia v3
-
-El adaptador implementa el protocolo Inertia v3 según la especificación y validado contra los adaptadores oficiales (Laravel, Rails, Phoenix). El PageObject incluye todos los campos requeridos:
-
-| Campo | Tipo | Siempre presente |
-|-------|------|------------------|
-| `component` | String | sí |
-| `props` | Object | sí |
-| `url` | String | sí |
-| `version` | String | sí |
-| `deferredProps` | Map | no |
-| `mergeProps` | String[] | no |
-| `prependProps` | String[] | no |
-| `deepMergeProps` | String[] | no |
-| `matchPropsOn` | String[] | no |
-| `onceProps` | Map | no |
-| `scrollProps` | Map | no |
-| `sharedProps` | String[] | no |
-| `rescuedProps` | String[] | no |
-| `meta` | Object | no |
-| `encryptHistory` | boolean | no (omitido si `false`) |
-| `clearHistory` | boolean | no (omitido si `false`) |
-| `preserveFragment` | boolean | no (omitido si `false`) |
-
-## Equivalencias con los adaptadores oficiales
-
-| quarkus-inertia | inertia-laravel | inertia-rails |
-|-----------------|-----------------|---------------|
-| `render(component, props)` | `Inertia::render()` | `render inertia: {...}` |
-| `redirect(url)` / `back()` | `redirect()` / `back()` | `redirect_to` / `redirect_back` |
-| `back(fallback)` / `back(status, headers)` / `back(status, headers, fallback)` | `back(status, headers, fallback)` | `redirect_back` |
-| `redirect(url)` / `back()` encadenados: `.with(key, value)` / `.withErrors(map)` / `.withInput(map)` (`InertiaRedirect`, también sobre cualquier variante de `back(...)`) | `Redirect::to(url)->with(...)->withErrors(...)->withInput()` / `Redirect::back()->...` | — |
-| `header(name, value)` / `headers(map)` | headers de redirect (`->withHeaders()`) | `response.headers` |
-| `location(url)` (409 + `X-Inertia-Location`) | `Inertia::location()` | `inertia_location()` |
-| `version(version)` / `getVersion()` | `Inertia::version()` / `getVersion()` | `inertia_version` |
-| `setRootView(name)` | `Inertia::setRootView()` | `inertia_layout` |
-| `share(key, value)` / `share(map)` | `Inertia::share()` | `inertia_share` |
-| `getShared()` / `flushShared()` / `getShared(key, default)` | `Inertia::getShared()` / `flushShared()` | — |
-| `always(key, value)` | `Inertia::always()` | `always_prop` |
-| `deferred(group, name, resolver)` | `Inertia::defer(cb, group)` | `defer` |
-| `optional(key, resolver)` | `Inertia::optional()` | `optional_prop` |
-| `once(key, value[, customKey])` | `Inertia::once()` / `shareOnce()` | `once_prop` |
-| `merge(key, value[, deep])` / `prepend(key, value)` | `Inertia::merge()` / `prepend()` | `merge_prop` |
-| `merge(key, value, deep, matchOn...)` | `Inertia::merge()->matchOn()` | — |
-| `scroll(key, metadata)` | `Inertia::scroll()` | `scroll_prop` |
-| `rescue(key)` | `Inertia::rescue()` | — |
-| `meta(key, value)` | props `meta` | `inertia_meta_tags` |
-| `flash(key, value)` | `Inertia::flash()` | `inertia_flash` |
-| `getFlash(key, default)` / `pullFlash(key, default)` | — | `flash` del page |
-| `cache(key, ttl, resolver)` / `optional(…, cacheKey, ttl)` (claves `inertia_rails/...`) | `Inertia::lazy()` con prop dorado | `cache_prop` |
-| `shareInstanceProps(instance)` | — | `use_inertia_instance_props` (view_assigns) |
-| `handleErrorUsing(mapper)` | `Inertia::handle()` | — |
-| `render(Enum)` / `redirect(url, fullPage)` | `Inertia::render()`/`Inertia::location()` | `redirect_to inertia` |
-| `withoutSsr(paths)` / `disableSsr()` | `Inertia::withoutSsr()` / `disableSsr()` | — |
-| `encryptHistory/clearHistory/preserveFragment` | igual | igual |
-
-**Testing**: `InertiaPage` (`assertComponent`/`assertHasProps`/`assertHasExactProps`/`assertNoProp`/…) es el equivalente Java a los helpers de `inertia-rails`/`inertia-laravel` tests.
-
-Diferencias de ergonomía (intencionales): las props no se pueden pasar como
-callables dentro del mapa de props (estilo Laravel/Rails); en su lugar se
-registran explícitamente con `deferred`/`optional`/`once`/`merge` antes del
-`render`. SSR global vía configuración (`inertia.ssr-enabled`) sin exclusión
-por ruta.
+Ver [`CONTRIBUTING.md`](CONTRIBUTING.md) y el
+[`CHANGELOG.md`](CHANGELOG.md). El plan maestro de arquitectura vive en
+[`implementation_plan.md`](implementation_plan.md).

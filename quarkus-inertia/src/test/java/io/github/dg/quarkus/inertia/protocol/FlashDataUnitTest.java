@@ -1,0 +1,131 @@
+package io.github.dg.quarkus.inertia.protocol;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.ext.web.RoutingContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import io.github.dg.quarkus.inertia.config.InertiaConfig;
+import io.github.dg.quarkus.inertia.spi.FlashStore;
+import io.github.dg.quarkus.inertia.version.VersionProvider;
+
+class FlashDataUnitTest {
+
+    private PageObjectBuilder builder;
+    private SharedDataRegistry sharedData;
+    private FlashStore flashStore;
+    private InertiaConfig config;
+
+    @BeforeEach
+    void setUp() {
+        sharedData = new SharedDataRegistry();
+
+        var versionProvider = mock(VersionProvider.class);
+        when(versionProvider.getVersion()).thenReturn("1.0.0");
+
+        flashStore = mock(FlashStore.class);
+        when(flashStore.hasData()).thenReturn(false);
+
+        config = mock(InertiaConfig.class);
+        when(config.encryptHistory()).thenReturn(false);
+        when(config.camelizeProps()).thenReturn(false);
+        when(config.alwaysIncludeErrors()).thenReturn(true);
+
+        var routingContext = mock(RoutingContext.class);
+        var httpRequest = mock(HttpServerRequest.class);
+        when(routingContext.request()).thenReturn(httpRequest);
+        when(httpRequest.uri()).thenReturn("/flash");
+
+        var currentVertxRequest = mock(CurrentVertxRequest.class);
+        when(currentVertxRequest.getCurrent()).thenReturn(routingContext);
+
+        builder = new PageObjectBuilder(
+            sharedData,
+            versionProvider,
+            new PartialReloadProcessor(),
+            new OncePropRegistry(),
+            new MergePropProcessor(),
+            flashStore,
+            currentVertxRequest,
+            config);
+    }
+
+    @Test
+    void shouldIncludeAllFlashKeysByDefault() {
+        when(flashStore.hasData()).thenReturn(true);
+        when(flashStore.drain()).thenReturn(Map.of("success", "creado", "warning", "cuidado"));
+
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.props())
+            .containsEntry("success", "creado")
+            .containsEntry("warning", "cuidado");
+        assertThat(page.flash())
+            .containsEntry("success", "creado")
+            .containsEntry("warning", "cuidado");
+    }
+
+    @Test
+    void shouldFilterFlashKeysByAllowlist() {
+        when(flashStore.hasData()).thenReturn(true);
+        when(flashStore.drain()).thenReturn(Map.of("success", "creado", "warning", "cuidado"));
+        when(config.flashKeys()).thenReturn(Optional.of(List.of("success")));
+
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.props())
+            .containsEntry("success", "creado")
+            .doesNotContainKey("warning");
+        assertThat(page.flash())
+            .containsExactlyEntriesOf(Map.of("success", "creado"));
+    }
+
+    @Test
+    void shouldAlwaysIncludeEmptyErrorsWhenNone() {
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.props()).containsKey("errors");
+        assertThat(page.props().get("errors")).isInstanceOf(Map.class);
+        assertThat((Map<?, ?>) page.props().get("errors")).isEmpty();
+    }
+
+    @Test
+    void shouldAlwaysIncludeErrorsFromFlash() {
+        when(flashStore.hasData()).thenReturn(true);
+        when(flashStore.drain()).thenReturn(Map.of("errors", Map.of("name", "required")));
+
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.props().get("errors")).isEqualTo(Map.of("name", "required"));
+        assertThat(page.flash()).isNull();
+    }
+
+    @Test
+    void shouldExcludeErrorsFromTopLevelFlash() {
+        when(flashStore.hasData()).thenReturn(true);
+        when(flashStore.drain()).thenReturn(Map.of(
+            "message", "Registro actualizado.",
+            "errors", Map.of("name", "required")));
+
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.flash())
+            .containsExactlyEntriesOf(Map.of("message", "Registro actualizado."));
+        assertThat(page.props().get("errors")).isEqualTo(Map.of("name", "required"));
+    }
+
+    @Test
+    void shouldOmitFlashWhenStoreEmpty() {
+        var page = builder.build("Home", Map.of(), false).await().indefinitely();
+
+        assertThat(page.flash()).isNull();
+    }
+}

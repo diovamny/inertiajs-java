@@ -26,7 +26,7 @@ import com.example.kitchensink.service.CrmQueryService;
 import com.example.kitchensink.service.CrmWriteService;
 import com.example.kitchensink.service.Demo;
 import com.example.kitchensink.service.Resources;
-import com.quarkus.inertia.api.Inertia;
+import io.github.dg.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import org.jboss.resteasy.reactive.RestForm;

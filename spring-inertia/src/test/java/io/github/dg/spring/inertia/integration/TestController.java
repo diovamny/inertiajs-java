@@ -1,0 +1,75 @@
+package io.github.dg.spring.inertia.integration;
+
+import java.util.List;
+import java.util.Map;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.github.dg.spring.inertia.api.Inertia;
+
+@RestController
+public class TestController {
+
+    private final Inertia inertia;
+
+    public TestController(Inertia inertia) {
+        this.inertia = inertia;
+    }
+
+    @GetMapping("/dashboard")
+    public Object dashboard() {
+        return inertia.render("Dashboard",
+            Map.of("title", "Home", "users", List.of("a", "b")));
+    }
+
+    @GetMapping("/deferred")
+    public Object deferred() {
+        inertia.deferred("slow", "data", () -> "lazy-value");
+        return inertia.render("DeferredPage", Map.of("title", "t"));
+    }
+
+    @GetMapping("/shared")
+    public Object shared() {
+        inertia.share("appName", "MyApp");
+        inertia.always("csrf", "token123");
+        return inertia.render("SharedPage", Map.of("extra", "e"));
+    }
+
+    @GetMapping("/once")
+    public Object once() {
+        return inertia.render("OncePage", Map.of("notice", inertia.once("notice", "Hello")));
+    }
+
+    @GetMapping("/flash")
+    public Object flash() {
+        return inertia.render("FlashPage", Map.of());
+    }
+
+    @GetMapping("/goto")
+    public Object gotoUrl() {
+        return inertia.redirect("/flash", true);
+    }
+
+    @PostMapping("/submit")
+    public Object submit() {
+        return inertia.redirect("/flash").with("message", "Saved");
+    }
+
+    @PostMapping("/form")
+    public Object form(@Valid @RequestBody UserForm form) {
+        return inertia.redirect("/flash");
+    }
+
+    @GetMapping("/html")
+    public Object html() {
+        return inertia.render("Dashboard", Map.of("title", "Home"));
+    }
+
+    public record UserForm(@NotBlank String name, @Email String email) {
+    }
+}

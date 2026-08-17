@@ -1,0 +1,45 @@
+name: Native Image Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  quarkus-native:
+    name: Quarkus native build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Quarkus native build (tests)
+        run: mvn verify -pl quarkus-inertia -Dnative -Dquarkus.native.container-build=true
+
+  spring-native:
+    name: Spring Boot native build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Spring native build (AOT processAot + RuntimeHints verification)
+        run: mvn verify -pl spring-inertia -DskipTests
+
+      - name: Spring demo native build
+        run: |
+          mvn -f examples/spring-demo/pom.xml install -DskipTests -Pnative -Dnative-buildtools.version=0.10.5

@@ -12,7 +12,7 @@ import com.example.kitchensink.dto.FormValidator;
 import com.example.kitchensink.dto.NoteForm;
 import com.example.kitchensink.service.AuthService;
 import com.example.kitchensink.service.CrmWriteService;
-import com.quarkus.inertia.api.Inertia;
+import io.github.dg.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 

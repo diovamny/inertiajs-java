@@ -7,7 +7,7 @@ import jakarta.ws.rs.WebApplicationException;
 
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
-import com.quarkus.inertia.api.Inertia;
+import io.github.dg.quarkus.inertia.api.Inertia;
 
 @Path("/features/errors")
 public class NetworkErrorController {

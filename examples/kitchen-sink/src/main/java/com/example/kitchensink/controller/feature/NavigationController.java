@@ -11,7 +11,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.RoutingContext;
 
 import com.example.kitchensink.service.Demo;
-import com.quarkus.inertia.api.Inertia;
+import io.github.dg.quarkus.inertia.api.Inertia;
 
 @RouteBase(path = "/features/navigation")
 public class NavigationController {

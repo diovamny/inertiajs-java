@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ 21, 25 ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Build adapters and run full test suite
+        run: mvn clean test -T 1C
+
+      - name: Build and test Spring demo
+        run: mvn clean test -pl examples/spring-demo -Pexamples
+
+      - name: Verify release artifacts (sources + javadoc)
+        run: mvn clean package -Prelease -DskipTests
+
+      - name: Upload adapter jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: inertia-jars-java-${{ matrix.java }}
+          path: |
+            quarkus-inertia/target/*.jar
+            spring-inertia/target/*.jar
+          if-no-files-found: error

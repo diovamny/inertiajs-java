@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  publish:
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          server-id: central
+          server-username: ${{ secrets.CENTRAL_USERNAME }}
+          server-password: ${{ secrets.CENTRAL_PASSWORD }}
+
+      - name: Run full test suite
+        run: mvn clean test -T 1C
+
+      - name: Build, sign and publish to Sonatype Central Portal
+        run: mvn clean deploy -Prelease -DskipTests
+
+      - name: Attach release artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            quarkus-inertia/target/quarkus-inertia-*.jar
+            spring-inertia/target/spring-inertia-*.jar
+          generate_release_notes: true

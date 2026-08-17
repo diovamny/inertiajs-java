@@ -1,0 +1,97 @@
+{
+  "groups": [
+    {
+      "name": "inertia",
+      "type": "io.github.dg.spring.inertia.config.InertiaProperties",
+      "sourceType": "io.github.dg.spring.inertia.config.InertiaProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "inertia.root-template",
+      "type": "java.lang.String",
+      "defaultValue": "index.html",
+      "description": "Name of the root HTML template resolved from the classpath under templates/."
+    },
+    {
+      "name": "inertia.ssr-enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Whether server-side rendering (SSR) is enabled."
+    },
+    {
+      "name": "inertia.ssr-url",
+      "type": "java.lang.String",
+      "defaultValue": "http://localhost:13714/render",
+      "description": "URL of the SSR server endpoint."
+    },
+    {
+      "name": "inertia.ssr-exclude-paths",
+      "type": "java.util.List",
+      "description": "Paths excluded from SSR."
+    },
+    {
+      "name": "inertia.version-strategy",
+      "type": "java.lang.String",
+      "defaultValue": "sha256",
+      "description": "Asset version strategy: sha256 (default) or vite-manifest."
+    },
+    {
+      "name": "inertia.version-custom",
+      "type": "java.lang.String",
+      "description": "Fixed asset version; when set it wins over the strategy."
+    },
+    {
+      "name": "inertia.encrypt-history",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Whether the client must encrypt history state."
+    },
+    {
+      "name": "inertia.camelize-props",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Whether prop keys are converted from camelCase to snake_case."
+    },
+    {
+      "name": "inertia.csrf-enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Whether the XSRF-TOKEN cookie synchronization is active."
+    },
+    {
+      "name": "inertia.flash-keys",
+      "type": "java.util.List",
+      "description": "Additional session keys that must be flashed with every page."
+    },
+    {
+      "name": "inertia.always-include-errors",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Whether validation errors are always injected into the props."
+    },
+    {
+      "name": "inertia.error-status",
+      "type": "java.lang.Integer",
+      "defaultValue": 500,
+      "description": "HTTP status used for error pages."
+    },
+    {
+      "name": "inertia.error-component",
+      "type": "java.lang.String",
+      "defaultValue": "ErrorPage",
+      "description": "Component used for error pages."
+    },
+    {
+      "name": "inertia.lazy-etag-enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Whether the ETag / 304 handling is active."
+    },
+    {
+      "name": "inertia.root-view",
+      "type": "java.lang.String",
+      "description": "Optional explicit view name (template) for the root view."
+    }
+  ]
+}

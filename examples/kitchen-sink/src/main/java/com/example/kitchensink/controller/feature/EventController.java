@@ -8,7 +8,7 @@ import jakarta.ws.rs.Path;
 import com.example.kitchensink.service.Demo;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
-import com.quarkus.inertia.api.Inertia;
+import io.github.dg.quarkus.inertia.api.Inertia;
 
 @Path("/features/events")
 public class EventController {

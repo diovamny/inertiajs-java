@@ -1,0 +1,300 @@
+package io.github.dg.spring.inertia.internal;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
+import org.springframework.web.context.annotation.RequestScope;
+
+import io.github.dg.spring.inertia.api.Inertia;
+import io.github.dg.spring.inertia.api.InertiaRedirect;
+import io.github.dg.spring.inertia.api.InertiaResponse;
+import io.github.dg.spring.inertia.cache.CachedPropStore;
+import io.github.dg.spring.inertia.config.InertiaProperties;
+import io.github.dg.spring.inertia.model.AlwaysProp;
+import io.github.dg.spring.inertia.model.DeferredProp;
+import io.github.dg.spring.inertia.model.PageObject;
+import io.github.dg.spring.inertia.model.RawJson;
+import io.github.dg.spring.inertia.protocol.PageObjectBuilder;
+import io.github.dg.spring.inertia.protocol.PartialReloadProcessor;
+import io.github.dg.spring.inertia.protocol.RedirectProcessor;
+import io.github.dg.spring.inertia.protocol.ResponseProcessor;
+import io.github.dg.spring.inertia.protocol.SharedDataRegistry;
+import io.github.dg.spring.inertia.protocol.OncePropRegistry;
+import io.github.dg.spring.inertia.spi.ErrorMapper;
+import io.github.dg.spring.inertia.spi.FlashStore;
+
+/**
+ * Request-scoped implementation of {@link Inertia}: records every
+ * registration (shared/always/deferred/once/merge props, custom headers,
+ * version overrides, error mappers) in the request context and delegates
+ * the final assembly to the protocol layer.
+ */
+@RequestScope
+public class InertiaImpl implements Inertia {
+
+    private final InertiaProperties properties;
+    private final SharedDataRegistry sharedDataRegistry;
+    private final OncePropRegistry oncePropRegistry;
+    private final PartialReloadProcessor partialReloadProcessor;
+    private final RedirectProcessor redirectProcessor;
+    private final ResponseProcessor responseProcessor;
+    private final FlashStore flashStore;
+    private final CachedPropStore cachedPropStore;
+    private final String version;
+
+    public InertiaImpl(InertiaProperties properties,
+            SharedDataRegistry sharedDataRegistry,
+            OncePropRegistry oncePropRegistry,
+            PartialReloadProcessor partialReloadProcessor,
+            RedirectProcessor redirectProcessor,
+            ResponseProcessor responseProcessor,
+            FlashStore flashStore,
+            CachedPropStore cachedPropStore,
+            io.github.dg.spring.inertia.version.VersionProvider versionProvider) {
+        this.properties = properties;
+        this.sharedDataRegistry = sharedDataRegistry;
+        this.oncePropRegistry = oncePropRegistry;
+        this.partialReloadProcessor = partialReloadProcessor;
+        this.redirectProcessor = redirectProcessor;
+        this.responseProcessor = responseProcessor;
+        this.flashStore = flashStore;
+        this.cachedPropStore = cachedPropStore;
+        this.version = versionProvider != null ? versionProvider.version() : null;
+    }
+
+    @Override
+    public Object render(String component, Map<String, Object> props) {
+        return responseProcessor.process(component, props);
+    }
+
+    @Override
+    public Object render(String component, Map<String, Object> props, Map<String, Object> meta) {
+        if (meta != null) {
+            InertiaRequestContext.set(PageObjectBuilder.CONTEXT_META, meta);
+        }
+        return render(component, props);
+    }
+
+    @Override
+    public InertiaResponse with(PageObject page, int status) {
+        return responseProcessor.serialize(page, status);
+    }
+
+    @Override
+    public InertiaRedirect redirect(String url) {
+        return redirectProcessor.redirect(url, false);
+    }
+
+    @Override
+    public InertiaRedirect redirect(String url, boolean fullPage) {
+        return redirectProcessor.redirect(url, fullPage);
+    }
+
+    @Override
+    public InertiaRedirect back() {
+        return redirectProcessor.back();
+    }
+
+    @Override
+    public InertiaRedirect back(String fallback) {
+        return redirectProcessor.back(fallback);
+    }
+
+    @Override
+    public InertiaRedirect back(int status, Map<String, String> headers) {
+        return redirectProcessor.back(status, headers);
+    }
+
+    @Override
+    public InertiaRedirect back(int status, Map<String, String> headers, String fallback) {
+        return redirectProcessor.back(status, headers, fallback);
+    }
+
+    @Override
+    public InertiaRedirect location(String url) {
+        return redirectProcessor.location(url);
+    }
+
+    @Override
+    public void flash(String key, Object value) {
+        flashStore.put(key, value);
+    }
+
+    @Override
+    public Object share(String key, Object value) {
+        sharedDataRegistry.setSharedProp(key, value);
+        return value;
+    }
+
+    @Override
+    public Object share(Map<String, Object> values) {
+        sharedDataRegistry.setSharedProps(values);
+        return values;
+    }
+
+    @Override
+    public Object shared(String key) {
+        return sharedDataRegistry.sharedProp(key);
+    }
+
+    @Override
+    public Object always(String key, Object value) {
+        sharedDataRegistry.setAlwaysProp(key, AlwaysProp.of(value));
+        return value;
+    }
+
+    @Override
+    public Object always(Map<String, Object> values) {
+        for (var entry : values.entrySet()) {
+            sharedDataRegistry.setAlwaysProp(entry.getKey(), AlwaysProp.of(entry.getValue()));
+        }
+        return values;
+    }
+
+    @Override
+    public String deferred(String group, String name, Supplier<Object> resolver) {
+        var deferred = deferredRegistry();
+        deferred.put(name, new DeferredProp<>(group, name, resolver));
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_DEFERRED, deferred);
+        return name;
+    }
+
+    @Override
+    public Object deferred(Map<String, DeferredProp<Object>> props) {
+        var deferred = deferredRegistry();
+        deferred.putAll(props);
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_DEFERRED, deferred);
+        return props;
+    }
+
+    @Override
+    public Object once(String key, Object value) {
+        oncePropRegistry.remember(key, null);
+        return value;
+    }
+
+    @Override
+    public Object once(String key, Object value, Duration ttl) {
+        oncePropRegistry.remember(key, ttl);
+        return value;
+    }
+
+    @Override
+    public Object merge(String key, Object value) {
+        return merge(key, value, MergeRule.MERGE);
+    }
+
+    @Override
+    public Object merge(String key, Object value, MergeRule rule) {
+        switch (rule) {
+            case MERGE -> addList(PageObjectBuilder.CONTEXT_MERGE_PROPS, key);
+            case PREPEND -> addList(PageObjectBuilder.CONTEXT_PREPEND_PROPS, key);
+            case DEEP_MERGE -> addList(PageObjectBuilder.CONTEXT_DEEP_MERGE_PROPS, key);
+        }
+        return value;
+    }
+
+    @Override
+    public Object merge(Map<String, Object> values, MergeRule rule) {
+        for (var key : values.keySet()) {
+            merge(key, values.get(key), rule);
+        }
+        return values;
+    }
+
+    @Override
+    public Object rawJson(String json) {
+        return RawJson.of(json);
+    }
+
+    @Override
+    public Object optional(Supplier<Object> callback) {
+        return optional(callback, Optional.empty());
+    }
+
+    @Override
+    public Object optional(Supplier<Object> callback, Optional<Object> fallback) {
+        if (partialReloadProcessor.isPartialReload(partialComponent())) {
+            return fallback.orElse(Optional.empty());
+        }
+        return callback.get();
+    }
+
+    @Override
+    public Object cached(String key, Supplier<Object> resolver) {
+        return cached(key, null, resolver);
+    }
+
+    @Override
+    public Object cached(String key, Duration ttl, Supplier<Object> resolver) {
+        return new LazyProp(() -> cachedPropStore.compute(key, ttl, resolver));
+    }
+
+    @Override
+    public void setVersion(String version) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_PAGE_VERSION, version);
+    }
+
+    @Override
+    public void setEncryptHistory(boolean encrypt) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_ENCRYPT_HISTORY, encrypt);
+    }
+
+    @Override
+    public void setCamelizeProps(boolean camelize) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_CAMELIZE_PROPS, camelize);
+    }
+
+    @Override
+    public void handleErrorUsing(ErrorMapper mapper) {
+        InertiaRequestContext.set(ErrorResponseFactory.CONTEXT_KEY, mapper);
+    }
+
+    @Override
+    public Object rememberScrollProp(String key, Object value) {
+        var scroll = scrollRegistry();
+        scroll.put(key, value);
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_SCROLL_PROPS, scroll);
+        return value;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, DeferredProp<Object>> deferredRegistry() {
+        var stored = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_DEFERRED);
+        if (stored instanceof Map<?, ?> map) {
+            return (Map<String, DeferredProp<Object>>) map;
+        }
+        return new LinkedHashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> scrollRegistry() {
+        var stored = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_SCROLL_PROPS);
+        if (stored instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+        return new LinkedHashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addList(String attr, String key) {
+        var stored = InertiaRequestContext.get(attr);
+        List<String> list;
+        if (stored instanceof List<?> existing) {
+            list = (List<String>) existing;
+        } else {
+            list = new ArrayList<>();
+        }
+        list.add(key);
+        InertiaRequestContext.set(attr, list);
+    }
+
+    private static String partialComponent() {
+        var value = InertiaRequestContext.get(io.github.dg.spring.inertia.protocol.InertiaHeaderExtractor.CONTEXT_PARTIAL_COMPONENT);
+        return value != null ? String.valueOf(value) : null;
+    }
+}

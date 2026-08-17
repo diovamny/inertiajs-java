@@ -13,7 +13,7 @@ import com.example.kitchensink.repository.UserRepository;
 import com.example.kitchensink.service.AuthService;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
-import com.quarkus.inertia.api.Inertia;
+import io.github.dg.quarkus.inertia.api.Inertia;
 import io.vertx.ext.web.RoutingContext;
 
 @Path("/")
