@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### Nuevo: adaptador Spring Boot (`spring-inertia`)
+
+- **`io.github.dg.spring.inertia:spring-inertia:0.0.1`**: adaptador Inertia.js v3
+  para Spring Boot 4.1.x / Spring Framework 7 (síncrono, Spring MVC, AOT y
+  GraalVM Native con `RuntimeHintsRegistrar`).
+- API en paridad con el adaptador Quarkus: `Inertia` (render/redirect/back/
+  location/flash/share/always/deferred/once/merge/optional/cached/rawJson,
+  `MergeRule`), `InertiaResponse`, `InertiaRedirect` encadenado estilo Laravel
+  (`with`, `withErrors`, `withInput`).
+- Auto-configuration (`inertia.*`, 15 propiedades), SPI extensible
+  (`FlashStore`, `JsonProvider`, `ErrorMapper`, `ComponentTransformer`,
+  `UrlResolver`), validación con `@Valid` + Precognition (422 / flash de errors),
+  CSRF con cookie `XSRF-TOKEN`, ETag lazy, SSR vía `SsrClient`, version mismatch
+  409, merge props server-side en partial reloads, testing helpers
+  (`InertiaPage`, `InertiaResultMatchers`).
+- Paquete Quarkus renombrado a `io.github.dg.quarkus.inertia.*` (sin cambios
+  funcionales).
+- **Nuevo demo**: `examples/spring-demo` (Spring Boot 4.1 + Vue 3) — CRUD de
+  contactos con paginación y búsqueda en vivo, validación + precognition, props
+  v3 (deferred, once, mergeProps), flash. 7 tests de integración.
+
+### Corregido: cookie `XSRF-TOKEN` descartada en contenedores reales
+
+- `InertiaCsrfFilter` añadía la cookie `XSRF-TOKEN` **después** de ejecutar el
+  chain de filtros; los contenedores reales (Tomcat) descartan cabeceras de una
+  respuesta ya commiteada y el frontend nunca recibía el token. Ahora la cookie
+  se añade **antes** de `filterChain.doFilter` (MockMvc no commitea respuestas,
+  por eso el test previo no lo detectaba).
+- Nuevo test de regresión `InertiaCsrfFilterTest` que verifica la cookie
+  presente en el momento de ejecutarse el chain. Suite completa: 230 tests
+  Quarkus + 75 Spring + 7 demo, todos verdes.
+
+## 0.0.2 (2026-08-03)
+
 ### Páginas con status HTTP y páginas de error Inertia
 
 - **`render(component, props, status)`** (y overloads `render(component, status)`,
