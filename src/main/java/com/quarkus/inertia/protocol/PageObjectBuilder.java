@@ -3,6 +3,7 @@ package com.quarkus.inertia.protocol;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -468,12 +469,9 @@ public class PageObjectBuilder {
             var exceptStr = (String) ctx.getLocal("inertia-partial-except");
             var resetStr = (String) ctx.getLocal("inertia-reset");
 
-            Set<String> data = dataStr != null ?
-                Set.of(dataStr.split(",")) : Set.of();
-            Set<String> except = exceptStr != null ?
-                Set.of(exceptStr.split(",")) : Set.of();
-            Set<String> reset = resetStr != null ?
-                Set.of(resetStr.split(",")) : Set.of();
+            Set<String> data = splitToSet(dataStr);
+            Set<String> except = splitToSet(exceptStr);
+            Set<String> reset = splitToSet(resetStr);
 
             return new PartialReloadProcessor.PartialReloadContext(
                 component,
@@ -486,6 +484,29 @@ public class PageObjectBuilder {
         return buildPartialReloadFromRequest(resolveRequest());
     }
 
+    /**
+     * Split a comma-separated header value into a deduplicated set of
+     * trimmed, non-blank keys.
+     *
+     * <p>Inertia 3.x sends {@code X-Inertia-Partial-Data} as
+     * {@code only.concat(reset).join(",")}, so the same key can appear more
+     * than once; {@link Set#of(Object...)} would reject the duplicates.</p>
+     *
+     * @param raw the raw header value, or {@code null}
+     * @return a set of keys; never contains duplicates or blank entries
+     */
+    private static Set<String> splitToSet(String raw) {
+        if (raw == null || raw.isBlank()) return Set.of();
+        var keys = new LinkedHashSet<String>();
+        for (var part : raw.split(",")) {
+            var trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                keys.add(trimmed);
+            }
+        }
+        return keys;
+    }
+
     private PartialReloadProcessor.PartialReloadContext buildPartialReloadFromRequest(HttpServerRequest request) {
         if (request == null) return null;
         var component = request.getHeader("X-Inertia-Partial-Component");
@@ -495,12 +516,9 @@ public class PageObjectBuilder {
         var exceptStr = request.getHeader("X-Inertia-Partial-Except");
         var resetStr = request.getHeader("X-Inertia-Reset");
 
-        Set<String> data = dataStr != null ?
-            Set.of(dataStr.split(",")) : Set.of();
-        Set<String> except = exceptStr != null ?
-            Set.of(exceptStr.split(",")) : Set.of();
-        Set<String> reset = resetStr != null ?
-            Set.of(resetStr.split(",")) : Set.of();
+        Set<String> data = splitToSet(dataStr);
+        Set<String> except = splitToSet(exceptStr);
+        Set<String> reset = splitToSet(resetStr);
 
         return new PartialReloadProcessor.PartialReloadContext(
             component,

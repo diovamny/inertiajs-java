@@ -39,6 +39,19 @@ class ReactiveRouteInertiaTest {
     }
 
     @Test
+    void partialReloadWithDuplicateKeysReturns200() {
+        given()
+            .header("X-Inertia", "true")
+            .header("X-Inertia-Partial-Component", "Reactive/Hello")
+            .header("X-Inertia-Partial-Data", "name,name")
+            .when().get("/reactive/hello")
+            .then()
+                .statusCode(200)
+                .body("component", equalTo("Reactive/Hello"))
+                .body("props.name", equalTo("World"));
+    }
+
+    @Test
     void getRedirectsWith302() {
         given()
             .header("X-Inertia", "true")

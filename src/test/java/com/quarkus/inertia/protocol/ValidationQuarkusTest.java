@@ -75,6 +75,19 @@ class ValidationQuarkusTest {
     }
 
     @Test
+    void partialReloadWithDuplicateKeysReturns200() {
+        given()
+            .header("X-Inertia", "true")
+            .header("X-Inertia-Partial-Component", "Form")
+            .header("X-Inertia-Partial-Data", "foo,bar,foo")
+            .when().get("/validation-test")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body("component", equalTo("Form"));
+    }
+
+    @Test
     void validationFailureWithoutInertiaIsPlain400() {
         var response = given()
             .when().get("/validation-test")

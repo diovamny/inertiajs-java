@@ -93,7 +93,7 @@ public class DataLoadingController {
             && !"0".equals(favoritesRaw) && !"false".equalsIgnoreCase(favoritesRaw);
         var offset = CursorPagination.decode(cursor);
         var total = favorites ? contacts.countFavorites() : contacts.count();
-        var contactList = contacts.find("order by id desc").page((int) offset, 10).list();
+        var contactList = contacts.find("order by id desc").range((int) offset, (int) offset + 9).list();
         var items = new ArrayList<Object>();
         for (var c : contactList) {
             Contact contact = (Contact) c;
