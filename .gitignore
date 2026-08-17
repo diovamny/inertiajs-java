@@ -4,6 +4,5 @@ target/
 *.log
 node_modules/
 **/dist/
-examples/demo-app/
 data/
 .mvn/wrapper/*.jar
