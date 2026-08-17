@@ -14,6 +14,7 @@ import com.quarkus.inertia.model.PageObject;
 import com.quarkus.inertia.renderer.HtmlRenderer;
 import com.quarkus.inertia.response.JsonResponseProcessor;
 import com.quarkus.inertia.version.VersionProvider;
+import com.quarkus.inertia.vertx.ReactiveResponseWriter;
 
 /**
  * Turns a finished {@link PageObject} into the actual HTTP response:
@@ -28,15 +29,18 @@ public class ResponseProcessor {
     private final JsonResponseProcessor jsonProcessor;
     private final CurrentVertxRequest currentVertxRequest;
     private final VersionProvider versionProvider;
+    private final ReactiveResponseWriter reactiveWriter;
 
     @Inject
     public ResponseProcessor(HtmlRenderer htmlRenderer, JsonResponseProcessor jsonProcessor,
                              CurrentVertxRequest currentVertxRequest,
-                             VersionProvider versionProvider) {
+                             VersionProvider versionProvider,
+                             ReactiveResponseWriter reactiveWriter) {
         this.htmlRenderer = htmlRenderer;
         this.jsonProcessor = jsonProcessor;
         this.currentVertxRequest = currentVertxRequest;
         this.versionProvider = versionProvider;
+        this.reactiveWriter = reactiveWriter;
     }
 
     /**
@@ -50,7 +54,7 @@ public class ResponseProcessor {
             var rawErrors = page.props().get("errors");
             boolean hasErrors = rawErrors instanceof Map && !((Map<?, ?>) rawErrors).isEmpty();
             if (hasErrors) {
-                return Uni.createFrom().item(Response.status(422)
+                return reactiveWriter.write(Response.status(422)
                     .entity(Map.of("errors", rawErrors))
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .header("X-Inertia", "true")
@@ -58,7 +62,7 @@ public class ResponseProcessor {
                     .header("Vary", "Precognition")
                     .build());
             }
-            return Uni.createFrom().item(Response.noContent()
+            return reactiveWriter.write(Response.noContent()
                 .header("X-Inertia", "true")
                 .header("Precognition", "true")
                 .header("Precognition-Success", "true")
@@ -78,13 +82,13 @@ public class ResponseProcessor {
                         .header("Vary", "X-Inertia")
                         .build();
                 })
-                .map(Object.class::cast);
+                .chain(reactiveWriter::write);
         }
 
         if (isGetRequest()) {
             var clientVersion = getClientVersion();
             if (clientVersion != null && !clientVersion.equals(page.version())) {
-                return Uni.createFrom().item(
+                return reactiveWriter.write(
                     Response.status(Response.Status.CONFLICT)
                         .header("X-Inertia-Location", page.url())
                         .header("X-Inertia-Version", versionProvider.getVersion())
@@ -94,7 +98,7 @@ public class ResponseProcessor {
             }
         }
 
-        return jsonProcessor.write(page).map(Object.class::cast);
+        return jsonProcessor.write(page).chain(reactiveWriter::write);
     }
 
     private boolean isInertiaRequest() {

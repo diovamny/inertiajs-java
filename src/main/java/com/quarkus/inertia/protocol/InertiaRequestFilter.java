@@ -1,6 +1,7 @@
 package com.quarkus.inertia.protocol;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.annotation.Priority;
@@ -9,89 +10,38 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import io.vertx.core.Vertx;
 
 /**
- * Request filter that captures the referer of the current request into the
- * Vert.x context, so {@code inertia.back()} can redirect to the previous
- * page. Runs as a header decorator on every request.
+ * Request filter that captures the Inertia request headers into the Vert.x
+ * context so {@code inertia.back()} and the page object builder can resolve
+ * the previous URL, request method, version and partial-reload hints.
+ * Runs as a header decorator on every request.
+ *
+ * <p>The reactive routes pre-handler already extracts these headers; this
+ * filter only re-affirms the JAX-RS view (request URI, method and the
+ * {@code inertia-jaxrs} flag) to keep the JAX-RS URL semantics unchanged.</p>
  */
 @ApplicationScoped
 @Provider
 @Priority(Priorities.HEADER_DECORATOR)
 public class InertiaRequestFilter implements ContainerRequestFilter {
 
+    @Inject
+    InertiaHeaderExtractor headerExtractor;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         var ctx = Vertx.currentContext();
         if (ctx == null) return;
 
-        var inertiaHeader = requestContext.getHeaderString("X-Inertia");
-        ctx.putLocal("inertia-request", "true".equalsIgnoreCase(inertiaHeader)
-            || Boolean.parseBoolean(inertiaHeader));
+        var method = requestContext.getMethod();
+        var requestUri = requestContext.getUriInfo().getRequestUri().toString();
 
-        ctx.putLocal("request-method", requestContext.getMethod());
+        ctx.putLocal("inertia-jaxrs", Boolean.TRUE);
+        ctx.putLocal("request-method", method);
+        ctx.putLocal("request-uri", requestUri);
 
-        ctx.putLocal("request-uri", requestContext.getUriInfo().getRequestUri().toString());
+        if (Boolean.TRUE.equals(ctx.getLocal("inertia-headers-extracted"))) return;
 
-        var version = requestContext.getHeaderString("X-Inertia-Version");
-        if (version != null) {
-            ctx.putLocal("inertia-version", version);
-        }
-
-        var partialComponent = requestContext.getHeaderString("X-Inertia-Partial-Component");
-        if (partialComponent != null) {
-            ctx.putLocal("inertia-partial-component", partialComponent);
-        }
-
-        var partialData = requestContext.getHeaderString("X-Inertia-Partial-Data");
-        if (partialData != null) {
-            ctx.putLocal("inertia-partial-data", partialData);
-        }
-
-        var partialExcept = requestContext.getHeaderString("X-Inertia-Partial-Except");
-        if (partialExcept != null) {
-            ctx.putLocal("inertia-partial-except", partialExcept);
-        }
-
-        var reset = requestContext.getHeaderString("X-Inertia-Reset");
-        if (reset != null) {
-            ctx.putLocal("inertia-reset", reset);
-        }
-
-        var exceptOnce = requestContext.getHeaderString("X-Inertia-Except-Once-Props");
-        if (exceptOnce != null) {
-            ctx.putLocal("inertia-except-once-props", exceptOnce);
-        }
-
-        var errorBag = requestContext.getHeaderString("X-Inertia-Error-Bag");
-        if (errorBag != null) {
-            ctx.putLocal("inertia-error-bag", errorBag);
-        }
-
-        var scrollMergeIntent = requestContext.getHeaderString("X-Inertia-Infinite-Scroll-Merge-Intent");
-        if (scrollMergeIntent != null) {
-            ctx.putLocal("inertia-scroll-merge-intent", scrollMergeIntent);
-        }
-
-        var precognition = requestContext.getHeaderString("Precognition");
-        if (precognition != null) {
-            ctx.putLocal("inertia-precognition", "true".equalsIgnoreCase(precognition));
-        }
-
-        var validateOnly = requestContext.getHeaderString("Precognition-Validate-Only");
-        if (validateOnly != null) {
-            ctx.putLocal("inertia-precognition-validate-fields", validateOnly);
-        }
-
-        var purpose = requestContext.getHeaderString("Purpose");
-        ctx.putLocal("inertia-prefetch", "prefetch".equalsIgnoreCase(purpose));
-
-        var legacyPrefetch = requestContext.getHeaderString("X-Inertia-Prefetch");
-        if (legacyPrefetch != null) {
-            ctx.putLocal("inertia-prefetch", "true".equalsIgnoreCase(legacyPrefetch));
-        }
-
-        var referer = requestContext.getHeaderString("Referer");
-        if (referer != null) {
-            ctx.putLocal("referer-url", referer);
-        }
+        headerExtractor.extract(ctx, method, requestUri, requestContext::getHeaderString);
+        ctx.putLocal("inertia-headers-extracted", Boolean.TRUE);
     }
 }

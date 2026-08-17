@@ -1,8 +1,5 @@
 package com.quarkus.inertia.security;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.UUID;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
@@ -14,6 +11,7 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 
 import com.quarkus.inertia.config.InertiaConfig;
@@ -23,13 +21,15 @@ import com.quarkus.inertia.config.InertiaConfig;
  * and validates the matching header on non-GET requests (skipped when
  * {@code inertia.csrf-enabled=false}). Keeps the session token synchronized
  * across requests.
+ *
+ * <p>When the reactive routes pre-handler already validated the request
+ * (session present before routing), the {@code inertia-csrf-handled} flag
+ * makes this filter a no-op so the token is never double-checked.</p>
  */
 @ApplicationScoped
 @Provider
 @Priority(Priorities.HEADER_DECORATOR + 5)
 public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerResponseFilter {
-
-    static final String SESSION_ATTR = "__inertia_csrf";
 
     @Inject
     Instance<RoutingContext> routingContext;
@@ -37,16 +37,20 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
     @Inject
     InertiaConfig config;
 
+    @Inject
+    InertiaCsrfService csrfService;
+
     @Override
     public void filter(ContainerRequestContext request) {
         if (!config.csrfEnabled()) return;
+        if (csrfHandled()) return;
 
         var xsrfToken = request.getHeaderString("X-XSRF-TOKEN");
         if (xsrfToken != null && !xsrfToken.isBlank()) {
             request.getHeaders().putSingle("X-CSRF-TOKEN", xsrfToken);
         }
 
-        if (!isStateChanging(request.getMethod())) return;
+        if (!csrfService.isStateChanging(request.getMethod())) return;
 
         if (!tokenMatches(xsrfToken)) {
             request.abortWith(Response.status(419).entity("CSRF token mismatch").build());
@@ -60,12 +64,12 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
         var token = getOrCreateToken();
         if (token == null) return;
 
-        response.getHeaders().add("Set-Cookie",
-            "XSRF-TOKEN=" + token + "; Path=/; SameSite=Lax");
+        response.getHeaders().add("Set-Cookie", csrfService.cookieHeader(token));
     }
 
-    private boolean isStateChanging(String method) {
-        return !"GET".equals(method) && !"HEAD".equals(method) && !"OPTIONS".equals(method);
+    private boolean csrfHandled() {
+        var ctx = Vertx.currentContext();
+        return ctx != null && Boolean.TRUE.equals(ctx.getLocal(InertiaCsrfService.CONTEXT_HANDLED));
     }
 
     private boolean tokenMatches(String provided) {
@@ -74,26 +78,14 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
         if (rc == null) return true;
         var session = rc.session();
         if (session == null) return true;
-        var stored = (String) session.get(SESSION_ATTR);
-        if (stored == null) return false;
-
-        return MessageDigest.isEqual(
-            stored.getBytes(StandardCharsets.UTF_8),
-            provided.getBytes(StandardCharsets.UTF_8));
+        var stored = (String) session.get(InertiaCsrfService.SESSION_ATTR);
+        return csrfService.matches(stored, provided);
     }
 
     private String getOrCreateToken() {
         var rc = resolveRoutingContext();
         if (rc == null) return null;
-        var session = rc.session();
-        if (session == null) return null;
-
-        var token = (String) session.get(SESSION_ATTR);
-        if (token == null) {
-            token = UUID.randomUUID().toString();
-            session.put(SESSION_ATTR, token);
-        }
-        return token;
+        return csrfService.getOrCreateToken(rc);
     }
 
     private RoutingContext resolveRoutingContext() {

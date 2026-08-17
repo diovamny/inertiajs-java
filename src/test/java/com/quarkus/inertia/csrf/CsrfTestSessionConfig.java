@@ -14,6 +14,6 @@ public class CsrfTestSessionConfig {
         var store = LocalSessionStore.create(vertx);
         var sessionHandler = SessionHandler.create(store);
         sessionHandler.setLazySession(true);
-        router.route().order(0).handler(sessionHandler);
+        router.route().order(-1000).handler(sessionHandler);
     }
 }

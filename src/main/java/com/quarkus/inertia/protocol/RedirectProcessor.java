@@ -9,6 +9,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
 import com.quarkus.inertia.spi.FlashStore;
+import com.quarkus.inertia.vertx.ReactiveResponseWriter;
 
 import java.util.Map;
 
@@ -31,11 +32,18 @@ public class RedirectProcessor {
 
     private final CurrentVertxRequest currentVertxRequest;
     private final FlashStore flashStore;
+    private final ReactiveResponseWriter reactiveWriter;
 
     @Inject
-    public RedirectProcessor(CurrentVertxRequest currentVertxRequest, FlashStore flashStore) {
+    public RedirectProcessor(CurrentVertxRequest currentVertxRequest, FlashStore flashStore,
+                             ReactiveResponseWriter reactiveWriter) {
         this.currentVertxRequest = currentVertxRequest;
         this.flashStore = flashStore;
+        this.reactiveWriter = reactiveWriter;
+    }
+
+    public RedirectProcessor(CurrentVertxRequest currentVertxRequest, FlashStore flashStore) {
+        this(currentVertxRequest, flashStore, new ReactiveResponseWriter());
     }
 
     /**
@@ -59,9 +67,9 @@ public class RedirectProcessor {
     public Uni<Object> process(String url, boolean fullPage) {
         return Uni.createFrom().deferred(() -> {
             if (fullPage && isInertiaRequest()) {
-                return Uni.createFrom().item(buildConflict(url, java.util.Map.of()));
+                return reactiveWriter.write(buildConflict(url, java.util.Map.of()));
             }
-            return Uni.createFrom().item(buildRedirect(url, isNonGetRequest(), java.util.Map.of()));
+            return reactiveWriter.write(buildRedirect(url, isNonGetRequest(), java.util.Map.of()));
         });
     }
 
@@ -76,9 +84,9 @@ public class RedirectProcessor {
     public Uni<Object> process(String url, Map<String, String> headers) {
         return Uni.createFrom().deferred(() -> {
             if (isInertiaRequest() && isExternal(url)) {
-                return Uni.createFrom().item(buildConflict(url, headers));
+                return reactiveWriter.write(buildConflict(url, headers));
             }
-            return Uni.createFrom().item(buildRedirect(url, isNonGetRequest(), headers));
+            return reactiveWriter.write(buildRedirect(url, isNonGetRequest(), headers));
         });
     }
 
@@ -91,9 +99,9 @@ public class RedirectProcessor {
     public Uni<Object> external(String url) {
         return Uni.createFrom().deferred(() -> {
             if (isInertiaRequest() && isExternal(url)) {
-                return Uni.createFrom().item(buildConflict(url, java.util.Map.of()));
+                return reactiveWriter.write(buildConflict(url, java.util.Map.of()));
             }
-            return Uni.createFrom().item(buildRedirect(url, isNonGetRequest(), java.util.Map.of()));
+            return reactiveWriter.write(buildRedirect(url, isNonGetRequest(), java.util.Map.of()));
         });
     }
 
@@ -226,7 +234,7 @@ public class RedirectProcessor {
                     .header("Location", url)
                     .header("Vary", "X-Inertia");
                 applyHeaders(builder, headers);
-                return Uni.createFrom().item(builder.build());
+                return reactiveWriter.write(builder.build());
             });
         }
         return process(url, headers);

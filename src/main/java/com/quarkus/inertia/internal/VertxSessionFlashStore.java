@@ -90,9 +90,17 @@ public class VertxSessionFlashStore implements FlashStore {
         try {
             var rc = routingContext.get();
             return rc != null ? rc.session() : null;
-        } catch (Exception e) {
-            return null;
+        } catch (Exception ignored) {
+            // no active request / no routing context: fall through
         }
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            var rc = ctx.getLocal("inertia-routing-context");
+            if (rc instanceof io.vertx.ext.web.RoutingContext r) {
+                return r.session();
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
