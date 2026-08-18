@@ -28,6 +28,13 @@
   `examples/quarkus/` (demo-app, kitchen-sink, pingcrm, pingcrm-react) y los
   de Spring en `examples/spring/`; `examples/spring-demo` (básico) fue
   eliminado en favor de `spring-pingcrm`.
+- **Fix boot del cliente v3**: `HtmlRenderer` ahora emite además el JSON de la
+  página en un `<script type="application/json" data-page="app">` (placeholder
+  `__INERTIA_PAGE_JSON__`), que es el formato que `@inertiajs/core` v3 lee al
+  arrancar; sin él el cliente lanzaba `Cannot read properties of null
+  (reading 'component')` y la pantalla quedaba en blanco. La plantilla raíz
+  de spring-inertia y la del demo incluyen el nuevo script tag (el atributo
+  `data-page` clásico se mantiene por compatibilidad).
 
 ### Corregido: cookie `XSRF-TOKEN` descartada en contenedores reales
 

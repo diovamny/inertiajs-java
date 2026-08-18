@@ -46,6 +46,9 @@ class RenderPageIntegrationTest {
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
             .andExpect(header().string("Vary", "X-Inertia"))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("data-page=")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "type=\"application/json\" data-page=\"app\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("\"component\":\"Dashboard\"")))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard")));
     }
 

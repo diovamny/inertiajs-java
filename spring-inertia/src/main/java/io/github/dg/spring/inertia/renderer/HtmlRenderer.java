@@ -16,20 +16,25 @@ import io.github.dg.spring.inertia.spi.JsonProvider;
  * <p>The root template ({@code inertia.root-template}, default
  * {@code templates/index.html}) is resolved from the classpath and must
  * contain the placeholder {@code __INERTIA_PAGE__} inside the
- * {@code data-page} attribute of the app element:</p>
+ * {@code data-page} attribute of the app element, plus the placeholder
+ * {@code __INERTIA_PAGE_JSON__} inside a {@code data-page} script tag that
+ * the Inertia v3 client reads on boot:</p>
  *
  * <pre>{@code
  * <div id="app" data-page="__INERTIA_PAGE__"></div>
+ * <script type="application/json" data-page="app">__INERTIA_PAGE_JSON__</script>
  * }</pre>
  *
- * <p>The page JSON is injected HTML-escaped (the browser decodes the
- * entities when reading the attribute). When SSR is enabled and the visit
- * matches, the optional placeholders {@code __INERTIA_SSR_HEAD__} and
- * {@code __INERTIA_SSR_BODY__} are replaced with the SSR payload.</p>
+ * <p>The attribute value is injected HTML-escaped (the browser decodes the
+ * entities when reading the attribute) while the script tag receives the raw
+ * JSON. When SSR is enabled and the visit matches, the optional placeholders
+ * {@code __INERTIA_SSR_HEAD__} and {@code __INERTIA_SSR_BODY__} are replaced
+ * with the SSR payload.</p>
  */
 public class HtmlRenderer {
 
     public static final String PAGE_PLACEHOLDER = "__INERTIA_PAGE__";
+    public static final String PAGE_JSON_PLACEHOLDER = "__INERTIA_PAGE_JSON__";
     public static final String SSR_HEAD_PLACEHOLDER = "__INERTIA_SSR_HEAD__";
     public static final String SSR_BODY_PLACEHOLDER = "__INERTIA_SSR_BODY__";
 
@@ -51,7 +56,8 @@ public class HtmlRenderer {
      */
     public String render(PageObject page) {
         var template = loadTemplate();
-        var escapedJson = escapeForHtmlAttribute(jsonProvider.toJson(page));
+        var rawJson = jsonProvider.toJson(page);
+        var escapedJson = escapeForHtmlAttribute(rawJson);
 
         String html = template.replace(PAGE_PLACEHOLDER, escapedJson);
 
@@ -63,7 +69,7 @@ public class HtmlRenderer {
             html = html.replace(SSR_HEAD_PLACEHOLDER, "");
             html = html.replace(SSR_BODY_PLACEHOLDER, "");
         }
-        return html;
+        return html.replace(PAGE_JSON_PLACEHOLDER, rawJson);
     }
 
     /**
