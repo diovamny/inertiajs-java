@@ -14,7 +14,8 @@ import io.github.dg.spring.inertia.internal.InertiaRequestContext;
  *   <li>{@code X-Inertia-Partial-Component} - partial reload target</li>
  *   <li>{@code X-Inertia-Partial-Data}      - props to include</li>
  *   <li>{@code X-Inertia-Partial-Except}    - props to exclude</li>
- *   <li>{@code X-Inertia-Partial-Reset}     - ignore merged props</li>
+ *   <li>{@code X-Inertia-Reset}             - reset mergeable props (alias:
+ *   {@code X-Inertia-Partial-Reset})</li>
  *   <li>{@code X-Inertia-Precognition}      - precognition visit</li>
  *   <li>{@code X-Inertia-Precognition-Validate-Fields} - validate-only list</li>
  *   <li>{@code X-Inertia-Error-Bag}         - target errors bag</li>
@@ -57,7 +58,11 @@ public class InertiaHeaderExtractor {
         set(request, CONTEXT_PARTIAL_COMPONENT, header(request, "X-Inertia-Partial-Component"));
         set(request, CONTEXT_PARTIAL_DATA, header(request, "X-Inertia-Partial-Data"));
         set(request, CONTEXT_PARTIAL_EXCEPT, header(request, "X-Inertia-Partial-Except"));
-        set(request, CONTEXT_PARTIAL_RESET, header(request, "X-Inertia-Partial-Reset"));
+        var reset = header(request, "X-Inertia-Reset");
+        if (reset == null || reset.isBlank()) {
+            reset = header(request, "X-Inertia-Partial-Reset");
+        }
+        set(request, CONTEXT_PARTIAL_RESET, reset);
         set(request, CONTEXT_PRECOGNITION, header(request, "X-Inertia-Precognition"));
         set(request, CONTEXT_PRECOGNITION_VALIDATE_FIELDS, header(request, "X-Inertia-Precognition-Validate-Fields"));
         set(request, CONTEXT_ERROR_BAG, header(request, "X-Inertia-Error-Bag"));

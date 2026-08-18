@@ -41,6 +41,24 @@ public class PartialReloadProcessor {
     }
 
     /**
+     * The props explicitly requested via {@code X-Inertia-Partial-Data}.
+     *
+     * @return the requested keys, empty when the header is absent
+     */
+    public List<String> partialData() {
+        return attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA);
+    }
+
+    /**
+     * The props explicitly excluded via {@code X-Inertia-Partial-Except}.
+     *
+     * @return the excluded keys, empty when the header is absent
+     */
+    public List<String> partialExcept() {
+        return attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT);
+    }
+
+    /**
      * Filter the props for the partial reload. "Always" props survive the
      * filter unconditionally.
      *

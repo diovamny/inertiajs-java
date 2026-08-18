@@ -18,6 +18,7 @@ import io.github.dg.spring.inertia.model.AlwaysProp;
 import io.github.dg.spring.inertia.model.DeferredProp;
 import io.github.dg.spring.inertia.model.PageObject;
 import io.github.dg.spring.inertia.model.RawJson;
+import io.github.dg.spring.inertia.model.ScrollProp;
 import io.github.dg.spring.inertia.protocol.PageObjectBuilder;
 import io.github.dg.spring.inertia.protocol.PartialReloadProcessor;
 import io.github.dg.spring.inertia.protocol.RedirectProcessor;
@@ -184,6 +185,18 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Object once(String key, Object value, String customKey) {
+        oncePropRegistry.remember(key, customKey, null);
+        return value;
+    }
+
+    @Override
+    public Object once(String key, Object value, String customKey, Duration ttl) {
+        oncePropRegistry.remember(key, customKey, ttl);
+        return value;
+    }
+
+    @Override
     public Object merge(String key, Object value) {
         return merge(key, value, MergeRule.MERGE);
     }
@@ -194,6 +207,17 @@ public class InertiaImpl implements Inertia {
             case MERGE -> addList(PageObjectBuilder.CONTEXT_MERGE_PROPS, key);
             case PREPEND -> addList(PageObjectBuilder.CONTEXT_PREPEND_PROPS, key);
             case DEEP_MERGE -> addList(PageObjectBuilder.CONTEXT_DEEP_MERGE_PROPS, key);
+        }
+        return value;
+    }
+
+    @Override
+    public Object merge(String key, Object value, MergeRule rule, String... matchOn) {
+        merge(key, value, rule);
+        for (var field : matchOn) {
+            if (field != null && !field.isBlank()) {
+                addList(PageObjectBuilder.CONTEXT_MATCH_PROPS_ON, key + "." + field);
+            }
         }
         return value;
     }
@@ -257,9 +281,35 @@ public class InertiaImpl implements Inertia {
     @Override
     public Object rememberScrollProp(String key, Object value) {
         var scroll = scrollRegistry();
-        scroll.put(key, value);
+        scroll.put(key, new ScrollProp(value, null, Map.of("merge", Boolean.TRUE)));
         InertiaRequestContext.set(PageObjectBuilder.CONTEXT_SCROLL_PROPS, scroll);
         return value;
+    }
+
+    @Override
+    public void scroll(String key, Map<String, Object> metadata) {
+        scroll(key, null, metadata);
+    }
+
+    @Override
+    public void scroll(String key, Object value, Map<String, Object> metadata) {
+        var scroll = scrollRegistry();
+        scroll.put(key, new ScrollProp(value, null, metadata != null ? metadata : Map.of()));
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_SCROLL_PROPS, scroll);
+    }
+
+    @Override
+    public void rescue(String key) {
+        var rescued = rescuedRegistry();
+        if (!rescued.contains(key)) {
+            rescued.add(key);
+        }
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_RESCUED_CANDIDATES, rescued);
+    }
+
+    @Override
+    public void preserveFragment(boolean preserve) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_PRESERVE_FRAGMENT, preserve);
     }
 
     @SuppressWarnings("unchecked")
@@ -272,12 +322,21 @@ public class InertiaImpl implements Inertia {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> scrollRegistry() {
+    private Map<String, ScrollProp> scrollRegistry() {
         var stored = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_SCROLL_PROPS);
         if (stored instanceof Map<?, ?> map) {
-            return (Map<String, Object>) map;
+            return (Map<String, ScrollProp>) map;
         }
         return new LinkedHashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> rescuedRegistry() {
+        var stored = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_RESCUED_CANDIDATES);
+        if (stored instanceof List<?> list) {
+            return (List<String>) list;
+        }
+        return new ArrayList<>();
     }
 
     @SuppressWarnings("unchecked")

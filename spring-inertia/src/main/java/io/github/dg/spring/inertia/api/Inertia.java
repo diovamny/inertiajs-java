@@ -201,6 +201,31 @@ public interface Inertia {
     Object once(String key, Object value, Duration ttl);
 
     /**
+     * Register a once-prop whose client-side tracking key differs from the
+     * prop name.
+     *
+     * <p>The client remembers the prop under {@code customKey}, so several
+     * props can share one "already shown" entry.</p>
+     *
+     * @param key       the prop key
+     * @param value     the value
+     * @param customKey the tracking key sent to the client
+     * @return the value, so it can be returned from helpers
+     */
+    Object once(String key, Object value, String customKey);
+
+    /**
+     * Register a once-prop with a custom tracking key and an expiry.
+     *
+     * @param key       the prop key
+     * @param value     the value
+     * @param customKey the tracking key sent to the client
+     * @param ttl       how long the client may display it
+     * @return the value, so it can be returned from helpers
+     */
+    Object once(String key, Object value, String customKey, Duration ttl);
+
+    /**
      * Register a mergeable prop.
      *
      * @param key   the prop key
@@ -227,6 +252,18 @@ public interface Inertia {
      * @return the values map
      */
     Object merge(Map<String, Object> values, MergeRule rule);
+
+    /**
+     * Register a mergeable prop with a merge rule and list-matching fields.
+     *
+     * @param key     the prop key
+     * @param value   the value
+     * @param rule    the merge rule
+     * @param matchOn dot-notation fields (relative to the prop) used by the
+     *                client to match list elements during the merge
+     * @return the value, so it can be returned from helpers
+     */
+    Object merge(String key, Object value, MergeRule rule, String... matchOn);
 
     /**
      * Wrap a raw JSON document to be embedded verbatim in the page props.
@@ -302,6 +339,42 @@ public interface Inertia {
     void handleErrorUsing(ErrorMapper mapper);
 
     /**
+     * Register a prop as "rescued".
+     *
+     * <p>When a deferred (or cached) resolver for the prop fails or returns
+     * {@code null}, the prop is omitted from the page and marked as rescued in
+     * the {@code rescuedProps} metadata, so the frontend can render its
+     * rescue slot instead of failing the visit.</p>
+     *
+     * @param key the prop name
+     */
+    void rescue(String key);
+
+    /**
+     * Register a scroll prop with only metadata.
+     *
+     * <p>Scroll props (Laravel's {@code Inertia::scroll()}) let the client
+     * restore and merge paginated data across partial reloads (InfiniteScroll
+     * component).</p>
+     *
+     * @param key      the prop name
+     * @param metadata the scroll metadata (e.g. {@code previousPage},
+     *                 {@code nextPage}, {@code currentPage}, {@code pageName},
+     *                 {@code matchOn})
+     */
+    void scroll(String key, Map<String, Object> metadata);
+
+    /**
+     * Register a scroll prop with a value and metadata.
+     *
+     * @param key      the prop name
+     * @param value    the prop value
+     * @param metadata the scroll metadata
+     * @see #scroll(String, Map)
+     */
+    void scroll(String key, Object value, Map<String, Object> metadata);
+
+    /**
      * Remember a scroll prop: its position is preserved between visits.
      *
      * @param key   the prop key
@@ -309,6 +382,14 @@ public interface Inertia {
      * @return the value, so it can be returned from helpers
      */
     Object rememberScrollProp(String key, Object value);
+
+    /**
+     * Request the client to preserve the URL fragment during the current
+     * visit.
+     *
+     * @param preserve whether the URL fragment should be preserved
+     */
+    void preserveFragment(boolean preserve);
 
     /**
      * Merge rules for {@link #merge(String, Object, MergeRule)}.

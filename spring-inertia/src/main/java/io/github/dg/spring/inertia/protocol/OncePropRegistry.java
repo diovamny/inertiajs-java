@@ -33,8 +33,26 @@ public class OncePropRegistry {
      * @return the prop key
      */
     public String remember(String key, Duration ttl) {
+        return remember(key, null, ttl);
+    }
+
+    /**
+     * Register a once-prop under a custom client tracking key.
+     *
+     * <p>The client remembers the prop under {@code customKey}, so several
+     * props can share a single "already shown" entry; the metadata is sent
+     * under the custom key while the prop value stays under {@code key}.</p>
+     *
+     * @param key       the prop key
+     * @param customKey the tracking key sent to the client; {@code null} uses
+     *                  {@code key}
+     * @param ttl       optional expiry; {@code null} never expires
+     * @return the prop key
+     */
+    public String remember(String key, String customKey, Duration ttl) {
         var expiresAt = ttl != null ? System.currentTimeMillis() + ttl.toMillis() : null;
-        metadata.put(key, new OnceProp(key, expiresAt));
+        var trackingKey = customKey != null ? customKey : key;
+        metadata.put(trackingKey, new OnceProp(key, expiresAt));
         return key;
     }
 

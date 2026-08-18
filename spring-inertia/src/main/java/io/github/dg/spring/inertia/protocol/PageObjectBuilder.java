@@ -12,6 +12,7 @@ import io.github.dg.spring.inertia.internal.InertiaRequestContext;
 import io.github.dg.spring.inertia.internal.LazyProp;
 import io.github.dg.spring.inertia.model.DeferredProp;
 import io.github.dg.spring.inertia.model.PageObject;
+import io.github.dg.spring.inertia.model.ScrollProp;
 import io.github.dg.spring.inertia.spi.ComponentTransformer;
 import io.github.dg.spring.inertia.spi.FlashStore;
 import io.github.dg.spring.inertia.spi.UrlResolver;
@@ -32,6 +33,9 @@ public class PageObjectBuilder {
     public static final String CONTEXT_DEEP_MERGE_PROPS = "inertia-deep-merge-props";
     public static final String CONTEXT_MATCH_PROPS_ON = "inertia-match-props-on";
     public static final String CONTEXT_SCROLL_PROPS = "inertia-scroll-props";
+    public static final String CONTEXT_RESCUED_PROPS = "inertia-rescued-props";
+    public static final String CONTEXT_RESCUED_CANDIDATES = "inertia-rescued-candidates";
+    public static final String CONTEXT_PRESERVE_FRAGMENT = "inertia-preserve-fragment";
     public static final String CONTEXT_META = "inertia-meta";
     public static final String CONTEXT_PAGE_STATUS = "inertia-page-status";
     public static final String CONTEXT_PAGE_VERSION = "inertia-page-version";
@@ -93,6 +97,7 @@ public class PageObjectBuilder {
         applyAlwaysProps(merged);
 
         var deferredProps = collectDeferredProps(merged);
+        var scrollProps = applyScrollProps(merged);
         var mergeProps = stringList(CONTEXT_MERGE_PROPS);
         var prependProps = stringList(CONTEXT_PREPEND_PROPS);
         var deepMergeProps = stringList(CONTEXT_DEEP_MERGE_PROPS);
@@ -128,7 +133,7 @@ public class PageObjectBuilder {
                 && !version.equals(String.valueOf(clientVersion)));
 
         var flash = flashStore.hasData() ? flashStore.drain() : null;
-        var scrollProps = scrollMetadata();
+        var rescued = rescuedKeys();
 
         var resolvedComponent = componentTransformer != null
             ? componentTransformer.transform(component)
@@ -136,7 +141,7 @@ public class PageObjectBuilder {
 
         var page = new PageObject(resolvedComponent, merged, url, version,
             flash,
-            deferredProps.isEmpty() ? null : deferredProps,
+            deferredProps.isEmpty() || partial ? null : deferredProps,
             mergeProps.isEmpty() ? null : mergeProps,
             prependProps.isEmpty() ? null : prependProps,
             deepMergeProps.isEmpty() ? null : deepMergeProps,
@@ -144,11 +149,11 @@ public class PageObjectBuilder {
             oncePropRegistry.metadata().isEmpty() ? null : oncePropRegistry.metadata(),
             scrollProps.isEmpty() ? null : scrollProps,
             sharedDataRegistry.sharedProps().isEmpty() ? null : List.copyOf(sharedDataRegistry.sharedProps().keySet()),
-            null,
+            rescued.isEmpty() ? null : List.copyOf(rescued),
             meta(),
             encryptHistoryEnabled(),
             false,
-            false);
+            preserveFragmentEnabled());
         return page;
     }
 
@@ -206,7 +211,7 @@ public class PageObjectBuilder {
     private void applyOnceProps(Map<String, Object> merged) {
         for (var entry : oncePropRegistry.metadata().entrySet()) {
             if (oncePropRegistry.alreadyShown(entry.getKey())) {
-                merged.remove(entry.getKey());
+                merged.remove(entry.getValue().prop());
             } else {
                 oncePropRegistry.markShown(entry.getKey());
             }
@@ -237,22 +242,81 @@ public class PageObjectBuilder {
             return Map.of();
         }
         var groups = new LinkedHashMap<String, List<String>>();
+        var isPartial = partialReloadProcessor.isPartialReload(partialComponent());
+        var requested = isPartial ? requestedDeferredKeys((Map<String, DeferredProp<?>>) map) : null;
         for (var entry : ((Map<String, DeferredProp<?>>) map).entrySet()) {
             var deferred = entry.getValue();
             var members = groups.computeIfAbsent(deferred.group(), k -> new ArrayList<>());
             members.add(deferred.name());
-            if (partialReloadProcessor.isPartialReload(partialComponent())) {
-                merged.put(deferred.name(), deferred.resolve());
+            if (requested != null && requested.contains(deferred.name())) {
+                resolveDeferred(merged, deferred);
             }
         }
         return groups;
     }
 
     @SuppressWarnings("unchecked")
+    private java.util.Set<String> requestedDeferredKeys(Map<String, DeferredProp<?>> registered) {
+        var data = partialReloadProcessor.partialData();
+        if (!data.isEmpty()) {
+            return new java.util.HashSet<>(data);
+        }
+        var except = partialReloadProcessor.partialExcept();
+        if (!except.isEmpty()) {
+            var keys = new java.util.HashSet<String>();
+            for (var name : registered.keySet()) {
+                if (!except.contains(name)) {
+                    keys.add(name);
+                }
+            }
+            return keys;
+        }
+        return java.util.Set.of();
+    }
+
+    private void resolveDeferred(Map<String, Object> merged, DeferredProp<?> deferred) {
+        var name = deferred.name();
+        if (!rescuedCandidates().contains(name)) {
+            merged.put(name, deferred.resolve());
+            return;
+        }
+        Object value;
+        try {
+            value = deferred.resolve();
+        } catch (RuntimeException e) {
+            markRescued(name);
+            return;
+        }
+        if (value != null) {
+            merged.put(name, value);
+        } else {
+            markRescued(name);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private Map<String, Object> resolveLazyProps(Map<String, Object> props) {
         for (var entry : props.entrySet()) {
             if (entry.getValue() instanceof LazyProp lazy) {
-                props.put(entry.getKey(), lazy.resolve());
+                var name = entry.getKey();
+                if (!rescuedCandidates().contains(name)) {
+                    props.put(name, lazy.resolve());
+                    continue;
+                }
+                Object value;
+                try {
+                    value = lazy.resolve();
+                } catch (RuntimeException e) {
+                    props.remove(name);
+                    markRescued(name);
+                    continue;
+                }
+                if (value != null) {
+                    props.put(name, value);
+                } else {
+                    props.remove(name);
+                    markRescued(name);
+                }
             }
         }
         return props;
@@ -273,16 +337,102 @@ public class PageObjectBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Map<String, Object>> scrollMetadata() {
+    private Map<String, Map<String, Object>> applyScrollProps(Map<String, Object> merged) {
         var registered = InertiaRequestContext.get(CONTEXT_SCROLL_PROPS);
         if (!(registered instanceof Map<?, ?> map) || map.isEmpty()) {
             return Map.of();
         }
+        var resetKeys = resetKeys();
+        var intent = InertiaRequestContext.header("X-Inertia-Infinite-Scroll-Merge-Intent");
         var result = new LinkedHashMap<String, Map<String, Object>>();
-        for (var key : ((Map<String, Object>) map).keySet()) {
-            result.put(key, Map.of("merge", Boolean.TRUE));
+        for (var entry : ((Map<String, ScrollProp>) map).entrySet()) {
+            var key = entry.getKey();
+            var spec = entry.getValue();
+            var wrapper = spec.wrapperOrData();
+            if (spec.value() != null) {
+                merged.put(key, spec.value());
+            }
+            var mergePath = key + "." + wrapper;
+            if ("prepend".equalsIgnoreCase(intent)) {
+                addList(CONTEXT_PREPEND_PROPS, mergePath);
+            } else {
+                addList(CONTEXT_MERGE_PROPS, mergePath);
+            }
+            var metadata = spec.metadata() != null ? spec.metadata() : Map.of();
+            var matchOn = metadata.get("matchOn");
+            if (matchOn instanceof String s) {
+                addList(CONTEXT_MATCH_PROPS_ON, mergePath + "." + s);
+            } else if (matchOn instanceof List<?> list) {
+                for (var path : list) {
+                    addList(CONTEXT_MATCH_PROPS_ON, mergePath + "." + path);
+                }
+            }
+            var clean = new LinkedHashMap<String, Object>();
+            for (var name : List.of("merge", "previousPage", "nextPage", "currentPage", "pageName")) {
+                if (metadata.containsKey(name)) {
+                    clean.put(name, metadata.get(name));
+                }
+            }
+            clean.put("reset", resetKeys.contains(key));
+            result.put(key, clean);
         }
         return result;
+    }
+
+    private java.util.Set<String> resetKeys() {
+        var value = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PARTIAL_RESET);
+        if (value == null) {
+            return java.util.Set.of();
+        }
+        var keys = new java.util.HashSet<String>();
+        for (var part : String.valueOf(value).split(",")) {
+            var trimmed = part.trim();
+            if (!trimmed.isBlank()) {
+                keys.add(trimmed);
+            }
+        }
+        return keys;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> rescuedCandidates() {
+        var stored = InertiaRequestContext.get(CONTEXT_RESCUED_CANDIDATES);
+        if (stored instanceof List<?> list) {
+            return (List<String>) list;
+        }
+        return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> rescuedKeys() {
+        var stored = InertiaRequestContext.get(CONTEXT_RESCUED_PROPS);
+        if (stored instanceof List<?> list) {
+            return (List<String>) list;
+        }
+        return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void markRescued(String key) {
+        var stored = InertiaRequestContext.get(CONTEXT_RESCUED_PROPS);
+        List<String> list;
+        if (stored instanceof List<?> existing) {
+            list = (List<String>) existing;
+        } else {
+            list = new ArrayList<>();
+        }
+        if (!list.contains(key)) {
+            list.add(key);
+        }
+        InertiaRequestContext.set(CONTEXT_RESCUED_PROPS, list);
+    }
+
+    private boolean preserveFragmentEnabled() {
+        var override = InertiaRequestContext.get(CONTEXT_PRESERVE_FRAGMENT);
+        if (override != null) {
+            return Boolean.TRUE.equals(override);
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -298,6 +448,19 @@ public class PageObjectBuilder {
             return (List<String>) list;
         }
         return List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addList(String attr, String key) {
+        var stored = InertiaRequestContext.get(attr);
+        List<String> list;
+        if (stored instanceof List<?> existing) {
+            list = (List<String>) existing;
+        } else {
+            list = new ArrayList<>();
+        }
+        list.add(key);
+        InertiaRequestContext.set(attr, list);
     }
 
     private static String partialComponent() {
