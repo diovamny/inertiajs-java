@@ -94,7 +94,7 @@ Los errores de `@Valid` se flashean y redirigen de vuelta (prop `errors` en el
 siguiente render); con `X-Inertia-Precognition: true` el servidor responde
 `422` con `{errors: {campo: mensaje}}`.
 
-Demo completa: [`examples/spring-demo`](examples/spring-demo) (Vue 3).
+Demo completa: [`examples/spring/spring-pingcrm`](examples/spring/spring-pingcrm) (Vue 3).
 
 ---
 
@@ -135,9 +135,10 @@ public class DashboardResource {
 }
 ```
 
-Demos: [`examples/kitchen-sink`](examples/kitchen-sink) (showcase integral),
-[`examples/demo-app`](examples/demo-app), [`examples/pingcrm`](examples/pingcrm),
-[`examples/pingcrm-react`](examples/pingcrm-react).
+Demos: [`examples/quarkus/kitchen-sink`](examples/quarkus/kitchen-sink) (showcase integral),
+[`examples/quarkus/demo-app`](examples/quarkus/demo-app),
+[`examples/quarkus/pingcrm`](examples/quarkus/pingcrm),
+[`examples/quarkus/pingcrm-react`](examples/quarkus/pingcrm-react).
 
 ---
 
@@ -151,8 +152,8 @@ mvn clean test -T 1C
 mvn clean test -pl spring-inertia
 mvn clean test -pl quarkus-inertia
 
-# Demo Spring
-mvn clean test -pl examples/spring-demo -Pexamples
+# Demo Spring (pingcrm)
+mvn clean test -pl examples/spring/spring-pingcrm -Pexamples
 
 # JARs de release (sources + javadoc)
 mvn clean package -Prelease -DskipTests

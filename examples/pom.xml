@@ -13,11 +13,8 @@
     <description>Demos and showcases for the Inertia.js Java adapters</description>
 
     <modules>
-        <module>demo-app</module>
-        <module>kitchen-sink</module>
-        <module>pingcrm</module>
-        <module>pingcrm-react</module>
-        <module>spring-demo</module>
+        <module>quarkus</module>
+        <module>spring</module>
     </modules>
 
     <properties>

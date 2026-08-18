@@ -28,7 +28,7 @@ jobs:
         run: mvn clean test -T 1C
 
       - name: Build and test Spring demo
-        run: mvn clean test -pl examples/spring-demo -Pexamples
+        run: mvn clean test -pl examples/spring/spring-pingcrm -Pexamples
 
       - name: Verify release artifacts (sources + javadoc)
         run: mvn clean package -Prelease -DskipTests

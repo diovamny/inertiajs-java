@@ -19,9 +19,15 @@
   (`InertiaPage`, `InertiaResultMatchers`).
 - Paquete Quarkus renombrado a `io.github.dg.quarkus.inertia.*` (sin cambios
   funcionales).
-- **Nuevo demo**: `examples/spring-demo` (Spring Boot 4.1 + Vue 3) — CRUD de
-  contactos con paginación y búsqueda en vivo, validación + precognition, props
-  v3 (deferred, once, mergeProps), flash. 7 tests de integración.
+- **Nuevo demo**: `examples/spring/spring-pingcrm` (Spring Boot 4.1 + Vue 3) —
+  port completo de PingCRM (organizaciones, contactos, usuarios con foto,
+  dashboard, reportes, autenticación por sesión PBKDF2, seed con datos fake,
+  Flyway, soft deletes, imágenes con resize) sobre `spring-inertia`. 25 tests
+  de integración MockMvc.
+- **Demos reestructurados**: los demos Quarkus viven ahora en
+  `examples/quarkus/` (demo-app, kitchen-sink, pingcrm, pingcrm-react) y los
+  de Spring en `examples/spring/`; `examples/spring-demo` (básico) fue
+  eliminado en favor de `spring-pingcrm`.
 
 ### Corregido: cookie `XSRF-TOKEN` descartada en contenedores reales
 

@@ -42,4 +42,4 @@ jobs:
 
       - name: Spring demo native build
         run: |
-          mvn -f examples/spring-demo/pom.xml install -DskipTests -Pnative -Dnative-buildtools.version=0.10.5
+          mvn -f examples/spring/spring-pingcrm/pom.xml install -DskipTests -Pnative -Dnative-buildtools.version=0.10.5

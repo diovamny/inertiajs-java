@@ -132,14 +132,18 @@ C:\Users\DiovamnyGarciaPeña\Desktop\inertiajs\
 │           └── (9 unitarios + 9 integración con MockMvc)
 │
 └── examples/                                 [FOLDER] ← Demos y Showcases
-    ├── pom.xml                              [NEW] Aggregator pom (groupId: io.github.dg | artifactId: inertia-examples)
-    ├── demo-app/                            [MODIFY] Demo Quarkus: actualiza parent + dependencias a io.github.dg.quarkus.inertia
-    ├── kitchen-sink/                        [MODIFY] Showcase Quarkus: actualiza parent + dependencias
-    ├── pingcrm/                             [MODIFY] PingCRM Vue 3 Quarkus: actualiza parent + dependencias
-    ├── pingcrm-react/                       [MODIFY] PingCRM React Quarkus: actualiza parent + dependencias
-    └── spring-demo/                         [NEW] Demo completa Spring Boot 4.1 + Vue 3 + GraalVM Native
-        ├── pom.xml                          [NEW] Depende de io.github.dg.spring.inertia:spring-inertia:0.0.1
-        └── src/...                          [NEW] CRUD Contactos, Precognition, Props v3, Seguridad y Perfil Nativo
+    ├── pom.xml                              [MODIFY] Aggregator pom (modules: quarkus, spring)
+    ├── quarkus/                             [MODIFY] Agrupa los demos Quarkus (movidos intactos)
+    │   ├── pom.xml                          [NEW] Aggregator
+    │   ├── demo-app/                        [MODIFY] Demo Quarkus: actualiza parent + dependencias a io.github.dg.quarkus.inertia
+    │   ├── kitchen-sink/                    [MODIFY] Showcase Quarkus: actualiza parent + dependencias
+    │   ├── pingcrm/                         [MODIFY] PingCRM Vue 3 Quarkus: actualiza parent + dependencias
+    │   └── pingcrm-react/                   [MODIFY] PingCRM React Quarkus: actualiza parent + dependencias
+    └── spring/                              [NEW] Demos Spring Boot
+        ├── pom.xml                          [NEW] Aggregator
+        └── spring-pingcrm/                  [NEW] Port completo de PingCRM: Spring Boot 4.1 + Vue 3 + GraalVM Native
+            ├── pom.xml                      [NEW] Depende de io.github.dg.spring.inertia:spring-inertia:0.0.1
+            └── src/...                      [NEW] Organizaciones, contactos, usuarios, auth sesión PBKDF2, seed, Flyway, SSR
 ```
 
 ---
@@ -417,15 +421,19 @@ Implementación de `InertiaRuntimeHints`:
 
 ## 6. Proyectos de Ejemplo y Demos (`examples/`)
 
-1. **`examples/demo-app`** (Quarkus + React / Vite).
-2. **`examples/kitchen-sink`** (Quarkus + Showcase integral de todas las características v3).
-3. **`examples/pingcrm`** (Quarkus + Vue 3).
-4. **`examples/pingcrm-react`** (Quarkus + React).
-5. **`examples/spring-demo`** (Spring Boot 4.1 + Vue 3 + GraalVM Native):
-   - CRUD de Contactos con paginación y búsqueda en vivo.
-   - Formularios con validación `@Valid` y Precognition en tiempo real.
-   - Demostración de props v3 (`deferred`, `once`, `mergeProps`).
-   - Compilación nativa con arranque verificado en < 50ms.
+1. **`examples/quarkus/demo-app`** (Quarkus + React / Vite).
+2. **`examples/quarkus/kitchen-sink`** (Quarkus + Showcase integral de todas las características v3).
+3. **`examples/quarkus/pingcrm`** (Quarkus + Vue 3).
+4. **`examples/quarkus/pingcrm-react`** (Quarkus + React).
+5. **`examples/spring/spring-pingcrm`** (Spring Boot 4.1 + Vue 3 + GraalVM Native):
+   - Port completo del demo PingCRM: organizaciones, contactos, usuarios
+     (con foto), dashboard, reportes y autenticación por sesión (PBKDF2).
+   - Spring Data JPA + Flyway + H2, seed con datos fake (JavaFaker), soft
+     deletes y restauración, imágenes con resize vía servlet.
+   - Frontend Vue 3 + Vite 8 construido con `frontend-maven-plugin`
+     (assets commiteados en `resources/static`), SSR opcional (`ssr.js`),
+     versionado de assets vía `inertia.version-strategy=vite-manifest`.
+   - 25 tests de integración MockMvc sobre `spring-inertia`.
 
 ---
 
@@ -441,8 +449,11 @@ mvn clean test -pl spring-inertia
 # 3. Ejecución aislada de tests del módulo Quarkus
 mvn clean test -pl quarkus-inertia
 
-# 4. Verificación de demos
-mvn clean test -pl examples/spring-demo -Pexamples
+# 4. Verificación de demos (reactor completo: adaptadores + ejemplos)
+mvn clean test -Pexamples
+# o por grupo:
+mvn clean test -f examples/quarkus/pom.xml
+mvn clean test -f examples/spring/pom.xml
 
 # 5. Validación de generación de JARs de Release (Sources + Javadocs)
 mvn clean package -Prelease -DskipTests
