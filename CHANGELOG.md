@@ -35,6 +35,13 @@
   (reading 'component')` y la pantalla quedaba en blanco. La plantilla raíz
   de spring-inertia y la del demo incluyen el nuevo script tag (el atributo
   `data-page` clásico se mantiene por compatibilidad).
+- **Fix `errors` siempre presente**: el builder de página de spring-inertia
+  ahora inyecta `props.errors` (mapa vacío si no hay errores) en cada render
+  cuando `inertia.always-include-errors=true` (paridad con Laravel y con
+  quarkus-inertia); antes la clave faltaba y componentes como
+  `FlashMessages.vue` reventaban con `Cannot convert undefined or null to
+  object` al hacer `Object.keys(props.errors)`. La clave sobrevive además a
+  los partial reloads (como los always props).
 
 ### Corregido: cookie `XSRF-TOKEN` descartada en contenedores reales
 

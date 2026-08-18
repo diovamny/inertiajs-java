@@ -50,6 +50,8 @@ public class PageObjectBuilder {
     private final ComponentTransformer componentTransformer;
     private final UrlResolver urlResolver;
 
+    private String alwaysErrorsKey;
+
     public PageObjectBuilder(InertiaProperties properties,
             SharedDataRegistry sharedDataRegistry,
             OncePropRegistry oncePropRegistry,
@@ -84,8 +86,8 @@ public class PageObjectBuilder {
             merged = camelize(merged);
         }
 
-        injectValidationErrors(merged, alwaysIncludeErrors);
         injectFlash(merged);
+        injectValidationErrors(merged, alwaysIncludeErrors);
         injectSharedProps(merged);
         applyOnceProps(merged);
         applyAlwaysProps(merged);
@@ -103,7 +105,7 @@ public class PageObjectBuilder {
             } else {
                 merged = mergePropProcessor.mergeProps(merged, mergeProps, prependProps, deepMergeProps, matchPropsOn);
             }
-            merged = partialReloadProcessor.filterProps(merged, alwaysPropsMap());
+            merged = partialReloadProcessor.filterProps(merged, alwaysPropsMap(merged));
             mergePropProcessor.propagateProps(merged);
         } else {
             mergePropProcessor.propagateProps(merged);
@@ -175,13 +177,14 @@ public class PageObjectBuilder {
     }
 
     private void injectValidationErrors(Map<String, Object> merged, boolean alwaysIncludeErrors) {
-        if (!alwaysIncludeErrors) {
-            return;
-        }
+        var bag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
+        var key = bag != null ? String.valueOf(bag) : "errors";
         var errors = InertiaRequestContext.get(CONTEXT_ERRORS);
-        if (errors != null) {
-            var bag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
-            merged.put(bag != null ? String.valueOf(bag) : "errors", errors);
+        if (errors instanceof Map<?, ?> map && !map.isEmpty()) {
+            merged.put(key, new LinkedHashMap<>(map));
+            alwaysErrorsKey = key;
+        } else if (alwaysIncludeErrors) {
+            merged.putIfAbsent(key, Map.of());
         }
     }
 
@@ -211,15 +214,18 @@ public class PageObjectBuilder {
     }
 
     private void applyAlwaysProps(Map<String, Object> merged) {
-        for (var entry : alwaysPropsMap().entrySet()) {
+        for (var entry : alwaysPropsMap(merged).entrySet()) {
             merged.put(entry.getKey(), entry.getValue());
         }
     }
 
-    private Map<String, Object> alwaysPropsMap() {
+    private Map<String, Object> alwaysPropsMap(Map<String, Object> merged) {
         var map = new LinkedHashMap<String, Object>();
         for (var entry : sharedDataRegistry.alwaysProps().entrySet()) {
             map.put(entry.getKey(), entry.getValue().value());
+        }
+        if (alwaysErrorsKey != null && merged.containsKey(alwaysErrorsKey)) {
+            map.put(alwaysErrorsKey, merged.get(alwaysErrorsKey));
         }
         return map;
     }

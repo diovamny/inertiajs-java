@@ -35,6 +35,7 @@ class RenderPageIntegrationTest {
             .andExpect(header().string("Vary", "X-Inertia"))
             .andExpect(inertia().component("Dashboard"))
             .andExpect(inertia().prop("title", equalTo("Home")))
+            .andExpect(inertia().prop("errors", org.hamcrest.Matchers.anEmptyMap()))
             .andExpect(inertia().url("/dashboard"))
             .andExpect(inertia().version("test-version"));
     }
