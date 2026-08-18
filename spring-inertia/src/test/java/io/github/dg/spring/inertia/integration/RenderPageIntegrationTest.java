@@ -68,4 +68,19 @@ class RenderPageIntegrationTest {
         mockMvc.perform(get("/dashboard").header("X-Inertia", "true"))
             .andExpect(header().exists("ETag"));
     }
+
+    @Test
+    void missingRouteIsSilent404ForPlainVisits() throws Exception {
+        mockMvc.perform(get("/.well-known/appspecific/com.chrome.devtools.json"))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(""));
+    }
+
+    @Test
+    void missingRouteIsErrorPage404ForInertiaVisits() throws Exception {
+        mockMvc.perform(get("/no-such-page").header("X-Inertia", "true"))
+            .andExpect(status().isNotFound())
+            .andExpect(inertia().component("ErrorPage"))
+            .andExpect(inertia().prop("status", equalTo(404)));
+    }
 }

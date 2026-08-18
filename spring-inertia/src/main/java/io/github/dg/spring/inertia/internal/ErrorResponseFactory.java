@@ -2,7 +2,9 @@ package io.github.dg.spring.inertia.internal;
 
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import io.github.dg.spring.inertia.model.PageObject;
 import io.github.dg.spring.inertia.protocol.InertiaHeaderExtractor;
@@ -50,17 +52,54 @@ public class ErrorResponseFactory {
     }
 
     /**
+     * Build the 404 response for a missing route or static resource: silent
+     * for plain visits, an Inertia error page with status 404 for X-Inertia
+     * visits. A registered {@link ErrorMapper} wins over both defaults.
+     *
+     * @param error the missing-resource exception
+     * @return the 404 response
+     */
+    public ResponseEntity<String> notFound(NoResourceFoundException error) {
+        var custom = InertiaRequestContext.get(CONTEXT_KEY);
+        if (custom instanceof ErrorMapper mapper) {
+            var mapped = mapper.map(error);
+            if (mapped != null) {
+                return ResponseEntity.status(mapped.getStatusCode())
+                    .headers(mapped.getHeaders())
+                    .body(mapped.getBody() != null ? String.valueOf(mapped.getBody()) : null);
+            }
+        }
+        if (!isErrorResponseExpected()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(createErrorPage(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()));
+    }
+
+    /**
      * Build an error page object for a server-side exception.
      *
      * @param error the server-side exception
      * @return the JSON page payload
      */
     public String createErrorPage(Throwable error) {
+        return createErrorPage(status, String.valueOf(error));
+    }
+
+    /**
+     * Build an error page object with the given status and message.
+     *
+     * @param status  the HTTP status of the error
+     * @param message the error message
+     * @return the JSON page payload
+     */
+    public String createErrorPage(int status, String message) {
         var uri = InertiaRequestContext.uri();
         var version = InertiaRequestContext.get("inertia-version");
         var page = new PageObject(component, Map.of(
             "status", status,
-            "message", String.valueOf(error)
+            "message", message
         ), uri, version != null ? String.valueOf(version) : null);
         return jsonProvider.toJson(page);
     }

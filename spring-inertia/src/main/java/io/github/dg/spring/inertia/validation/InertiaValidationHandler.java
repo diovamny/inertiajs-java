@@ -4,6 +4,7 @@ import jakarta.validation.ValidationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import io.github.dg.spring.inertia.internal.ErrorResponseFactory;
 
@@ -25,6 +26,16 @@ public class InertiaValidationHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<String> handleBusinessValidation(ValidationException ex) {
         return errorResponseFactory.map(ex);
+    }
+
+    /**
+     * Missing routes/static resources are ordinary 404s: silent for plain
+     * visits (e.g. browser probes like {@code /.well-known/...}) and an
+     * Inertia error page with status 404 for X-Inertia visits.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<String> handleMissingResource(NoResourceFoundException ex) {
+        return errorResponseFactory.notFound(ex);
     }
 
     @ExceptionHandler(Exception.class)

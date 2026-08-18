@@ -42,6 +42,13 @@
   `FlashMessages.vue` reventaban con `Cannot convert undefined or null to
   object` al hacer `Object.keys(props.errors)`. La clave sobrevive además a
   los partial reloads (como los always props).
+- **Fix 404 silencioso**: las rutas y recursos estáticos inexistentes
+  (`NoResourceFoundException`, p. ej. el probe de Chrome
+  `/.well-known/appspecific/com.chrome.devtools.json`) ya no se convierten en
+  un `UnhandledException` con stack trace: las visitas normales reciben un
+  404 sin cuerpo y las visitas Inertia un page object JSON (application/json)
+  con status 404 y el componente de error configurado; un `ErrorMapper`
+  registrado sigue teniendo prioridad.
 
 ### Corregido: cookie `XSRF-TOKEN` descartada en contenedores reales
 
