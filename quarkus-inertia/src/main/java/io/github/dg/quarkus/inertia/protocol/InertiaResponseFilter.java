@@ -19,10 +19,12 @@ import java.util.Map;
 import io.github.dg.quarkus.inertia.config.InertiaConfig;
 
 /**
- * Response filter that implements the lazy-response optimization: when the
- * client revalidates with {@code If-None-Match} and the generated page
- * object still matches, the body is replaced with a 304 response. Honors
- * {@code inertia.lazy-etag-enabled}.
+ * Response filter that implements the precognition protocol (204 responses
+ * with {@code Precognition-Success: true} for successful validations, with
+ * 4xx statuses passing through untouched) and the lazy-response
+ * optimization: when the client revalidates with {@code If-None-Match} and
+ * the generated page object still matches, the body is replaced with a 304
+ * response. Honors {@code inertia.lazy-etag-enabled}.
  */
 @ApplicationScoped
 @Provider
@@ -39,17 +41,25 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
 
         applyCustomHeaders(response, ctx);
 
-        var isInertia = Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
+        var isPrecognition = Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
         int status = response.getStatus();
 
+        if (isPrecognition) {
+            if (status >= 400) return;
+            response.setStatus(204);
+            response.getHeaders().putSingle("Precognition", "true");
+            response.getHeaders().putSingle("Precognition-Success", "true");
+            response.getHeaders().putSingle("Vary", "Precognition");
+            response.setEntity(null, null, null);
+            return;
+        }
+
+        var isInertia = Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
         if (isInertia) {
             response.getHeaders().add("Vary", "X-Inertia");
         } else {
             return;
         }
-
-        var isPrecognition = Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
-        if (isPrecognition) return;
 
         if (isRedirect(status)) {
             handleRedirect(request, response, ctx);

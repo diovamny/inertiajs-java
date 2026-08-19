@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.core.http.HttpServerRequest;
@@ -85,5 +88,56 @@ class PageObjectBuilderDotNotationUnitTest {
 
         assertThat(page.props()).containsKey("errors");
         assertThat(page.props().get("errors")).isEqualTo(Map.of("name", "Required"));
+    }
+
+    @Test
+    void shouldEmitOnlyActuallyRescuedProps() {
+        sharedData.addRescuedProp("flaky");
+        sharedData.addRescuedProp("ok");
+
+        var page = builder.build("Users", Map.of(
+            "flaky", (java.util.function.Supplier<io.smallrye.mutiny.Uni<Object>>) ()
+                -> io.smallrye.mutiny.Uni.createFrom().failure(new IllegalStateException("boom")),
+            "ok", (java.util.function.Supplier<io.smallrye.mutiny.Uni<Object>>) ()
+                -> io.smallrye.mutiny.Uni.createFrom().item("fine")
+        ), false).await().indefinitely();
+
+        assertThat(page.rescuedProps()).containsExactly("flaky");
+        assertThat(page.props()).doesNotContainKey("flaky");
+        assertThat(page.props()).containsEntry("ok", "fine");
+    }
+
+    @Test
+    void shouldNotEmitRescuedPropsWhenCandidatesSucceed() {
+        sharedData.addRescuedProp("ok");
+
+        var page = builder.build("Users", Map.of(
+            "ok", (java.util.function.Supplier<io.smallrye.mutiny.Uni<Object>>) ()
+                -> io.smallrye.mutiny.Uni.createFrom().item("fine")
+        ), false).await().indefinitely();
+
+        assertThat(page.rescuedProps()).isNullOrEmpty();
+        assertThat(page.props()).containsEntry("ok", "fine");
+    }
+
+    @Test
+    void shouldPruneDottedMergeKeysWhenParentIsReset() throws Exception {
+        sharedData.merge("contacts.data", java.util.List.of(1), false, "id");
+
+        var vertx = io.vertx.core.Vertx.vertx();
+        var ctx = vertx.getOrCreateContext();
+        ctx.putLocal("inertia-reset", "contacts");
+        var latch = new CountDownLatch(1);
+        var ref = new AtomicReference<io.github.dg.quarkus.inertia.model.PageObject>();
+        ctx.runOnContext(v -> {
+            try {
+                ref.set(builder.build("Users", Map.of(), false).await().indefinitely());
+            } finally {
+                latch.countDown();
+            }
+        });
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(ref.get().mergeProps()).isNullOrEmpty();
     }
 }

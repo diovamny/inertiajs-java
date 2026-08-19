@@ -23,7 +23,9 @@ import io.github.dg.quarkus.inertia.spi.JsonProvider;
  * the fields it asked to validate (see {@code Precognition-Validate-Only}).
  * For regular form submissions the errors are flashed and the client is
  * redirected back to the form, mimicking the Laravel-inertia demo
- * behavior. Only applies to Inertia requests.
+ * behavior. Precognition visits are recognized before the Inertia gate:
+ * the laravel-precognition client sends {@code Precognition: true}
+ * without {@code X-Inertia}.
  */
 @Provider
 @Priority(Priorities.HEADER_DECORATOR + 10)
@@ -62,15 +64,7 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                 .build();
         }
 
-        var isInertia = Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
-        if (!isInertia) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(errors)
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .build();
-        }
-
-        var isPrecognition = Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
+        var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
         if (isPrecognition) {
             var errorBag = (String) ctx.getLocal("inertia-error-bag");
             var body = errorBag != null && !errorBag.isBlank()
@@ -82,7 +76,6 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                 return Response.status(422)
                     .entity(json)
                     .type(MediaType.APPLICATION_JSON_TYPE)
-                    .header("X-Inertia", "true")
                     .header("Precognition", "true")
                     .header("Vary", "Precognition")
                     .build();
@@ -90,11 +83,18 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                 return Response.status(422)
                     .entity(payload)
                     .type(MediaType.APPLICATION_JSON_TYPE)
-                    .header("X-Inertia", "true")
                     .header("Precognition", "true")
                     .header("Vary", "Precognition")
                     .build();
             }
+        }
+
+        var isInertia = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
+        if (!isInertia) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity(errors)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .build();
         }
 
         var errorBag = (String) ctx.getLocal("inertia-error-bag");

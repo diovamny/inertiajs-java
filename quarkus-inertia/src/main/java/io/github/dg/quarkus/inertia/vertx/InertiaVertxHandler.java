@@ -163,13 +163,6 @@ public class InertiaVertxHandler {
             errors.put(field, violation.getMessage());
         }
 
-        if (!isInertia(ctx)) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(errors)
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .build();
-        }
-
         var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
         if (isPrecognition) {
             var errorBag = (String) ctx.getLocal("inertia-error-bag");
@@ -179,9 +172,15 @@ public class InertiaVertxHandler {
             return Response.status(422)
                 .entity(Map.of("errors", body))
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .header("X-Inertia", "true")
                 .header("Precognition", "true")
                 .header("Vary", "Precognition")
+                .build();
+        }
+
+        if (!isInertia(ctx)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity(errors)
+                .type(MediaType.APPLICATION_JSON_TYPE)
                 .build();
         }
 

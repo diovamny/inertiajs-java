@@ -40,4 +40,11 @@ public class ValidationTestResource {
         }
         return inertia.redirect("/validation-test");
     }
+
+    @GET
+    @Path("preserve-redirect")
+    public Uni<Object> preserveRedirect() {
+        inertia.preserveFragment(true);
+        return inertia.redirect("/validation-test");
+    }
 }

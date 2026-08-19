@@ -156,4 +156,81 @@ class ValidationQuarkusTest {
                 .header("Precognition", equalTo("true"))
                 .body("errors", not(hasKey("name")));
     }
+
+    @Test
+    void precognitionWithoutInertiaHeaderReturns422Not400() {
+        var response = given()
+            .when().get("/validation-test")
+            .then()
+                .statusCode(200)
+                .extract();
+        var cookies = response.cookies();
+        var token = response.cookie("XSRF-TOKEN");
+
+        given()
+            .cookies(cookies)
+            .header("X-XSRF-TOKEN", token)
+            .header("Precognition", "true")
+            .header("Precognition-Validate-Only", "name")
+            .formParam("name", "")
+            .when().post("/validation-test")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .header("Precognition", equalTo("true"))
+                .body("errors.name", equalTo("required"));
+    }
+
+    @Test
+    void precognitionSuccessReturns204WithSuccessHeader() {
+        var response = given()
+            .when().get("/validation-test")
+            .then()
+                .statusCode(200)
+                .extract();
+        var cookies = response.cookies();
+        var token = response.cookie("XSRF-TOKEN");
+
+        given()
+            .cookies(cookies)
+            .header("X-XSRF-TOKEN", token)
+            .header("Precognition", "true")
+            .header("Precognition-Validate-Only", "name")
+            .formParam("name", "John")
+            .when().post("/validation-test")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(204)
+                .header("Precognition", equalTo("true"))
+                .header("Precognition-Success", equalTo("true"));
+    }
+
+    @Test
+    void preserveFragmentSurvivesSameOriginRedirect() {
+        var response = given()
+            .when().get("/validation-test")
+            .then()
+                .statusCode(200)
+                .extract();
+        var cookies = response.cookies();
+
+        given()
+            .cookies(cookies)
+            .header("X-Inertia", "true")
+            .redirects().follow(false)
+            .when().get("/validation-test/preserve-redirect")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(302)
+                .header("Location", equalTo("/validation-test"));
+
+        given()
+            .cookies(cookies)
+            .header("X-Inertia", "true")
+            .when().get("/validation-test")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body("preserveFragment", equalTo(true));
+    }
 }

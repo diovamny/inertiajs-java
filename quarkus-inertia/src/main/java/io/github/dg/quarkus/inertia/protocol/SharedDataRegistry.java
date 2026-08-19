@@ -33,6 +33,7 @@ public class SharedDataRegistry {
     private final Map<String, ScrollSpec> scrollProps = new HashMap<>();
     private final Map<String, Object> meta = new HashMap<>();
     private final List<String> rescuedProps = new java.util.ArrayList<>();
+    private final List<String> actuallyRescuedProps = new java.util.ArrayList<>();
 
     /**
      * Specification of a scroll prop: its value, the DOM element the client
@@ -105,6 +106,7 @@ public class SharedDataRegistry {
         scrollProps.clear();
         meta.clear();
         rescuedProps.clear();
+        actuallyRescuedProps.clear();
     }
 
     public void addDeferredPropGroup(String group, List<String> keys) {
@@ -270,5 +272,23 @@ public class SharedDataRegistry {
 
     public boolean hasRescuedProps() {
         return !rescuedProps.isEmpty();
+    }
+
+    /**
+     * Record a prop that was actually rescued during this build: it was
+     * resolved, failed (or produced {@code null}) and was removed from the
+     * page props. Only these keys are emitted as the page's
+     * {@code rescuedProps}.
+     *
+     * @param key the rescued prop name
+     */
+    public void markActuallyRescued(String key) {
+        if (!actuallyRescuedProps.contains(key)) {
+            actuallyRescuedProps.add(key);
+        }
+    }
+
+    public List<String> getActuallyRescuedProps() {
+        return List.copyOf(actuallyRescuedProps);
     }
 }

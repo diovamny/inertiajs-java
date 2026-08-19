@@ -409,6 +409,25 @@ public class InertiaImpl implements Inertia {
         if (ctx != null) {
             ctx.putLocal("inertia-preserve-fragment", preserve);
         }
+        var session = session();
+        if (session != null) {
+            if (preserve) {
+                session.put(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT, Boolean.TRUE);
+            } else {
+                session.remove(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
+            }
+        }
+    }
+
+    private io.vertx.ext.web.Session session() {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            var local = ctx.getLocal("inertia-routing-context");
+            if (local instanceof io.vertx.ext.web.RoutingContext rc) {
+                return rc.session();
+            }
+        }
+        return null;
     }
 
     boolean isEncryptHistory() {

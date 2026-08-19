@@ -51,17 +51,23 @@ public class InertiaResponseDecorator {
             applyCsrfCookie(headers, ctx);
         }
 
+        var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
+        if (isPrecognition) {
+            if (status >= 400) {
+                return new DecoratedResponse(status, headers, entity);
+            }
+            headers.set("Precognition", "true");
+            headers.set("Precognition-Success", "true");
+            headers.set("Vary", "Precognition");
+            return new DecoratedResponse(Response.Status.NO_CONTENT.getStatusCode(), headers, null);
+        }
+
         var isInertia = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
         if (!isInertia) {
             return new DecoratedResponse(status, headers, entity);
         }
 
         headers.add("Vary", "X-Inertia");
-
-        var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
-        if (isPrecognition) {
-            return new DecoratedResponse(status, headers, entity);
-        }
 
         if (isRedirect(status)) {
             return handleRedirect(rc, ctx, status, headers, entity);

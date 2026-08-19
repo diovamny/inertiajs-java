@@ -33,6 +33,9 @@ import io.github.dg.quarkus.inertia.version.VersionProvider;
 @RequestScoped
 public class PageObjectBuilder {
 
+    /** Session attribute carrying the preserve-fragment flag across a redirect. */
+    public static final String SESSION_PRESERVE_FRAGMENT = "__inertia_preserve_fragment";
+
     private final SharedDataRegistry sharedData;
     private final VersionProvider versionProvider;
     private final PartialReloadProcessor partialReloadProcessor;
@@ -145,14 +148,10 @@ public class PageObjectBuilder {
 
         var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
         var resetKeys = resetProps();
-        var mergeProps = new java.util.ArrayList<>(sharedData.getMergePropKeys());
-        mergeProps.removeIf(resetKeys::contains);
-        var prependProps = new java.util.ArrayList<>(sharedData.getPrependPropKeys());
-        prependProps.removeIf(resetKeys::contains);
-        var deepMergeProps = new java.util.ArrayList<>(sharedData.getDeepMergePropKeys());
-        deepMergeProps.removeIf(resetKeys::contains);
-        var matchPropsOn = new java.util.ArrayList<>(sharedData.getMatchPropKeys());
-        matchPropsOn.removeIf(resetKeys::contains);
+        var mergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getMergePropKeys()), resetKeys);
+        var prependProps = pruneReset(new java.util.ArrayList<>(sharedData.getPrependPropKeys()), resetKeys);
+        var deepMergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getDeepMergePropKeys()), resetKeys);
+        var matchPropsOn = pruneReset(new java.util.ArrayList<>(sharedData.getMatchPropKeys()), resetKeys);
         var onceProps = onceMetadata.isEmpty() ? null : onceMetadata;
         var scrollProps = sharedData.hasScrollProps()
             ? buildScrollProps(mergeProps, prependProps, matchPropsOn)
@@ -169,7 +168,9 @@ public class PageObjectBuilder {
         var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
 
         return resolveSupplierProps(allProps, partialContext).map(resolvedProps -> {
-            var rescuedProps = sharedData.hasRescuedProps() ? sharedData.getRescuedProps() : null;
+            var rescuedProps = sharedData.hasRescuedProps()
+                ? sharedData.getActuallyRescuedProps()
+                : null;
 
             var page = new PageObject(resolvedComponent, copyOfNullTolerant(resolvedProps), url, version,
                 flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
@@ -245,6 +246,7 @@ public class PageObjectBuilder {
                         .onFailure().recoverWithUni(failure -> {
                             if (sharedData.getRescuedProps().contains(key)) {
                                 map.remove(key);
+                                sharedData.markActuallyRescued(key);
                                 return Uni.createFrom().nullItem();
                             }
                             return Uni.createFrom().failure(failure);
@@ -252,6 +254,7 @@ public class PageObjectBuilder {
                         .map(resolved -> {
                             if (resolved == null && sharedData.getRescuedProps().contains(key)) {
                                 map.remove(key);
+                                sharedData.markActuallyRescued(key);
                             } else {
                                 map.put(key, resolved);
                             }
@@ -329,6 +332,21 @@ public class PageObjectBuilder {
             var trimmed = part.trim();
             if (!trimmed.isEmpty()) keys.add(trimmed);
         }
+        return keys;
+    }
+
+    /**
+     * Drop the reset keys from a merge metadata list. A reset of a parent
+     * prop ({@code contacts}) also prunes its dotted descendants
+     * ({@code contacts.data}) so the client replaces the whole subtree
+     * instead of merging it with the stale cached value.
+     */
+    private static List<String> pruneReset(List<String> keys, java.util.Set<String> resetKeys) {
+        if (resetKeys.isEmpty()) {
+            return keys;
+        }
+        keys.removeIf(key -> resetKeys.stream()
+            .anyMatch(reset -> key.equals(reset) || key.startsWith(reset + ".")));
         return keys;
     }
 
@@ -563,9 +581,38 @@ public class PageObjectBuilder {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
             var val = ctx.getLocal("inertia-preserve-fragment");
-            return Boolean.TRUE.equals(val);
+            if (val != null) {
+                return Boolean.TRUE.equals(val);
+            }
+        }
+        var session = session();
+        if (session != null) {
+            var stored = session.get(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
+            if (Boolean.TRUE.equals(stored)) {
+                session.remove(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
+                return true;
+            }
         }
         return false;
+    }
+
+    private io.vertx.ext.web.Session session() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var local = ctx.getLocal("inertia-routing-context");
+            if (local instanceof io.vertx.ext.web.RoutingContext rc) {
+                return rc.session();
+            }
+        }
+        try {
+            var routingContext = currentVertxRequest.getCurrent();
+            if (routingContext != null) {
+                return routingContext.session();
+            }
+        } catch (Exception ignored) {
+            // no active request
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
