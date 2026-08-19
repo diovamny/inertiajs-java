@@ -57,7 +57,8 @@ class ValidationIntegrationTest {
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "test-version"))
             .andExpect(status().isOk())
-            .andExpect(inertia().prop("errors", hasKey("name")));
+            .andExpect(inertia().prop("errors", hasKey("name")))
+            .andExpect(inertia().flash("errors", org.hamcrest.Matchers.nullValue()));
     }
 
     @Test
@@ -68,5 +69,52 @@ class ValidationIntegrationTest {
                 .content("{\"name\":\"Ada\"}"))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", "/flash"));
+    }
+
+    @Test
+    void precognitionWithoutXInertiaReturns422WithPrecognitionHeader() throws Exception {
+        mockMvc.perform(post("/form")
+                .header("Precognition", "true")
+                .header("Precognition-Validate-Only", "name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"\"}"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(header().string("Precognition", "true"))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.errors.name").exists());
+    }
+
+    @Test
+    void precognitionValidReturns204WithSuccessHeader() throws Exception {
+        mockMvc.perform(post("/form")
+                .header("Precognition", "true")
+                .header("Precognition-Validate-Only", "name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Ada\"}"))
+            .andExpect(status().isNoContent())
+            .andExpect(header().string("Precognition", "true"))
+            .andExpect(header().string("Precognition-Success", "true"));
+    }
+
+    @Test
+    void errorBagErrorsAreNestedUnderBagOnReload() throws Exception {
+        var session = new MockHttpSession();
+        mockMvc.perform(post("/form")
+                .session(session)
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Error-Bag", "createContact")
+                .header("Referer", "/flash")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"\"}"))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", "/flash"));
+
+        mockMvc.perform(get("/flash")
+                .session(session)
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Version", "test-version")
+                .header("X-Inertia-Error-Bag", "createContact"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.props.errors.createContact.name").exists());
     }
 }

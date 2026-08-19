@@ -16,8 +16,10 @@ import io.github.dg.spring.inertia.internal.InertiaRequestContext;
  *   <li>{@code X-Inertia-Partial-Except}    - props to exclude</li>
  *   <li>{@code X-Inertia-Reset}             - reset mergeable props (alias:
  *   {@code X-Inertia-Partial-Reset})</li>
- *   <li>{@code X-Inertia-Precognition}      - precognition visit</li>
- *   <li>{@code X-Inertia-Precognition-Validate-Fields} - validate-only list</li>
+ *   <li>{@code X-Inertia-Precognition}      - precognition visit (alias:
+ *   {@code Precognition}, sent by the laravel-precognition client)</li>
+ *   <li>{@code X-Inertia-Precognition-Validate-Fields} - validate-only list
+ *   (alias: {@code Precognition-Validate-Only})</li>
  *   <li>{@code X-Inertia-Error-Bag}         - target errors bag</li>
  * </ul>
  */
@@ -63,8 +65,16 @@ public class InertiaHeaderExtractor {
             reset = header(request, "X-Inertia-Partial-Reset");
         }
         set(request, CONTEXT_PARTIAL_RESET, reset);
-        set(request, CONTEXT_PRECOGNITION, header(request, "X-Inertia-Precognition"));
-        set(request, CONTEXT_PRECOGNITION_VALIDATE_FIELDS, header(request, "X-Inertia-Precognition-Validate-Fields"));
+        var precognition = header(request, "X-Inertia-Precognition");
+        if (precognition == null || precognition.isBlank()) {
+            precognition = header(request, "Precognition");
+        }
+        var validateFields = header(request, "X-Inertia-Precognition-Validate-Fields");
+        if (validateFields == null || validateFields.isBlank()) {
+            validateFields = header(request, "Precognition-Validate-Only");
+        }
+        set(request, CONTEXT_PRECOGNITION, precognition);
+        set(request, CONTEXT_PRECOGNITION_VALIDATE_FIELDS, validateFields);
         set(request, CONTEXT_ERROR_BAG, header(request, "X-Inertia-Error-Bag"));
     }
 

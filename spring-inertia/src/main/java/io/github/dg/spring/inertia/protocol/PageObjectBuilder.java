@@ -43,6 +43,8 @@ public class PageObjectBuilder {
     public static final String CONTEXT_CUSTOM_HEADERS = "inertia-custom-headers";
     public static final String CONTEXT_ENCRYPT_HISTORY = "inertia-encrypt-history";
     public static final String CONTEXT_CAMELIZE_PROPS = "inertia-camelize-props";
+    /** Session attribute carrying the preserve-fragment flag across a redirect. */
+    public static final String SESSION_PRESERVE_FRAGMENT = "__inertia_preserve_fragment";
 
     private final InertiaProperties properties;
     private final SharedDataRegistry sharedDataRegistry;
@@ -90,7 +92,21 @@ public class PageObjectBuilder {
             merged = camelize(merged);
         }
 
-        injectFlash(merged);
+        var url = urlResolver != null
+            ? urlResolver.resolve(InertiaRequestContext.uri())
+            : InertiaRequestContext.uri();
+        var version = resolveVersion();
+
+        InertiaRequestContext.set(CONTEXT_PAGE_VERSION, version);
+        var clientVersion = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_VERSION);
+        InertiaRequestContext.set(CONTEXT_VERSION_MISMATCH,
+            "GET".equalsIgnoreCase(InertiaRequestContext.method())
+                && clientVersion != null
+                && version != null
+                && !version.equals(String.valueOf(clientVersion)));
+
+        var flash = resolveFlashData(merged);
+
         injectValidationErrors(merged, alwaysIncludeErrors);
         injectSharedProps(merged);
         applyOnceProps(merged);
@@ -98,10 +114,11 @@ public class PageObjectBuilder {
 
         var deferredProps = collectDeferredProps(merged);
         var scrollProps = applyScrollProps(merged);
-        var mergeProps = stringList(CONTEXT_MERGE_PROPS);
-        var prependProps = stringList(CONTEXT_PREPEND_PROPS);
-        var deepMergeProps = stringList(CONTEXT_DEEP_MERGE_PROPS);
-        var matchPropsOn = stringList(CONTEXT_MATCH_PROPS_ON);
+        var resetKeys = resetKeys();
+        var mergeProps = pruneReset(stringList(CONTEXT_MERGE_PROPS), resetKeys);
+        var prependProps = pruneReset(stringList(CONTEXT_PREPEND_PROPS), resetKeys);
+        var deepMergeProps = pruneReset(stringList(CONTEXT_DEEP_MERGE_PROPS), resetKeys);
+        var matchPropsOn = pruneReset(stringList(CONTEXT_MATCH_PROPS_ON), resetKeys);
 
         var partial = partialReloadProcessor.isPartialReload(component);
         if (partial) {
@@ -119,20 +136,6 @@ public class PageObjectBuilder {
         merged = resolveLazyProps(merged);
         merged = unwrapOptionals(merged);
 
-        var url = urlResolver != null
-            ? urlResolver.resolve(InertiaRequestContext.uri())
-            : InertiaRequestContext.uri();
-        var version = resolveVersion();
-
-        InertiaRequestContext.set(CONTEXT_PAGE_VERSION, version);
-        var clientVersion = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_VERSION);
-        InertiaRequestContext.set(CONTEXT_VERSION_MISMATCH,
-            "GET".equalsIgnoreCase(InertiaRequestContext.method())
-                && clientVersion != null
-                && version != null
-                && !version.equals(String.valueOf(clientVersion)));
-
-        var flash = flashStore.hasData() ? flashStore.drain() : null;
         var rescued = rescuedKeys();
 
         var resolvedComponent = componentTransformer != null
@@ -183,23 +186,59 @@ public class PageObjectBuilder {
 
     private void injectValidationErrors(Map<String, Object> merged, boolean alwaysIncludeErrors) {
         var bag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
-        var key = bag != null ? String.valueOf(bag) : "errors";
         var errors = InertiaRequestContext.get(CONTEXT_ERRORS);
         if (errors instanceof Map<?, ?> map && !map.isEmpty()) {
-            merged.put(key, new LinkedHashMap<>(map));
-            alwaysErrorsKey = key;
+            var target = bag != null
+                ? Map.of(String.valueOf(bag), new LinkedHashMap<>(map))
+                : new LinkedHashMap<>(map);
+            merged.put("errors", target);
+            alwaysErrorsKey = "errors";
         } else if (alwaysIncludeErrors) {
-            merged.putIfAbsent(key, Map.of());
+            merged.putIfAbsent("errors", Map.of());
         }
     }
 
-    private void injectFlash(Map<String, Object> merged) {
-        if (!flashStore.hasData()) {
-            return;
+    /**
+     * Drain the flash store and return the flash data delivered to the
+     * client as the top-level {@code flash} page key, or {@code null}
+     * when there is nothing to deliver.
+     *
+     * <p>The flashed values are mirrored into the page props as well
+     * (legacy flat prop contract), but the {@code errors} key is kept
+     * only in the props (where the validation machinery consumes it)
+     * and excluded from the top-level flash so it never fires the
+     * client's {@code flash} event.</p>
+     *
+     * @param merged the accumulated page props (mutated in place with the
+     *               drained flash keys)
+     * @return the top-level flash map, or {@code null} when empty
+     */
+    private Map<String, Object> resolveFlashData(Map<String, Object> merged) {
+        if (!flashStore.hasData()
+                || Boolean.TRUE.equals(InertiaRequestContext.get(CONTEXT_VERSION_MISMATCH))) {
+            return null;
         }
-        for (var entry : flashStore.drain().entrySet()) {
-            merged.putIfAbsent(entry.getKey(), entry.getValue());
+        var flashed = flashStore.drain();
+        if (flashed.isEmpty()) {
+            return null;
         }
+        var allowed = properties.getFlashKeys();
+        var target = flashed;
+        if (!allowed.isEmpty()) {
+            var filtered = new LinkedHashMap<String, Object>();
+            for (var key : allowed) {
+                if (flashed.containsKey(key)) {
+                    filtered.put(key, flashed.get(key));
+                }
+            }
+            target = filtered;
+        }
+        for (var entry : target.entrySet()) {
+            merged.put(entry.getKey(), entry.getValue());
+        }
+        var flashData = new LinkedHashMap<>(target);
+        flashData.remove("errors");
+        return flashData.isEmpty() ? null : flashData;
     }
 
     private void injectSharedProps(Map<String, Object> merged) {
@@ -394,6 +433,21 @@ public class PageObjectBuilder {
         return keys;
     }
 
+    /**
+     * Drop the reset keys from a merge metadata list. A reset of a parent
+     * prop ({@code contacts}) also prunes its dotted descendants
+     * ({@code contacts.data}) so the client replaces the whole subtree
+     * instead of merging it with the stale cached value.
+     */
+    private static List<String> pruneReset(List<String> keys, java.util.Set<String> resetKeys) {
+        if (resetKeys.isEmpty()) {
+            return keys;
+        }
+        return keys.stream()
+            .filter(key -> resetKeys.stream().noneMatch(reset -> key.equals(reset) || key.startsWith(reset + ".")))
+            .toList();
+    }
+
     @SuppressWarnings("unchecked")
     private List<String> rescuedCandidates() {
         var stored = InertiaRequestContext.get(CONTEXT_RESCUED_CANDIDATES);
@@ -431,6 +485,17 @@ public class PageObjectBuilder {
         var override = InertiaRequestContext.get(CONTEXT_PRESERVE_FRAGMENT);
         if (override != null) {
             return Boolean.TRUE.equals(override);
+        }
+        var request = InertiaRequestContext.request();
+        if (request != null) {
+            var session = request.getSession(false);
+            if (session != null) {
+                var stored = session.getAttribute(SESSION_PRESERVE_FRAGMENT);
+                if (Boolean.TRUE.equals(stored)) {
+                    session.removeAttribute(SESSION_PRESERVE_FRAGMENT);
+                    return true;
+                }
+            }
         }
         return false;
     }

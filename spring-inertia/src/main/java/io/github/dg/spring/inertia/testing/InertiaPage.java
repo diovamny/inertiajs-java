@@ -11,7 +11,8 @@ public record InertiaPage(
     String component,
     Map<String, Object> props,
     String url,
-    String version
+    String version,
+    Map<String, Object> flash
 ) {
 
     private static final ObjectMapper DEFAULT = new ObjectMapper();
@@ -38,11 +39,15 @@ public record InertiaPage(
             var node = mapper.readTree(json);
             Map<String, Object> props = mapper.convertValue(
                 node.path("props"), new TypeReference<Map<String, Object>>() { });
+            Map<String, Object> flash = node.has("flash")
+                ? mapper.convertValue(node.path("flash"), new TypeReference<Map<String, Object>>() { })
+                : null;
             return new InertiaPage(
                 node.path("component").asText(),
                 props,
                 node.path("url").asText(),
-                node.path("version").asText(null));
+                node.path("version").asText(null),
+                flash);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid Inertia page JSON", e);
         }
@@ -66,5 +71,15 @@ public record InertiaPage(
      */
     public boolean hasProp(String name) {
         return props != null && props.containsKey(name);
+    }
+
+    /**
+     * The value of a top-level flash key.
+     *
+     * @param key the flash key
+     * @return the value or {@code null} when absent
+     */
+    public Object flash(String key) {
+        return flash != null ? flash.get(key) : null;
     }
 }

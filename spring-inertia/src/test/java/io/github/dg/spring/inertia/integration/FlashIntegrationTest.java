@@ -38,7 +38,8 @@ class FlashIntegrationTest {
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "test-version"))
             .andExpect(status().isOk())
-            .andExpect(inertia().prop("message", equalTo("Saved")));
+            .andExpect(inertia().prop("message", equalTo("Saved")))
+            .andExpect(inertia().flash("message", equalTo("Saved")));
     }
 
     @Test
@@ -48,9 +49,11 @@ class FlashIntegrationTest {
             .andExpect(status().isSeeOther());
         mockMvc.perform(get("/flash").session(session)
                 .header("X-Inertia", "true").header("X-Inertia-Version", "test-version"))
-            .andExpect(inertia().prop("message", equalTo("Saved")));
+            .andExpect(inertia().prop("message", equalTo("Saved")))
+            .andExpect(inertia().flash("message", equalTo("Saved")));
         mockMvc.perform(get("/flash").session(session)
                 .header("X-Inertia", "true").header("X-Inertia-Version", "test-version"))
-            .andExpect(inertia().prop("message", org.hamcrest.Matchers.nullValue()));
+            .andExpect(inertia().prop("message", org.hamcrest.Matchers.nullValue()))
+            .andExpect(inertia().flash("message", org.hamcrest.Matchers.nullValue()));
     }
 }

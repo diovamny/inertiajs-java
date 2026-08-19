@@ -2,7 +2,6 @@ package io.github.dg.spring.inertia.api;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.github.dg.spring.inertia.model.DeferredProp;
@@ -274,22 +273,18 @@ public interface Inertia {
     Object rawJson(String json);
 
     /**
-     * Resolve a prop lazily; during partial reloads the callback is skipped
-     * and the prop is omitted.
+     * Resolve a prop lazily and only include it when it is explicitly
+     * requested through a partial reload (i.e. when the key is listed in the
+     * {@code only} option of a partial reload of the page). On full visits
+     * and unrequested partial reloads the prop is omitted.
      *
+     * @param key      the prop key (as used by the client in the partial
+     *                 reload {@code only} list)
      * @param callback the resolver
-     * @return the resolved value (or a skip marker)
+     * @return the resolved value, or a skip marker when the prop should be
+     *         omitted
      */
-    Object optional(Supplier<Object> callback);
-
-    /**
-     * Resolve a prop lazily with a fallback used during partial reloads.
-     *
-     * @param callback the resolver
-     * @param fallback the value used when the prop is partial-reloaded
-     * @return the resolved or fallback value
-     */
-    Object optional(Supplier<Object> callback, Optional<Object> fallback);
+    Object optional(String key, Supplier<Object> callback);
 
     /**
      * Cache a prop computation server-side.

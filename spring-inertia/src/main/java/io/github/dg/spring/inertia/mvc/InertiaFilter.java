@@ -16,6 +16,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import io.github.dg.spring.inertia.config.InertiaProperties;
 import io.github.dg.spring.inertia.internal.InertiaRequestContext;
+import io.github.dg.spring.inertia.protocol.InertiaHeaderExtractor;
 import io.github.dg.spring.inertia.protocol.PageObjectBuilder;
 
 /**
@@ -28,7 +29,11 @@ import io.github.dg.spring.inertia.protocol.PageObjectBuilder;
  *   <li>redirects empty 200 responses back to the referer</li>
  *   <li>normalizes 302 redirects of state-changing requests to 303</li>
  *   <li>converts external 302 redirects on Inertia GET visits into 409 +
- *       {@code X-Inertia-Location}</li>
+ *       {@code X-Inertia-Location}; same-origin redirects pass through so
+ *       the client follows them transparently (required for
+ *       preserve-fragment visits)</li>
+ *   <li>converts successful precognition responses into 204 +
+ *       {@code Precognition-Success}</li>
  * </ul>
  */
 public class InertiaFilter extends OncePerRequestFilter {
@@ -50,6 +55,7 @@ public class InertiaFilter extends OncePerRequestFilter {
         applyCustomHeaders(wrapper);
         applyRedirectNormalization(request, wrapper);
         applyEmptyResponseRedirect(request, wrapper);
+        applyPrecognition(wrapper);
         applyEtag(request, wrapper);
         wrapper.copyBodyToResponse();
     }
@@ -80,10 +86,51 @@ public class InertiaFilter extends OncePerRequestFilter {
             response.setStatus(303);
         }
         if (response.getStatus() == 302 && InertiaRequestContext.isInertiaRequest()
-                && "GET".equalsIgnoreCase(method)) {
+                && "GET".equalsIgnoreCase(method) && isExternal(location, request)) {
             response.setStatus(409);
             response.setHeader("X-Inertia-Location", location);
             response.setHeader("Vary", "X-Inertia");
+        }
+    }
+
+    /**
+     * Convert successful precognition responses into the 204 the
+     * laravel-precognition client expects. The 422 failure responses built
+     * by the {@code PrecognitionHandler} already carry the
+     * {@code Precognition: true} header and are left untouched.
+     */
+    private void applyPrecognition(ContentCachingResponseWrapper response) {
+        if (InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION) == null) {
+            return;
+        }
+        if (response.getStatus() >= 400) {
+            return;
+        }
+        response.setStatus(204);
+        response.setHeader("Precognition", "true");
+        response.setHeader("Precognition-Success", "true");
+        response.setHeader("Vary", "Precognition");
+        response.resetBuffer();
+    }
+
+    private static boolean isExternal(String location, HttpServletRequest request) {
+        if (location.startsWith("/")) {
+            return false;
+        }
+        try {
+            var uri = new java.net.URI(location);
+            if (!uri.isAbsolute()) {
+                return false;
+            }
+            var host = request.getServerName();
+            var port = request.getServerPort();
+            var isDefaultPort = ("http".equalsIgnoreCase(uri.getScheme()) && port == 80)
+                || ("https".equalsIgnoreCase(uri.getScheme()) && port == 443);
+            var expectedAuthority = isDefaultPort ? host : host + ":" + port;
+            return !request.getScheme().equalsIgnoreCase(uri.getScheme())
+                || !expectedAuthority.equalsIgnoreCase(uri.getAuthority());
+        } catch (Exception e) {
+            return true;
         }
     }
 

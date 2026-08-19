@@ -49,14 +49,15 @@ public class PrecognitionHandler {
         if (InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION) != null) {
             var headers = new org.springframework.http.HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("X-Inertia", "true");
-            headers.set("Vary", "X-Inertia");
+            headers.set("Precognition", "true");
+            headers.set("Vary", "Precognition");
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).headers(headers)
                 .body(jsonProvider.toJson(Map.of("errors", errors)));
         }
 
-        InertiaRequestContext.set(InertiaHeaderExtractor.CONTEXT_ERROR_BAG, null);
-        flashStore.put("errors", errors);
+        var bag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
+        var errorsToFlash = bag != null ? Map.of(String.valueOf(bag), errors) : errors;
+        flashStore.put("errors", errorsToFlash);
         return redirectBackWithErrors(errors);
     }
 

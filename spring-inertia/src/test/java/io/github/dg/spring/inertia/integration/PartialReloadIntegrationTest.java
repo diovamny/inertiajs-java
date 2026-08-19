@@ -70,4 +70,26 @@ class PartialReloadIntegrationTest {
             .andExpect(inertia().hasProp("title"))
             .andExpect(inertia().hasProp("users"));
     }
+
+    @Test
+    void resetKeyPrunesMergeMetadata() throws Exception {
+        mockMvc.perform(get("/merge-match")
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Version", "test-version")
+                .header("X-Inertia-Partial-Component", "MergePage")
+                .header("X-Inertia-Partial-Data", "contacts"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                .jsonPath("$.mergeProps[0]").value("contacts"));
+
+        mockMvc.perform(get("/merge-match")
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Version", "test-version")
+                .header("X-Inertia-Partial-Component", "MergePage")
+                .header("X-Inertia-Partial-Data", "contacts")
+                .header("X-Inertia-Reset", "contacts"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                .jsonPath("$.mergeProps").doesNotExist());
+    }
 }

@@ -120,6 +120,35 @@ public class InertiaResultMatchers {
         };
     }
 
+    /**
+     * Assert a top-level flash value with a Hamcrest matcher.
+     *
+     * @param key     the flash key
+     * @param matcher the matcher
+     * @return the matcher
+     */
+    public ResultMatcher flash(String key, Matcher<?> matcher) {
+        return result -> {
+            var page = pageOf(result);
+            var value = page.flash(key);
+            if (!matcher.matches(value)) {
+                throw new AssertionError(
+                    "Flash '" + key + "' with value " + value + " does not match " + matcher);
+            }
+        };
+    }
+
+    /**
+     * Assert a top-level flash value equals a value.
+     *
+     * @param key   the flash key
+     * @param value the expected value
+     * @return the matcher
+     */
+    public ResultMatcher flash(String key, Object value) {
+        return flash(key, Matchers.equalTo(value));
+    }
+
     private static InertiaPage pageOf(MvcResult result) {
         var body = new String(result.getResponse().getContentAsByteArray(),
             java.nio.charset.StandardCharsets.UTF_8);

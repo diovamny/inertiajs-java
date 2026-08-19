@@ -236,14 +236,13 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
-    public Object optional(Supplier<Object> callback) {
-        return optional(callback, Optional.empty());
-    }
-
-    @Override
-    public Object optional(Supplier<Object> callback, Optional<Object> fallback) {
-        if (partialReloadProcessor.isPartialReload(partialComponent())) {
-            return fallback.orElse(Optional.empty());
+    public Object optional(String key, Supplier<Object> callback) {
+        if (!partialReloadProcessor.isPartialReload(partialComponent())) {
+            return Optional.empty();
+        }
+        var requested = partialReloadProcessor.partialData();
+        if (requested.isEmpty() || !requested.contains(key)) {
+            return Optional.empty();
         }
         return callback.get();
     }
@@ -310,6 +309,15 @@ public class InertiaImpl implements Inertia {
     @Override
     public void preserveFragment(boolean preserve) {
         InertiaRequestContext.set(PageObjectBuilder.CONTEXT_PRESERVE_FRAGMENT, preserve);
+        var request = InertiaRequestContext.request();
+        if (request != null) {
+            var session = request.getSession(true);
+            if (preserve) {
+                session.setAttribute(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT, Boolean.TRUE);
+            } else {
+                session.removeAttribute(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

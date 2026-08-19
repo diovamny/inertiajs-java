@@ -37,6 +37,13 @@ public class TestController {
         return inertia.render("DeferredPage", Map.of("title", "t"));
     }
 
+    @GetMapping("/optional")
+    public Object optional() {
+        return inertia.render("OptionalPage", Map.of(
+            "section1", inertia.optional("section1", () -> "one"),
+            "section2", inertia.optional("section2", () -> "two")));
+    }
+
     @GetMapping("/deferred-filter")
     public Object deferredFilter() {
         inertia.deferred("slow", "slow", () -> "slow-value");
@@ -77,6 +84,12 @@ public class TestController {
     public Object preserveFragment() {
         inertia.preserveFragment(true);
         return inertia.render("FragmentPage", Map.of("title", "t"));
+    }
+
+    @GetMapping("/preserve-redirect")
+    public Object preserveRedirect() {
+        inertia.preserveFragment(true);
+        return inertia.redirect("/flash");
     }
 
     @GetMapping("/merge-match")

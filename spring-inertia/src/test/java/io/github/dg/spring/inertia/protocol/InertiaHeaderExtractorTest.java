@@ -66,6 +66,18 @@ class InertiaHeaderExtractorTest {
     }
 
     @Test
+    void extractsLaravelPrecognitionHeaderAliases() {
+        request.setMethod("POST");
+        request.addHeader("Precognition", "true");
+        request.addHeader("Precognition-Validate-Only", "email,name");
+
+        extractor.extract(request);
+
+        assertEquals("true", request.getAttribute(InertiaHeaderExtractor.CONTEXT_PRECOGNITION));
+        assertEquals("email,name", request.getAttribute(InertiaHeaderExtractor.CONTEXT_PRECOGNITION_VALIDATE_FIELDS));
+    }
+
+    @Test
     void plainVisitHasNoInertiaAttribute() {
         extractor.extract(request);
         assertFalse(request.getAttribute(InertiaHeaderExtractor.CONTEXT_INERTIA) != null);

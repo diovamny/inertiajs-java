@@ -238,8 +238,8 @@ class PingCrmSpringTest {
     @Order(13)
     void editMissingOrganizationRedirectsWithError() throws Exception {
         mockMvc.perform(get("/organizations/999999/edit").header("X-Inertia", "true").session(session))
-            .andExpect(status().isConflict())
-            .andExpect(header().string("X-Inertia-Location", "/organizations"));
+            .andExpect(status().isFound())
+            .andExpect(header().string("Location", "/organizations"));
     }
 
     // ──────────────────────────────────────────────
