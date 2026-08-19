@@ -1,0 +1,1019 @@
+{
+  "_AppLayout.js": {
+    "file": "assets/AppLayout.js",
+    "name": "AppLayout",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_useAppearance.js",
+      "_AppLogoIcon.js"
+    ]
+  },
+  "_AppLogoIcon.js": {
+    "file": "assets/AppLogoIcon.js",
+    "name": "AppLogoIcon",
+    "imports": [
+      "_dist.js"
+    ]
+  },
+  "_CardDescription.js": {
+    "file": "assets/CardDescription.js",
+    "name": "CardDescription",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js"
+    ]
+  },
+  "_CardTitle.js": {
+    "file": "assets/CardTitle.js",
+    "name": "CardTitle",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js"
+    ]
+  },
+  "_CodeBlock.js": {
+    "file": "assets/CodeBlock.js",
+    "name": "CodeBlock",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_check.js"
+    ]
+  },
+  "_FeatureHeader.css": {
+    "file": "assets/FeatureHeader.css",
+    "src": "_FeatureHeader.css"
+  },
+  "_FeatureHeader.js": {
+    "file": "assets/FeatureHeader.js",
+    "name": "FeatureHeader",
+    "imports": [
+      "_dist.js",
+      "_CardTitle.js",
+      "_CardDescription.js"
+    ],
+    "css": [
+      "assets/FeatureHeader.css"
+    ]
+  },
+  "_Input.js": {
+    "file": "assets/Input.js",
+    "name": "Input",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js"
+    ]
+  },
+  "_InputError.js": {
+    "file": "assets/InputError.js",
+    "name": "InputError",
+    "imports": [
+      "_dist.js"
+    ]
+  },
+  "_Label.js": {
+    "file": "assets/Label.js",
+    "name": "Label",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js"
+    ]
+  },
+  "_PersistentDemoLayout.js": {
+    "file": "assets/PersistentDemoLayout.js",
+    "name": "PersistentDemoLayout",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "_Skeleton.js": {
+    "file": "assets/Skeleton.js",
+    "name": "Skeleton",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js"
+    ]
+  },
+  "_badge.js": {
+    "file": "assets/badge.js",
+    "name": "badge",
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js"
+    ]
+  },
+  "_check.js": {
+    "file": "assets/check.js",
+    "name": "check",
+    "imports": [
+      "_createLucideIcon.js"
+    ]
+  },
+  "_createLucideIcon.js": {
+    "file": "assets/createLucideIcon.js",
+    "name": "createLucideIcon",
+    "imports": [
+      "_dist.js"
+    ]
+  },
+  "_dist.js": {
+    "file": "assets/dist.js",
+    "name": "dist"
+  },
+  "_heart.js": {
+    "file": "assets/heart.js",
+    "name": "heart",
+    "imports": [
+      "_createLucideIcon.js"
+    ]
+  },
+  "_plus.js": {
+    "file": "assets/plus.js",
+    "name": "plus",
+    "imports": [
+      "_createLucideIcon.js"
+    ]
+  },
+  "_search.js": {
+    "file": "assets/search.js",
+    "name": "search",
+    "imports": [
+      "_createLucideIcon.js"
+    ]
+  },
+  "_useAppearance.js": {
+    "file": "assets/useAppearance.js",
+    "name": "useAppearance",
+    "imports": [
+      "_dist.js"
+    ]
+  },
+  "resources/js/app.ts": {
+    "file": "assets/app.js",
+    "name": "app",
+    "src": "resources/js/app.ts",
+    "isEntry": true,
+    "imports": [
+      "_dist.js",
+      "_useAppearance.js"
+    ],
+    "dynamicImports": [
+      "resources/js/pages/Auth/Login.vue",
+      "resources/js/pages/Contacts/Create.vue",
+      "resources/js/pages/Contacts/Edit.vue",
+      "resources/js/pages/Contacts/Index.vue",
+      "resources/js/pages/Contacts/Show.vue",
+      "resources/js/pages/Crm/Dashboard.vue",
+      "resources/js/pages/ErrorPage.vue",
+      "resources/js/pages/Features/DataLoading/DeferredProps.vue",
+      "resources/js/pages/Features/DataLoading/InfiniteScroll.vue",
+      "resources/js/pages/Features/DataLoading/OnceProps.vue",
+      "resources/js/pages/Features/DataLoading/OptionalProps.vue",
+      "resources/js/pages/Features/DataLoading/PartialReloads.vue",
+      "resources/js/pages/Features/DataLoading/Polling.vue",
+      "resources/js/pages/Features/DataLoading/PropMerging.vue",
+      "resources/js/pages/Features/DataLoading/WhenVisible.vue",
+      "resources/js/pages/Features/Errors/HttpExceptions.vue",
+      "resources/js/pages/Features/Errors/NetworkErrors.vue",
+      "resources/js/pages/Features/Events/GlobalEvents.vue",
+      "resources/js/pages/Features/Events/LocationEvent.vue",
+      "resources/js/pages/Features/Events/OnceEvents.vue",
+      "resources/js/pages/Features/Events/Progress.vue",
+      "resources/js/pages/Features/Events/VisitCallbacks.vue",
+      "resources/js/pages/Features/Forms/DottedKeys.vue",
+      "resources/js/pages/Features/Forms/FileUploads.vue",
+      "resources/js/pages/Features/Forms/FormComponent.vue",
+      "resources/js/pages/Features/Forms/OptimisticUpdates.vue",
+      "resources/js/pages/Features/Forms/Precognition.vue",
+      "resources/js/pages/Features/Forms/UseForm.vue",
+      "resources/js/pages/Features/Forms/UseFormContext.vue",
+      "resources/js/pages/Features/Forms/Validation.vue",
+      "resources/js/pages/Features/Http/UseHttp.vue",
+      "resources/js/pages/Features/Layouts/Head.vue",
+      "resources/js/pages/Features/Layouts/LayoutProps.vue",
+      "resources/js/pages/Features/Layouts/NestedLayouts.vue",
+      "resources/js/pages/Features/Layouts/PersistentLayouts.vue",
+      "resources/js/pages/Features/Layouts/PersistentLayoutsPageTwo.vue",
+      "resources/js/pages/Features/Navigation/AsyncRequests.vue",
+      "resources/js/pages/Features/Navigation/HistoryManagement.vue",
+      "resources/js/pages/Features/Navigation/InstantVisitTarget.vue",
+      "resources/js/pages/Features/Navigation/InstantVisits.vue",
+      "resources/js/pages/Features/Navigation/Links.vue",
+      "resources/js/pages/Features/Navigation/ManualVisits.vue",
+      "resources/js/pages/Features/Navigation/PreserveScroll.vue",
+      "resources/js/pages/Features/Navigation/PreserveState.vue",
+      "resources/js/pages/Features/Navigation/Redirects.vue",
+      "resources/js/pages/Features/Navigation/ScrollManagement.vue",
+      "resources/js/pages/Features/Navigation/UrlFragments.vue",
+      "resources/js/pages/Features/Navigation/ViewTransitions.vue",
+      "resources/js/pages/Features/Prefetching/CacheManagement.vue",
+      "resources/js/pages/Features/Prefetching/LinkPrefetch.vue",
+      "resources/js/pages/Features/Prefetching/ManualPrefetch.vue",
+      "resources/js/pages/Features/Prefetching/StaleWhileRevalidate.vue",
+      "resources/js/pages/Features/State/FlashData.vue",
+      "resources/js/pages/Features/State/Remember.vue",
+      "resources/js/pages/Features/State/SharedProps.vue",
+      "resources/js/pages/Organizations/Index.vue",
+      "resources/js/pages/Organizations/Show.vue"
+    ],
+    "css": [
+      "assets/app.css"
+    ]
+  },
+  "resources/js/pages/Auth/Login.vue": {
+    "file": "assets/Login.js",
+    "name": "Login",
+    "src": "resources/js/pages/Auth/Login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_Label.js",
+      "_check.js",
+      "_Input.js",
+      "_AppLogoIcon.js"
+    ]
+  },
+  "resources/js/pages/Contacts/Create.vue": {
+    "file": "assets/Create.js",
+    "name": "Create",
+    "src": "resources/js/pages/Contacts/Create.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_Input.js",
+      "_CardTitle.js"
+    ]
+  },
+  "resources/js/pages/Contacts/Edit.vue": {
+    "file": "assets/Edit.js",
+    "name": "Edit",
+    "src": "resources/js/pages/Contacts/Edit.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_Input.js",
+      "_CardTitle.js"
+    ]
+  },
+  "resources/js/pages/Contacts/Index.vue": {
+    "file": "assets/Index.js",
+    "name": "Index",
+    "src": "resources/js/pages/Contacts/Index.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_heart.js",
+      "_plus.js",
+      "_search.js",
+      "_Input.js",
+      "_badge.js"
+    ]
+  },
+  "resources/js/pages/Contacts/Show.vue": {
+    "file": "assets/Show.js",
+    "name": "Show",
+    "src": "resources/js/pages/Contacts/Show.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_heart.js",
+      "_CardTitle.js",
+      "_CardDescription.js",
+      "_Skeleton.js",
+      "_badge.js"
+    ]
+  },
+  "resources/js/pages/Crm/Dashboard.vue": {
+    "file": "assets/Dashboard.js",
+    "name": "Dashboard",
+    "src": "resources/js/pages/Crm/Dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_CardTitle.js",
+      "_CardDescription.js",
+      "_Skeleton.js"
+    ]
+  },
+  "resources/js/pages/ErrorPage.vue": {
+    "file": "assets/ErrorPage.js",
+    "name": "ErrorPage",
+    "src": "resources/js/pages/ErrorPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLogoIcon.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/DeferredProps.vue": {
+    "file": "assets/DeferredProps.js",
+    "name": "DeferredProps",
+    "src": "resources/js/pages/Features/DataLoading/DeferredProps.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/InfiniteScroll.vue": {
+    "file": "assets/InfiniteScroll.js",
+    "name": "InfiniteScroll",
+    "src": "resources/js/pages/Features/DataLoading/InfiniteScroll.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/OnceProps.vue": {
+    "file": "assets/OnceProps.js",
+    "name": "OnceProps",
+    "src": "resources/js/pages/Features/DataLoading/OnceProps.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/OptionalProps.vue": {
+    "file": "assets/OptionalProps.js",
+    "name": "OptionalProps",
+    "src": "resources/js/pages/Features/DataLoading/OptionalProps.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/PartialReloads.vue": {
+    "file": "assets/PartialReloads.js",
+    "name": "PartialReloads",
+    "src": "resources/js/pages/Features/DataLoading/PartialReloads.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/Polling.vue": {
+    "file": "assets/Polling.js",
+    "name": "Polling",
+    "src": "resources/js/pages/Features/DataLoading/Polling.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/PropMerging.vue": {
+    "file": "assets/PropMerging.js",
+    "name": "PropMerging",
+    "src": "resources/js/pages/Features/DataLoading/PropMerging.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/DataLoading/WhenVisible.vue": {
+    "file": "assets/WhenVisible.js",
+    "name": "WhenVisible",
+    "src": "resources/js/pages/Features/DataLoading/WhenVisible.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Errors/HttpExceptions.vue": {
+    "file": "assets/HttpExceptions.js",
+    "name": "HttpExceptions",
+    "src": "resources/js/pages/Features/Errors/HttpExceptions.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Errors/NetworkErrors.vue": {
+    "file": "assets/NetworkErrors.js",
+    "name": "NetworkErrors",
+    "src": "resources/js/pages/Features/Errors/NetworkErrors.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Events/GlobalEvents.vue": {
+    "file": "assets/GlobalEvents.js",
+    "name": "GlobalEvents",
+    "src": "resources/js/pages/Features/Events/GlobalEvents.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Events/LocationEvent.vue": {
+    "file": "assets/LocationEvent.js",
+    "name": "LocationEvent",
+    "src": "resources/js/pages/Features/Events/LocationEvent.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Events/OnceEvents.vue": {
+    "file": "assets/OnceEvents.js",
+    "name": "OnceEvents",
+    "src": "resources/js/pages/Features/Events/OnceEvents.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Events/Progress.vue": {
+    "file": "assets/Progress.js",
+    "name": "Progress",
+    "src": "resources/js/pages/Features/Events/Progress.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Events/VisitCallbacks.vue": {
+    "file": "assets/VisitCallbacks.js",
+    "name": "VisitCallbacks",
+    "src": "resources/js/pages/Features/Events/VisitCallbacks.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/DottedKeys.vue": {
+    "file": "assets/DottedKeys.js",
+    "name": "DottedKeys",
+    "src": "resources/js/pages/Features/Forms/DottedKeys.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_plus.js",
+      "_Input.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/FileUploads.vue": {
+    "file": "assets/FileUploads.js",
+    "name": "FileUploads",
+    "src": "resources/js/pages/Features/Forms/FileUploads.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/FormComponent.vue": {
+    "file": "assets/FormComponent.js",
+    "name": "FormComponent",
+    "src": "resources/js/pages/Features/Forms/FormComponent.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/OptimisticUpdates.vue": {
+    "file": "assets/OptimisticUpdates.js",
+    "name": "OptimisticUpdates",
+    "src": "resources/js/pages/Features/Forms/OptimisticUpdates.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_heart.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/Precognition.vue": {
+    "file": "assets/Precognition.js",
+    "name": "Precognition",
+    "src": "resources/js/pages/Features/Forms/Precognition.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/UseForm.vue": {
+    "file": "assets/UseForm.js",
+    "name": "UseForm",
+    "src": "resources/js/pages/Features/Forms/UseForm.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/UseFormContext.vue": {
+    "file": "assets/UseFormContext.js",
+    "name": "UseFormContext",
+    "src": "resources/js/pages/Features/Forms/UseFormContext.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Forms/Validation.vue": {
+    "file": "assets/Validation.js",
+    "name": "Validation",
+    "src": "resources/js/pages/Features/Forms/Validation.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_InputError.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Http/UseHttp.vue": {
+    "file": "assets/UseHttp.js",
+    "name": "UseHttp",
+    "src": "resources/js/pages/Features/Http/UseHttp.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Layouts/Head.vue": {
+    "file": "assets/Head.js",
+    "name": "Head",
+    "src": "resources/js/pages/Features/Layouts/Head.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Layouts/LayoutProps.vue": {
+    "file": "assets/LayoutProps.js",
+    "name": "LayoutProps",
+    "src": "resources/js/pages/Features/Layouts/LayoutProps.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_CodeBlock.js",
+      "_Input.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Layouts/NestedLayouts.vue": {
+    "file": "assets/NestedLayouts.js",
+    "name": "NestedLayouts",
+    "src": "resources/js/pages/Features/Layouts/NestedLayouts.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Layouts/PersistentLayouts.vue": {
+    "file": "assets/PersistentLayouts.js",
+    "name": "PersistentLayouts",
+    "src": "resources/js/pages/Features/Layouts/PersistentLayouts.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_CodeBlock.js",
+      "_PersistentDemoLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Layouts/PersistentLayoutsPageTwo.vue": {
+    "file": "assets/PersistentLayoutsPageTwo.js",
+    "name": "PersistentLayoutsPageTwo",
+    "src": "resources/js/pages/Features/Layouts/PersistentLayoutsPageTwo.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_Label.js",
+      "_PersistentDemoLayout.js",
+      "_Input.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/AsyncRequests.vue": {
+    "file": "assets/AsyncRequests.js",
+    "name": "AsyncRequests",
+    "src": "resources/js/pages/Features/Navigation/AsyncRequests.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/HistoryManagement.vue": {
+    "file": "assets/HistoryManagement.js",
+    "name": "HistoryManagement",
+    "src": "resources/js/pages/Features/Navigation/HistoryManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/InstantVisitTarget.vue": {
+    "file": "assets/InstantVisitTarget.js",
+    "name": "InstantVisitTarget",
+    "src": "resources/js/pages/Features/Navigation/InstantVisitTarget.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/InstantVisits.vue": {
+    "file": "assets/InstantVisits.js",
+    "name": "InstantVisits",
+    "src": "resources/js/pages/Features/Navigation/InstantVisits.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/Links.vue": {
+    "file": "assets/Links.js",
+    "name": "Links",
+    "src": "resources/js/pages/Features/Navigation/Links.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/ManualVisits.vue": {
+    "file": "assets/ManualVisits.js",
+    "name": "ManualVisits",
+    "src": "resources/js/pages/Features/Navigation/ManualVisits.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/PreserveScroll.vue": {
+    "file": "assets/PreserveScroll.js",
+    "name": "PreserveScroll",
+    "src": "resources/js/pages/Features/Navigation/PreserveScroll.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/PreserveState.vue": {
+    "file": "assets/PreserveState.js",
+    "name": "PreserveState",
+    "src": "resources/js/pages/Features/Navigation/PreserveState.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/Redirects.vue": {
+    "file": "assets/Redirects.js",
+    "name": "Redirects",
+    "src": "resources/js/pages/Features/Navigation/Redirects.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/ScrollManagement.vue": {
+    "file": "assets/ScrollManagement.js",
+    "name": "ScrollManagement",
+    "src": "resources/js/pages/Features/Navigation/ScrollManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/UrlFragments.vue": {
+    "file": "assets/UrlFragments.js",
+    "name": "UrlFragments",
+    "src": "resources/js/pages/Features/Navigation/UrlFragments.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Navigation/ViewTransitions.vue": {
+    "file": "assets/ViewTransitions.js",
+    "name": "ViewTransitions",
+    "src": "resources/js/pages/Features/Navigation/ViewTransitions.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Prefetching/CacheManagement.vue": {
+    "file": "assets/CacheManagement.js",
+    "name": "CacheManagement",
+    "src": "resources/js/pages/Features/Prefetching/CacheManagement.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Prefetching/LinkPrefetch.vue": {
+    "file": "assets/LinkPrefetch.js",
+    "name": "LinkPrefetch",
+    "src": "resources/js/pages/Features/Prefetching/LinkPrefetch.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Prefetching/ManualPrefetch.vue": {
+    "file": "assets/ManualPrefetch.js",
+    "name": "ManualPrefetch",
+    "src": "resources/js/pages/Features/Prefetching/ManualPrefetch.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/Prefetching/StaleWhileRevalidate.vue": {
+    "file": "assets/StaleWhileRevalidate.js",
+    "name": "StaleWhileRevalidate",
+    "src": "resources/js/pages/Features/Prefetching/StaleWhileRevalidate.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/State/FlashData.vue": {
+    "file": "assets/FlashData.js",
+    "name": "FlashData",
+    "src": "resources/js/pages/Features/State/FlashData.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/State/Remember.vue": {
+    "file": "assets/Remember.js",
+    "name": "Remember",
+    "src": "resources/js/pages/Features/State/Remember.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_Label.js",
+      "_Input.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Features/State/SharedProps.vue": {
+    "file": "assets/SharedProps.js",
+    "name": "SharedProps",
+    "src": "resources/js/pages/Features/State/SharedProps.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_CodeBlock.js",
+      "_badge.js",
+      "_FeatureHeader.js"
+    ]
+  },
+  "resources/js/pages/Organizations/Index.vue": {
+    "file": "assets/Index2.js",
+    "name": "Index",
+    "src": "resources/js/pages/Organizations/Index.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_dist.js",
+      "_AppLayout.js",
+      "_search.js",
+      "_Input.js",
+      "_badge.js"
+    ]
+  },
+  "resources/js/pages/Organizations/Show.vue": {
+    "file": "assets/Show2.js",
+    "name": "Show",
+    "src": "resources/js/pages/Organizations/Show.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_createLucideIcon.js",
+      "_dist.js",
+      "_AppLayout.js",
+      "_Input.js",
+      "_CardTitle.js",
+      "_badge.js"
+    ]
+  }
+}

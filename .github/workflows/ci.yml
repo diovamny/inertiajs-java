@@ -27,8 +27,11 @@ jobs:
       - name: Build adapters and run full test suite
         run: mvn clean test -T 1C
 
-      - name: Build and test Spring demo
+      - name: Build and test Spring demo (pingcrm)
         run: mvn clean test -pl examples/spring/spring-pingcrm -Pexamples
+
+      - name: Build and test Spring demo (kitchen-sink)
+        run: mvn clean test -pl examples/spring/spring-kitchen-sink -Pexamples
 
       - name: Verify release artifacts (sources + javadoc)
         run: mvn clean package -Prelease -DskipTests

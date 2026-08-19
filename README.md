@@ -135,10 +135,14 @@ public class DashboardResource {
 }
 ```
 
-Demos: [`examples/quarkus/kitchen-sink`](examples/quarkus/kitchen-sink) (showcase integral),
+Demos Quarkus: [`examples/quarkus/kitchen-sink`](examples/quarkus/kitchen-sink) (showcase integral),
 [`examples/quarkus/demo-app`](examples/quarkus/demo-app),
 [`examples/quarkus/pingcrm`](examples/quarkus/pingcrm),
 [`examples/quarkus/pingcrm-react`](examples/quarkus/pingcrm-react).
+
+Demos Spring: [`examples/spring/spring-pingcrm`](examples/spring/spring-pingcrm),
+[`examples/spring/spring-kitchen-sink`](examples/spring/spring-kitchen-sink) (port
+del showcase Quarkus).
 
 ---
 
@@ -154,6 +158,9 @@ mvn clean test -pl quarkus-inertia
 
 # Demo Spring (pingcrm)
 mvn clean test -pl examples/spring/spring-pingcrm -Pexamples
+
+# Demo Spring (kitchen-sink)
+mvn clean test -pl examples/spring/spring-kitchen-sink -Pexamples
 
 # JARs de release (sources + javadoc)
 mvn clean package -Prelease -DskipTests

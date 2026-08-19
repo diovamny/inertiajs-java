@@ -61,10 +61,21 @@ public class AuthController {
         return inertia.redirect("/dashboard");
     }
 
+@GET
+    @Path("logout")
+    @Blocking
+    public Uni<Object> logoutGet() {
+        return doLogout();
+    }
+
     @POST
     @Path("logout")
     @Blocking
     public Uni<Object> logout() {
+        return doLogout();
+    }
+
+    private Uni<Object> doLogout() {
         auth.logout();
         return inertia.redirect("/login");
     }

@@ -24,6 +24,12 @@
   dashboard, reportes, autenticación por sesión PBKDF2, seed con datos fake,
   Flyway, soft deletes, imágenes con resize) sobre `spring-inertia`. 25 tests
   de integración MockMvc.
+- **Nuevo demo**: `examples/spring/spring-kitchen-sink` (Spring Boot 4.1 +
+  Vue 3) — port 1:1 del showcase Quarkus `examples/quarkus/kitchen-sink`
+  (auth por sesión, Precognition, data loading: deferred/partial/scroll/
+  polling/merge/once/optional props, formularios + file uploads, estado,
+  HTTP API, layout/nav/redes, CRM con paginación) sobre `spring-inertia`.
+  23 tests de integración MockMvc, H2 in-memory.
 - **Demos reestructurados**: los demos Quarkus viven ahora en
   `examples/quarkus/` (demo-app, kitchen-sink, pingcrm, pingcrm-react) y los
   de Spring en `examples/spring/`; `examples/spring-demo` (básico) fue

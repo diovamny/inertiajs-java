@@ -17,6 +17,7 @@ is not tolerated.
    ```powershell
    mvn clean test -T 1C
    mvn clean test -pl examples/spring/spring-pingcrm -Pexamples
+   mvn clean test -pl examples/spring/spring-kitchen-sink -Pexamples
    ```
 4. Open a Pull Request describing the motivation and the changes.
    Reference related issues when applicable.
@@ -27,7 +28,7 @@ is not tolerated.
 |---|---|
 | `quarkus-inertia/` | Inertia.js v3 adapter for Quarkus 3.38.x (Mutiny / Vert.x / Qute / JAX-RS) |
 | `spring-inertia/` | Inertia.js v3 adapter for Spring Boot 4.1.x (Spring MVC / AOT / GraalVM) |
-| `examples/` | Demos: Quarkus (`examples/quarkus`: demo-app, kitchen-sink, pingcrm, pingcrm-react) and Spring Boot (`examples/spring`: spring-pingcrm) |
+| `examples/` | Demos: Quarkus (`examples/quarkus`: demo-app, kitchen-sink, pingcrm, pingcrm-react) and Spring Boot (`examples/spring`: spring-pingcrm, spring-kitchen-sink) |
 | `implementation_plan.md` | Approved master plan with architecture decisions |
 
 ## Conventions
