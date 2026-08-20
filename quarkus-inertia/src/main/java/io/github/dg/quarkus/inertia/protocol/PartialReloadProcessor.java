@@ -18,6 +18,10 @@ import io.github.dg.quarkus.inertia.model.PageObject;
 public class PartialReloadProcessor {
 
     public PageObject apply(PageObject page, PartialReloadContext context) {
+        return apply(page, context, null);
+    }
+
+    public PageObject apply(PageObject page, PartialReloadContext context, Map<String, Object> sharedProps) {
         if (context == null || !context.matchesComponent(page.component())) {
             return page;
         }
@@ -34,6 +38,13 @@ public class PartialReloadProcessor {
                 if (kept != null) {
                     filteredProps.put(key, kept);
                 }
+            }
+        }
+
+        if (sharedProps != null) {
+            for (var entry : sharedProps.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) continue;
+                filteredProps.put(entry.getKey(), entry.getValue());
             }
         }
 

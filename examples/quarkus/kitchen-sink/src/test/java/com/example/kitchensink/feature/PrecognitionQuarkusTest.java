@@ -89,6 +89,26 @@ class PrecognitionQuarkusTest {
     }
 
     @Test
+    void formComponentPrecognitionOnlyReportsRequestedField() {
+        var response = given()
+            .cookies(cookies)
+            .contentType(ContentType.JSON)
+            .header("X-Inertia", "true")
+            .header("Precognition", "true")
+            .header("Precognition-Validate-Only", "name")
+            .body(Map.of("name", "", "email", "not-an-email", "bio", "", "role", "developer"))
+            .redirects().follow(false)
+            .when().post("/features/forms/form-component")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .header("Precognition", equalTo("true"))
+                .body("errors.name", notNullValue())
+                .body("errors", not(hasKey("email")))
+                .body("errors", not(hasKey("bio")));
+    }
+
+    @Test
     void validEmailIgnoresEmptySiblings() {
         var response = precognition("email", form("", "alice@example.com", "", ""));
 

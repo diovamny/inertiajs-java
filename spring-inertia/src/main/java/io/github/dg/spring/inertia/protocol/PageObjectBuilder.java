@@ -127,7 +127,7 @@ public class PageObjectBuilder {
             } else {
                 merged = mergePropProcessor.mergeProps(merged, mergeProps, prependProps, deepMergeProps, matchPropsOn);
             }
-            merged = partialReloadProcessor.filterProps(merged, alwaysPropsMap(merged));
+            merged = partialReloadProcessor.filterProps(merged, partialReloadBaseProps(merged));
             mergePropProcessor.propagateProps(merged);
         } else {
             mergePropProcessor.propagateProps(merged);
@@ -272,6 +272,23 @@ public class PageObjectBuilder {
             map.put(alwaysErrorsKey, merged.get(alwaysErrorsKey));
         }
         return map;
+    }
+
+    /**
+     * The props that survive a partial reload unconditionally: always props
+     * plus every shared prop. Mirrors Laravel, where shared props stay in
+     * every response (including partial reloads) so layouts that rely on
+     * them (e.g. the authenticated user) never go missing.
+     *
+     * @param merged the accumulated page props
+     * @return the base props for the partial reload filter
+     */
+    private Map<String, Object> partialReloadBaseProps(Map<String, Object> merged) {
+        var base = alwaysPropsMap(merged);
+        for (var entry : sharedDataRegistry.sharedProps().entrySet()) {
+            base.putIfAbsent(entry.getKey(), entry.getValue());
+        }
+        return base;
     }
 
     @SuppressWarnings("unchecked")

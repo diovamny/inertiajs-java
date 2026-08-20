@@ -160,4 +160,23 @@ class PartialReloadProcessorUnitTest {
         assertThat(result.props()).containsKeys("auth", "errors");
         assertThat(result.props().get("errors")).isEqualTo(Map.of("name", "Required"));
     }
+
+    @Test
+    void shouldKeepSharedPropsOnPartialReload() {
+        var page = new PageObject("Users", Map.of("name", "John", "email", "john@test.com"), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of("name"), Set.of(), Set.of());
+        var result = processor.apply(page, context, Map.of("auth", Map.of("user", Map.of("id", 1))));
+        assertThat(result.props()).containsKeys("name", "auth");
+        assertThat(result.props()).doesNotContainKey("email");
+        assertThat(result.props().get("auth")).isEqualTo(Map.of("user", Map.of("id", 1)));
+    }
+
+    @Test
+    void shouldKeepSharedPropsEvenWhenExcepted() {
+        var page = new PageObject("Users", Map.of("name", "John"), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of(), Set.of("auth"), Set.of());
+        var result = processor.apply(page, context, Map.of("auth", Map.of("user", Map.of("id", 1))));
+        assertThat(result.props()).containsKeys("name", "auth");
+        assertThat(result.props().get("auth")).isEqualTo(Map.of("user", Map.of("id", 1)));
+    }
 }

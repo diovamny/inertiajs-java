@@ -180,7 +180,7 @@ public class PageObjectBuilder {
             page = expandDotNotation(page);
 
             if (partialContext != null) {
-                page = partialReloadProcessor.apply(page, partialContext);
+                page = partialReloadProcessor.apply(page, partialContext, sharedData.getShared());
             }
 
             page = unwrapAlwaysProps(page);

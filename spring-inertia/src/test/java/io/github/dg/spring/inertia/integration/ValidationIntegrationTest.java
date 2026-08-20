@@ -85,6 +85,19 @@ class ValidationIntegrationTest {
     }
 
     @Test
+    void precognitionOnlyReportsRequestedField() throws Exception {
+        mockMvc.perform(post("/form")
+                .header("Precognition", "true")
+                .header("Precognition-Validate-Only", "name")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"\",\"email\":\"not-an-email\"}"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(header().string("Precognition", "true"))
+            .andExpect(jsonPath("$.errors.name").exists())
+            .andExpect(jsonPath("$.errors.email").doesNotExist());
+    }
+
+    @Test
     void precognitionValidReturns204WithSuccessHeader() throws Exception {
         mockMvc.perform(post("/form")
                 .header("Precognition", "true")

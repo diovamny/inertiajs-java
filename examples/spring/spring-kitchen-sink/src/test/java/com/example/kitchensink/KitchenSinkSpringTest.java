@@ -340,6 +340,23 @@ class KitchenSinkSpringTest {
 
     @Test
     @Order(23)
+    void useFormContextPrecognitionOnlyReportsRequestedField() throws Exception {
+        mockMvc.perform(post("/features/forms/form-component")
+                .header("X-Inertia", "true")
+                .header("Precognition", "true")
+                .header("Precognition-Validate-Only", "name")
+                .contentType(APPLICATION_JSON)
+                .content("{\"name\":\"\",\"email\":\"not-an-email\",\"bio\":\"\",\"role\":\"developer\"}")
+                .session(session))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(header().string("Precognition", "true"))
+            .andExpect(jsonPath("$.errors.name").exists())
+            .andExpect(jsonPath("$.errors.email").doesNotExist())
+            .andExpect(jsonPath("$.errors.bio").doesNotExist());
+    }
+
+    @Test
+    @Order(24)
     void logoutClearsSession() throws Exception {
         mockMvc.perform(post("/logout").header("X-Inertia", "true").session(session))
             .andExpect(status().isSeeOther())

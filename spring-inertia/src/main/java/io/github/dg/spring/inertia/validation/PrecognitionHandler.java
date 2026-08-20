@@ -1,6 +1,7 @@
 package io.github.dg.spring.inertia.validation;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -47,12 +48,13 @@ public class PrecognitionHandler {
         InertiaRequestContext.set(PageObjectBuilder.CONTEXT_ERRORS, errors);
 
         if (InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION) != null) {
+            var filtered = filterToValidateOnly(errors);
             var headers = new org.springframework.http.HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Precognition", "true");
             headers.set("Vary", "Precognition");
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).headers(headers)
-                .body(jsonProvider.toJson(Map.of("errors", errors)));
+                .body(jsonProvider.toJson(Map.of("errors", filtered)));
         }
 
         var bag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
@@ -75,6 +77,39 @@ public class PrecognitionHandler {
             }
         }
         return errors;
+    }
+
+    /**
+     * Keep only the errors for the fields listed in
+     * {@code Precognition-Validate-Only}, so a precognition visit that
+     * validates a single field never surfaces sibling errors. A blank or
+     * absent header keeps every error.
+     *
+     * @param errors the full field error map
+     * @return the filtered map
+     */
+    private static Map<String, String> filterToValidateOnly(Map<String, String> errors) {
+        var raw = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION_VALIDATE_FIELDS);
+        if (raw == null) {
+            return errors;
+        }
+        var fields = new LinkedHashSet<String>();
+        for (var part : String.valueOf(raw).split(",")) {
+            var field = part.trim();
+            if (!field.isEmpty()) {
+                fields.add(field);
+            }
+        }
+        if (fields.isEmpty()) {
+            return errors;
+        }
+        var filtered = new LinkedHashMap<String, String>();
+        for (var entry : errors.entrySet()) {
+            if (fields.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
     }
 
     private ResponseEntity<?> redirectBackWithErrors(Map<String, String> errors) {

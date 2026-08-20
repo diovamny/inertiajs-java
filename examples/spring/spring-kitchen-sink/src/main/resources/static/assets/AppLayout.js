@@ -8466,10 +8466,10 @@ var UserMenuContent_default = /* @__PURE__ */ defineComponent({
 var NavUser_default = /* @__PURE__ */ defineComponent({
 	__name: "NavUser",
 	setup(__props) {
-		const user = usePage().props.auth.user;
+		const user = usePage().props.auth?.user ?? null;
 		const { isMobile, state } = useSidebar();
 		return (_ctx, _cache) => {
-			return openBlock(), createBlock(unref(SidebarMenu_default), null, {
+			return unref(user) ? (openBlock(), createBlock(unref(SidebarMenu_default), { key: 0 }, {
 				default: withCtx(() => [createVNode(unref(SidebarMenuItem_default), null, {
 					default: withCtx(() => [createVNode(unref(DropdownMenu_default), null, {
 						default: withCtx(() => [createVNode(unref(DropdownMenuTrigger_default), { "as-child": "" }, {
@@ -8496,7 +8496,7 @@ var NavUser_default = /* @__PURE__ */ defineComponent({
 					_: 1
 				})]),
 				_: 1
-			});
+			})) : createCommentVNode("", true);
 		};
 	}
 });
