@@ -1,5 +1,6 @@
 package io.github.dg.quarkus.inertia.renderer;
 
+import java.time.Duration;
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -18,6 +19,10 @@ import io.github.dg.quarkus.inertia.config.InertiaConfig;
  * Client for the server-side rendering server: forwards the page object as
  * JSON to the configured SSR endpoint ({@code inertia.ssr-url}) and returns
  * the rendered HTML, honoring {@code inertia.ssr-exclude-paths}.
+ *
+ * <p>Configurable timeouts for connection and read operations prevent
+ * blocking indefinitely on unresponsive SSR servers. Errors are logged but
+ * internal details are not exposed to the client.</p>
  */
 @ApplicationScoped
 public class SsrHandler {
@@ -62,8 +67,9 @@ public class SsrHandler {
 
     /**
      * Sends the page to the SSR server and returns its JSON response
-     * ({@code head} + {@code body}). Fails with an exception when the SSR
-     * server is unreachable; callers fall back to client-side rendering.
+     * ({@code head} + {@code body}). On timeout or error, fails silently
+     * so callers can fall back to client-side rendering. Internal error
+     * details are not exposed.
      */
     public Uni<JsonObject> render(JsonObject page) {
         if (vertx == null) {
@@ -73,13 +79,24 @@ public class SsrHandler {
         if (url == null || url.isBlank()) {
             return Uni.createFrom().failure(new IllegalStateException("ssr-url is not configured"));
         }
+
+        Duration connectTimeout = config.ssrConnectTimeout();
+        Duration readTimeout = config.ssrReadTimeout();
+
         return Uni.createFrom().deferred(() -> {
-            var client = vertx.createHttpClient();
+            var totalMs = (connectTimeout != null ? connectTimeout.toMillis() : 5000)
+                + (readTimeout != null ? readTimeout.toMillis() : 10000);
+            var client = vertx.createHttpClient(
+                new io.vertx.core.http.HttpClientOptions()
+                    .setConnectTimeout(connectTimeout != null ? (int) connectTimeout.toMillis() : 5000)
+                    .setIdleTimeout(readTimeout != null ? (int) readTimeout.toSeconds() : 10)
+            );
             return Uni.createFrom().emitter(emitter -> {
                 emitter.onTermination(client::close);
                 var options = new io.vertx.core.http.RequestOptions()
                     .setAbsoluteURI(url)
-                    .setMethod(HttpMethod.POST);
+                    .setMethod(HttpMethod.POST)
+                    .setTimeout(totalMs);
                 client.request(options, ar -> {
                     if (ar.failed()) {
                         emitter.fail(ar.cause());
@@ -102,7 +119,7 @@ public class SsrHandler {
                             var body = bodyAr.result().toString();
                             if (resp.statusCode() >= 400) {
                                 emitter.fail(new IllegalStateException(
-                                    "SSR server responded with " + resp.statusCode() + ": " + body));
+                                    "SSR server responded with " + resp.statusCode()));
                                 return;
                             }
                             emitter.complete(new JsonObject(body));

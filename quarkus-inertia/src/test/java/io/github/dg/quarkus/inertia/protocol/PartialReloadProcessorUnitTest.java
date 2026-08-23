@@ -162,21 +162,41 @@ class PartialReloadProcessorUnitTest {
     }
 
     @Test
-    void shouldKeepSharedPropsOnPartialReload() {
+    void shouldNotKeepUnrequestedSharedPropsOnPartialReload() {
         var page = new PageObject("Users", Map.of("name", "John", "email", "john@test.com"), "/users", "v1");
         var context = new PartialReloadContext("Users", Set.of("name"), Set.of(), Set.of());
-        var result = processor.apply(page, context, Map.of("auth", Map.of("user", Map.of("id", 1))));
-        assertThat(result.props()).containsKeys("name", "auth");
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsKey("name");
         assertThat(result.props()).doesNotContainKey("email");
-        assertThat(result.props().get("auth")).isEqualTo(Map.of("user", Map.of("id", 1)));
     }
 
     @Test
-    void shouldKeepSharedPropsEvenWhenExcepted() {
-        var page = new PageObject("Users", Map.of("name", "John"), "/users", "v1");
+    void shouldNotKeepSharedPropsWhenExcepted() {
+        var page = new PageObject("Users", Map.of("name", "John", "auth", Map.of("user", Map.of("id", 1))), "/users", "v1");
         var context = new PartialReloadContext("Users", Set.of(), Set.of("auth"), Set.of());
-        var result = processor.apply(page, context, Map.of("auth", Map.of("user", Map.of("id", 1))));
-        assertThat(result.props()).containsKeys("name", "auth");
-        assertThat(result.props().get("auth")).isEqualTo(Map.of("user", Map.of("id", 1)));
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsKey("name");
+        assertThat(result.props()).doesNotContainKey("auth");
+    }
+
+    @Test
+    void shouldExcludeNestedLeafOnlyNotParent() {
+        var page = new PageObject("Users", Map.of(
+            "auth", Map.of("user", Map.of("id", 1, "email", "john@test.com"), "role", "admin"),
+            "other", "value"
+        ), "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of(), Set.of("auth.user.email"), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsKeys("auth", "other");
+        assertThat(result.props().get("auth")).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        var auth = (Map<String, Object>) result.props().get("auth");
+        assertThat(auth).containsKey("user");
+        assertThat(auth).containsKey("role");
+        assertThat(auth.get("role")).isEqualTo("admin");
+        @SuppressWarnings("unchecked")
+        var user = (Map<String, Object>) auth.get("user");
+        assertThat(user).containsEntry("id", 1);
+        assertThat(user).doesNotContainKey("email");
     }
 }

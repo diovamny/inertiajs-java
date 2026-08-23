@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Supplier;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
 
@@ -13,6 +13,7 @@ import io.github.dg.quarkus.inertia.api.InertiaRedirect;
 import io.github.dg.quarkus.inertia.cache.CachedPropStore;
 import io.github.dg.quarkus.inertia.config.InertiaConfig;
 import io.github.dg.quarkus.inertia.model.AlwaysProp;
+import io.github.dg.quarkus.inertia.model.PageObject;
 import io.github.dg.quarkus.inertia.model.RawJson;
 import io.github.dg.quarkus.inertia.protocol.PageObjectBuilder;
 import io.github.dg.quarkus.inertia.protocol.ResponseProcessor;
@@ -23,13 +24,18 @@ import io.github.dg.quarkus.inertia.protocol.MergePropProcessor;
 import io.github.dg.quarkus.inertia.spi.FlashStore;
 import io.github.dg.quarkus.inertia.spi.ErrorMapper;
 import io.github.dg.quarkus.inertia.version.VersionProvider;
+import io.github.dg.quarkus.inertia.vertx.ReactiveResponseWriter;
+import io.vertx.core.Vertx;
+import io.vertx.ext.web.RoutingContext;
+import jakarta.ws.rs.core.Response;
 
 /**
- * Default {@link Inertia} implementation (request-scoped): forwards every
+ * Default {@link Inertia} implementation (application-scoped): forwards every
  * operation to the page builder, shared-data registry, redirect processor
  * and response processor that assemble the final page object.
+ * State is stored per-request in the Vert.x {@link RoutingContext}.
  */
-@RequestScoped
+@ApplicationScoped
 public class InertiaImpl implements Inertia {
 
     private final PageObjectBuilder pageBuilder;
@@ -42,6 +48,7 @@ public class InertiaImpl implements Inertia {
     private final FlashStore flashStore;
     private final CachedPropStore cachedPropStore;
     private final InertiaConfig config;
+    private final ReactiveResponseWriter reactiveWriter;
 
     @Inject
     public InertiaImpl(
@@ -54,7 +61,8 @@ public class InertiaImpl implements Inertia {
             MergePropProcessor mergePropProcessor,
             FlashStore flashStore,
             CachedPropStore cachedPropStore,
-            InertiaConfig config) {
+            InertiaConfig config,
+            ReactiveResponseWriter reactiveWriter) {
         this.pageBuilder = pageBuilder;
         this.responseProcessor = responseProcessor;
         this.sharedData = sharedData;
@@ -65,7 +73,12 @@ public class InertiaImpl implements Inertia {
         this.flashStore = flashStore;
         this.cachedPropStore = cachedPropStore;
         this.config = config;
+        this.reactiveWriter = reactiveWriter;
     }
+
+    // ========================================================================
+    // Reactive API (existing)
+    // ========================================================================
 
     @Override
     public Uni<Object> render(String component, Map<String, Object> props) {
@@ -109,11 +122,95 @@ public class InertiaImpl implements Inertia {
         return render(component.name(), props, status);
     }
 
-    private void storePageStatus(int status) {
-        var ctx = io.vertx.core.Vertx.currentContext();
-        if (ctx != null) {
-            ctx.putLocal("inertia-page-status", status);
-        }
+    // ========================================================================
+    // Synchronous JAX-RS Response API
+    // ========================================================================
+
+    @Override
+    public Response renderSync(String component, Map<String, Object> props) {
+        var page = pageBuilder.buildSync(component, props);
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(String component) {
+        var page = pageBuilder.buildSync(component, Map.of());
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(Enum<?> component) {
+        var page = pageBuilder.buildSync(component.name(), Map.of());
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(Enum<?> component, Map<String, Object> props) {
+        var page = pageBuilder.buildSync(component.name(), props);
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(String component, Map<String, Object> props, int status) {
+        storePageStatus(status);
+        var page = pageBuilder.buildSync(component, props);
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(String component, int status) {
+        storePageStatus(status);
+        var page = pageBuilder.buildSync(component, Map.of());
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(Enum<?> component, int status) {
+        storePageStatus(status);
+        var page = pageBuilder.buildSync(component.name(), Map.of());
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(Enum<?> component, Map<String, Object> props, int status) {
+        storePageStatus(status);
+        var page = pageBuilder.buildSync(component.name(), props);
+        return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response redirectSync(String url) {
+        return redirectProcessor.processSync(url);
+    }
+
+    @Override
+    public Response redirectSync(String url, boolean fullPage) {
+        return redirectProcessor.processSync(url, fullPage);
+    }
+
+    @Override
+    public Response backSync() {
+        return redirectProcessor.backSync();
+    }
+
+    @Override
+    public Response backSync(String fallback) {
+        return redirectProcessor.backSync(fallback);
+    }
+
+    @Override
+    public Response backSync(int status, String fallback) {
+        return redirectProcessor.backSync(status, fallback);
+    }
+
+    @Override
+    public Response backSync(int status, Map<String, String> headers) {
+        return redirectProcessor.backSync(status, headers);
+    }
+
+    @Override
+    public Response backSync(int status, Map<String, String> headers, String fallback) {
+        return redirectProcessor.backSync(status, headers, fallback);
     }
 
     @Override
@@ -149,6 +246,50 @@ public class InertiaImpl implements Inertia {
     @Override
     public InertiaRedirect back(int status, Map<String, String> headers, String fallback) {
         return new InertiaRedirect(redirectProcessor.back(status, headers, fallback), flashStore);
+    }
+
+// ========================================================================
+    // Vert.x Reactive Routes (synchronous API)
+    // ========================================================================
+
+    @Override
+    public void renderVertx(RoutingContext rc, String component, Map<String, Object> props) {
+        var page = pageBuilder.buildSync(component, props);
+        var response = responseProcessor.processSync(page);
+        writeResponse(rc, response);
+    }
+
+    @Override
+    public void renderVertx(RoutingContext rc, String component) {
+        renderVertx(rc, component, Map.of());
+    }
+
+    @Override
+    public void redirectVertx(RoutingContext rc, String url) {
+        var response = redirectProcessor.processSync(url);
+        writeResponse(rc, response);
+    }
+
+    @Override
+    public void redirectVertx(RoutingContext rc, String url, boolean fullPage) {
+        var response = redirectProcessor.processSync(url, fullPage);
+        writeResponse(rc, response);
+    }
+
+    @Override
+    public void backVertx(RoutingContext rc) {
+        var response = redirectProcessor.backSync();
+        writeResponse(rc, response);
+    }
+
+    @Override
+    public void backVertx(RoutingContext rc, String fallback) {
+        var response = redirectProcessor.backSync(fallback);
+        writeResponse(rc, response);
+    }
+
+    private void writeResponse(RoutingContext rc, jakarta.ws.rs.core.Response response) {
+        reactiveWriter.write(rc, response);
     }
 
     @Override
@@ -373,7 +514,7 @@ public class InertiaImpl implements Inertia {
     public void handleErrorUsing(ErrorMapper mapper) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal(ErrorResponseFactory.CONTEXT_KEY, mapper);
+            ctx.putLocal(io.github.dg.quarkus.inertia.internal.ErrorResponseFactory.CONTEXT_KEY, mapper);
         }
     }
 
@@ -452,7 +593,17 @@ public class InertiaImpl implements Inertia {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
             var val = ctx.getLocal("inertia-preserve-fragment");
-            return Boolean.TRUE.equals(val);
+            if (val != null) {
+                return Boolean.TRUE.equals(val);
+            }
+        }
+        var session = session();
+        if (session != null) {
+            var stored = session.get(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
+            if (Boolean.TRUE.equals(stored)) {
+                session.remove(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
+                return true;
+            }
         }
         return false;
     }
@@ -504,5 +655,12 @@ public class InertiaImpl implements Inertia {
     @Override
     public void flushShared() {
         sharedData.flushShared();
+    }
+
+    private void storePageStatus(int status) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            ctx.putLocal("inertia-page-status", status);
+        }
     }
 }

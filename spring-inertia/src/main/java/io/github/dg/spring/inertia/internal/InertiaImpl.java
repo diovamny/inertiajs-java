@@ -240,8 +240,18 @@ public class InertiaImpl implements Inertia {
         if (!partialReloadProcessor.isPartialReload(partialComponent())) {
             return Optional.empty();
         }
-        var requested = partialReloadProcessor.partialData();
-        if (requested.isEmpty() || !requested.contains(key)) {
+        var only = partialReloadProcessor.partialData();
+        var except = partialReloadProcessor.partialExcept();
+        boolean selected;
+        if (!only.isEmpty()) {
+            // Apply only first, then except (except takes precedence).
+            selected = only.contains(key) && (except.isEmpty() || !except.contains(key));
+        } else if (!except.isEmpty()) {
+            selected = !except.contains(key);
+        } else {
+            selected = true;
+        }
+        if (!selected) {
             return Optional.empty();
         }
         return callback.get();
@@ -265,6 +275,11 @@ public class InertiaImpl implements Inertia {
     @Override
     public void setEncryptHistory(boolean encrypt) {
         InertiaRequestContext.set(PageObjectBuilder.CONTEXT_ENCRYPT_HISTORY, encrypt);
+    }
+
+    @Override
+    public void setClearHistory(boolean clear) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_CLEAR_HISTORY, clear);
     }
 
     @Override

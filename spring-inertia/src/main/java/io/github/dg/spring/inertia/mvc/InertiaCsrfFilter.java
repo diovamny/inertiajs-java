@@ -6,12 +6,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.github.dg.spring.inertia.config.InertiaProperties;
+import io.github.dg.spring.inertia.internal.InertiaRequestContext;
 import io.github.dg.spring.inertia.security.InertiaCsrfService;
 
 /**
@@ -19,6 +18,11 @@ import io.github.dg.spring.inertia.security.InertiaCsrfService;
  * frontend echoes the cookie value in the {@code X-XSRF-TOKEN} (or
  * {@code X-CSRF-TOKEN}) header of state-changing requests; mismatches are
  * rejected with 419 before the controller runs.
+ *
+ * <p>The cookie is emitted on every response so that the initial HTML page
+ * load also receives it. CSRF validation only applies to state-changing
+ * Inertia requests (POST/PUT/PATCH/DELETE with {@code X-Inertia: true}).
+ * Non-Inertia and GET requests pass through without validation.</p>
  */
 public class InertiaCsrfFilter extends OncePerRequestFilter {
 
@@ -42,8 +46,9 @@ public class InertiaCsrfFilter extends OncePerRequestFilter {
         var method = request.getMethod();
         var stateChanging = "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)
             || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method);
+        var isInertia = isInertiaRequest(request);
 
-        if (stateChanging) {
+        if (stateChanging && isInertia) {
             var submitted = request.getHeader("X-XSRF-TOKEN");
             if (submitted == null || submitted.isBlank()) {
                 submitted = request.getHeader("X-CSRF-TOKEN");
@@ -65,5 +70,10 @@ public class InertiaCsrfFilter extends OncePerRequestFilter {
         cookie.setAttribute("SameSite", "Lax");
         response.addCookie(cookie);
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isInertiaRequest(HttpServletRequest request) {
+        var value = request.getHeader("X-Inertia");
+        return value != null && ("true".equalsIgnoreCase(value) || Boolean.parseBoolean(value));
     }
 }

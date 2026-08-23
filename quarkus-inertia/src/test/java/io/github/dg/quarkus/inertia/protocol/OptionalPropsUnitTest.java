@@ -98,13 +98,13 @@ class OptionalPropsUnitTest {
     }
 
     @Test
-    void shouldNotResolveOptionalPropOnExceptOnlyPartial() {
+    void shouldResolveOptionalPropWhenNotExcludedByExcept() {
         when(httpRequest.getHeader("X-Inertia-Partial-Component")).thenReturn("Component");
         when(httpRequest.getHeader("X-Inertia-Partial-Except")).thenReturn("base");
 
         var page = builder.build("Component", Map.of("base", "x"), true).await().indefinitely();
 
-        assertThat(page.props()).doesNotContainKey("expensive");
-        assertThat(calls.get()).isZero();
+        assertThat(page.props()).containsEntry("expensive", "resolved-expensive");
+        assertThat(calls.get()).isEqualTo(1);
     }
 }

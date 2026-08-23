@@ -32,7 +32,7 @@ class RenderPageIntegrationTest {
             .andExpect(header().string("X-Inertia", "true"))
             .andExpect(header().string("X-Inertia-Component", "Dashboard"))
             .andExpect(header().string("X-Inertia-Version", "test-version"))
-            .andExpect(header().string("Vary", "X-Inertia"))
+            .andExpect(header().string("Vary", "X-Inertia, X-Inertia-Version, X-Inertia-Partial-Component, X-Inertia-Partial-Data, X-Inertia-Partial-Except"))
             .andExpect(inertia().component("Dashboard"))
             .andExpect(inertia().prop("title", equalTo("Home")))
             .andExpect(inertia().prop("errors", org.hamcrest.Matchers.anEmptyMap()))

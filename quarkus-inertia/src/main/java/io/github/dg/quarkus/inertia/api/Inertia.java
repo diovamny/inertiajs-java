@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import io.smallrye.mutiny.Uni;
+import jakarta.ws.rs.core.Response;
 
 import io.github.dg.quarkus.inertia.model.RawJson;
 import io.github.dg.quarkus.inertia.spi.ErrorMapper;
@@ -152,6 +153,137 @@ public interface Inertia {
      * @see #render(String, Map, int)
      */
     Uni<Object> render(Enum<?> component, Map<String, Object> props, int status);
+
+    // ---------------------------------------------------------------------
+    // Synchronous JAX-RS Response API
+    // ---------------------------------------------------------------------
+
+    /**
+     * Render an Inertia page and return a synchronous JAX-RS {@link Response}.
+     * Useful for non-reactive JAX-RS endpoints.
+     *
+     * @param component the frontend component name
+     * @param props     the page props
+     * @return a JAX-RS Response (JSON page or HTML document)
+     */
+    jakarta.ws.rs.core.Response renderSync(String component, Map<String, Object> props);
+
+    /**
+     * Render an Inertia page with no props and return a synchronous JAX-RS Response.
+     */
+    jakarta.ws.rs.core.Response renderSync(String component);
+
+    /**
+     * Render an Inertia page whose component name comes from an enum constant.
+     */
+    jakarta.ws.rs.core.Response renderSync(Enum<?> component);
+
+    /**
+     * Render an Inertia page whose component name comes from an enum constant,
+     * with the given props.
+     */
+    jakarta.ws.rs.core.Response renderSync(Enum<?> component, Map<String, Object> props);
+
+    /**
+     * Render an Inertia page with the given props and an explicit HTTP
+     * status code, returning a synchronous JAX-RS Response.
+     */
+    jakarta.ws.rs.core.Response renderSync(String component, Map<String, Object> props, int status);
+
+    /**
+     * Render an Inertia page with no props and an explicit HTTP status.
+     */
+    jakarta.ws.rs.core.Response renderSync(String component, int status);
+
+    /**
+     * Render an Inertia page whose component name comes from an enum
+     * constant, with an explicit HTTP status.
+     */
+    jakarta.ws.rs.core.Response renderSync(Enum<?> component, int status);
+
+    /**
+     * Render an Inertia page whose component name comes from an enum
+     * constant, with the given props and an explicit HTTP status.
+     */
+    jakarta.ws.rs.core.Response renderSync(Enum<?> component, Map<String, Object> props, int status);
+
+    /**
+     * Redirect to an internal URL and return a synchronous JAX-RS Response.
+     */
+    jakarta.ws.rs.core.Response redirectSync(String url);
+
+    /**
+     * Redirect to an internal URL, optionally forcing a full page load.
+     */
+    jakarta.ws.rs.core.Response redirectSync(String url, boolean fullPage);
+
+    /**
+     * Redirect back to the previous page.
+     */
+    jakarta.ws.rs.core.Response backSync();
+
+    /**
+     * Redirect back to the previous page, falling back to the given URL.
+     */
+    jakarta.ws.rs.core.Response backSync(String fallback);
+
+    /**
+     * Redirect back with an explicit status code and fallback URL.
+     */
+    jakarta.ws.rs.core.Response backSync(int status, String fallback);
+
+    /**
+     * Redirect back with an explicit status code and response headers.
+     */
+    jakarta.ws.rs.core.Response backSync(int status, Map<String, String> headers);
+
+    /**
+     * Redirect back with an explicit status code, response headers and
+     * fallback URL.
+     */
+    jakarta.ws.rs.core.Response backSync(int status, Map<String, String> headers, String fallback);
+
+    // ---------------------------------------------------------------------
+    // Vert.x Reactive Routes (synchronous API)
+    // ---------------------------------------------------------------------
+
+    /**
+     * Render an Inertia page directly into a Vert.x {@link RoutingContext}.
+     * For use in {@code @Route} handlers.
+     *
+     * @param rc        the routing context
+     * @param component the frontend component name
+     * @param props     the page props
+     */
+    void renderVertx(io.vertx.ext.web.RoutingContext rc, String component, Map<String, Object> props);
+
+    /**
+     * Render an Inertia page directly into a Vert.x {@link RoutingContext}
+     * with no props.
+     */
+    void renderVertx(io.vertx.ext.web.RoutingContext rc, String component);
+
+    /**
+     * Redirect to a URL directly in a Vert.x {@link RoutingContext}.
+     */
+    void redirectVertx(io.vertx.ext.web.RoutingContext rc, String url);
+
+    /**
+     * Redirect to a URL, optionally forcing a full page load, in a Vert.x
+     * {@link RoutingContext}.
+     */
+    void redirectVertx(io.vertx.ext.web.RoutingContext rc, String url, boolean fullPage);
+
+    /**
+     * Redirect back to the previous page in a Vert.x {@link RoutingContext}.
+     */
+    void backVertx(io.vertx.ext.web.RoutingContext rc);
+
+    /**
+     * Redirect back to the previous page with a fallback URL in a Vert.x
+     * {@link RoutingContext}.
+     */
+    void backVertx(io.vertx.ext.web.RoutingContext rc, String fallback);
 
     // ---------------------------------------------------------------------
     // Redirects

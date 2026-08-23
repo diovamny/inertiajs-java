@@ -76,7 +76,7 @@ public class InertiaAutoConfiguration {
         if ("vite-manifest".equalsIgnoreCase(properties.getVersionStrategy())) {
             return new ManifestVersionProvider();
         }
-        return new StaticVersionProvider(properties.getVersionCustom());
+        return new StaticVersionProvider(properties);
     }
 
     @Bean
@@ -160,8 +160,7 @@ public class InertiaAutoConfiguration {
     @ConditionalOnMissingBean
     public ErrorResponseFactory errorResponseFactory(JsonProvider jsonProvider,
             InertiaProperties properties) {
-        return new ErrorResponseFactory(jsonProvider, properties.getErrorComponent(),
-            properties.getErrorStatus());
+        return new ErrorResponseFactory(jsonProvider, properties);
     }
 
     @Bean

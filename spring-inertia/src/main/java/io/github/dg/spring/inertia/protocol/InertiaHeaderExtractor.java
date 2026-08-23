@@ -34,6 +34,8 @@ public class InertiaHeaderExtractor {
     public static final String CONTEXT_PRECOGNITION = "inertia-precognition";
     public static final String CONTEXT_PRECOGNITION_VALIDATE_FIELDS = "inertia-precognition-validate-fields";
     public static final String CONTEXT_ERROR_BAG = "inertia-error-bag";
+    public static final String CONTEXT_EXCEPT_ONCE_PROPS = "inertia-except-once-props";
+    public static final String CONTEXT_PREFETCH = "inertia-prefetch";
     public static final String CONTEXT_METHOD = "request-method";
     public static final String CONTEXT_URI = "request-uri";
     public static final String CONTEXT_HEADERS_EXTRACTED = "inertia-headers-extracted";
@@ -76,6 +78,11 @@ public class InertiaHeaderExtractor {
         set(request, CONTEXT_PRECOGNITION, precognition);
         set(request, CONTEXT_PRECOGNITION_VALIDATE_FIELDS, validateFields);
         set(request, CONTEXT_ERROR_BAG, header(request, "X-Inertia-Error-Bag"));
+        set(request, CONTEXT_EXCEPT_ONCE_PROPS, header(request, "X-Inertia-Except-Once-Props"));
+        var purpose = header(request, "Purpose");
+        if ("prefetch".equalsIgnoreCase(purpose)) {
+            request.setAttribute(CONTEXT_PREFETCH, "true");
+        }
     }
 
     private static void set(HttpServletRequest request, String name, String value) {
@@ -105,6 +112,15 @@ public class InertiaHeaderExtractor {
     public boolean isInertiaRequest() {
         var value = attr(CONTEXT_INERTIA);
         return value != null && ("true".equalsIgnoreCase(value) || Boolean.parseBoolean(value));
+    }
+
+    /**
+     * Whether the current visit is a prefetch (background) request.
+     *
+     * @return {@code true} when {@code Purpose: prefetch}
+     */
+    public boolean isPrefetch() {
+        return "true".equals(attr(CONTEXT_PREFETCH));
     }
 
     private String attr(String name) {

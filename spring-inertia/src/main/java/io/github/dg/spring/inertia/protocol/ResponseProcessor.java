@@ -23,6 +23,7 @@ import io.github.dg.spring.inertia.spi.JsonProvider;
  *   <li>precognition visits answer 204 (validate-only) or 422 (errors)</li>
  *   <li>asset version mismatches answer 409 + {@code X-Inertia-Location}</li>
  *   <li>regular Inertia visits get the page JSON with the protocol headers</li>
+ *   <li>mutating requests that redirect use 303 See Other (handled by RedirectProcessor)</li>
  * </ul>
  */
 @RequestScope
@@ -69,7 +70,8 @@ public class ResponseProcessor {
         if (Boolean.TRUE.equals(InertiaRequestContext.get(PageObjectBuilder.CONTEXT_VERSION_MISMATCH))) {
             return versionMismatch(page);
         }
-        return serialize(page, pageStatus());
+        var status = pageStatus();
+        return serialize(page, status);
     }
 
     /**
@@ -91,7 +93,8 @@ public class ResponseProcessor {
         if (partialComponent != null) {
             headers.set("X-Inertia-Partial-Component", String.valueOf(partialComponent));
         }
-        headers.set("Vary", "X-Inertia");
+        // Vary by Inertia headers that affect the response
+        headers.set("Vary", "X-Inertia, X-Inertia-Version, X-Inertia-Partial-Component, X-Inertia-Partial-Data, X-Inertia-Partial-Except");
         applyCustomHeaders(headers);
         var body = jsonProvider.toJson(page);
         return new InertiaResponse(HttpStatusCode.valueOf(status), headers, body);
@@ -107,13 +110,15 @@ public class ResponseProcessor {
 
     private ResponseEntity<String> precognition(PageObject page) {
         if (InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION_VALIDATE_FIELDS) != null) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.noContent()
+                .header("Vary", "X-Inertia, Precognition")
+                .build();
         }
         var errors = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_ERRORS);
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Inertia", "true");
-        headers.set("Vary", "X-Inertia");
+        headers.set("Vary", "X-Inertia, Precognition");
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).headers(headers)
             .body(jsonProvider.toJson(Map.of("errors", errors != null ? errors : Map.of())));
     }
@@ -122,7 +127,7 @@ public class ResponseProcessor {
         var headers = new HttpHeaders();
         headers.set("X-Inertia-Location", page.url());
         headers.set("X-Inertia-Version", page.version() != null ? page.version() : "");
-        headers.set("Vary", "X-Inertia");
+        headers.set("Vary", "X-Inertia, X-Inertia-Version");
         applyCustomHeaders(headers);
         return ResponseEntity.status(HttpStatus.CONFLICT).headers(headers).build();
     }

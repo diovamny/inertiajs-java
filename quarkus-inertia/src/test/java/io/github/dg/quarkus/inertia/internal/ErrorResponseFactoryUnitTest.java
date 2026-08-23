@@ -21,6 +21,8 @@ class ErrorResponseFactoryUnitTest {
             @Override public String rootTemplate() { return "index.html"; }
             @Override public boolean ssrEnabled() { return false; }
             @Override public String ssrUrl() { return "http://localhost:13714"; }
+            @Override public java.time.Duration ssrConnectTimeout() { return java.time.Duration.ofSeconds(5); }
+            @Override public java.time.Duration ssrReadTimeout() { return java.time.Duration.ofSeconds(10); }
             @Override public String versionStrategy() { return "custom"; }
             @Override public java.util.Optional<String> versionCustom() { return java.util.Optional.of(version); }
             @Override public boolean encryptHistory() { return false; }
@@ -33,6 +35,8 @@ class ErrorResponseFactoryUnitTest {
             @Override public String errorComponent() { return errorComponent; }
             @Override public boolean lazyEtagEnabled() { return true; }
             @Override public java.util.Optional<java.util.List<String>> ssrExcludePaths() { return java.util.Optional.empty(); }
+            @Override public boolean useQute() { return false; }
+            @Override public boolean errorDetailsEnabled() { return true; }
         };
         factory.versionProvider = () -> version;
         return factory;

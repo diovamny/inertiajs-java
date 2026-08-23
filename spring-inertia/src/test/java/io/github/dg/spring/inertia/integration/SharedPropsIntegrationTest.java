@@ -46,7 +46,7 @@ class SharedPropsIntegrationTest {
     }
 
     @Test
-    void unrequestedSharedPropsSurvivePartialReload() throws Exception {
+    void unrequestedSharedPropsDoNotSurvivePartialReload() throws Exception {
         mockMvc.perform(get("/shared")
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "test-version")
@@ -54,7 +54,7 @@ class SharedPropsIntegrationTest {
                 .header("X-Inertia-Partial-Data", "extra"))
             .andExpect(status().isOk())
             .andExpect(inertia().prop("extra", equalTo("e")))
-            .andExpect(inertia().prop("appName", equalTo("MyApp")))
+            .andExpect(inertia().prop("appName", org.hamcrest.Matchers.nullValue()))
             .andExpect(inertia().prop("csrf", equalTo("token123")));
     }
 }

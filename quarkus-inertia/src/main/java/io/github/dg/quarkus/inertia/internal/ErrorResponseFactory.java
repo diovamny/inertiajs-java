@@ -19,6 +19,10 @@ import io.github.dg.quarkus.inertia.version.VersionProvider;
  * {@code inertia.error-component}, default {@code ErrorPage}) carrying the
  * exception status and message as props, so the Inertia client can render an
  * error page component (Laravel parity).
+ *
+ * <p>In production mode, error messages are replaced with a generic message
+ * to avoid leaking internal details. Set {@code inertia.error-details-enabled}
+ * to {@code true} to include exception messages in error responses.</p>
  */
 @ApplicationScoped
 public class ErrorResponseFactory {
@@ -120,9 +124,11 @@ public class ErrorResponseFactory {
     }
 
     private Response errorPageResponse(Throwable error, int status) {
-        var message = error != null && error.getMessage() != null
-            ? error.getMessage()
-            : (error != null ? error.getClass().getSimpleName() : "Internal Server Error");
+        var message = config.errorDetailsEnabled()
+            ? (error != null && error.getMessage() != null
+                ? error.getMessage()
+                : (error != null ? error.getClass().getSimpleName() : "Internal Server Error"))
+            : "Internal Server Error";
 
         var props = new LinkedHashMap<String, Object>();
         props.put("status", status);

@@ -42,7 +42,7 @@ public class RedirectProcessor {
      */
     public InertiaRedirect redirect(String url, boolean fullPage) {
         var status = isGet() ? 302 : 303;
-        if (!fullPage && isInertiaRequest() && url != null && url.contains("#")) {
+        if (!fullPage && isInertiaRequest() && !isPrefetch() && url != null && url.contains("#")) {
             var headers = new HttpHeaders();
             headers.set("X-Inertia-Redirect", url);
             return new InertiaRedirect(HttpStatus.CONFLICT, headers, null, flashStore);
@@ -136,5 +136,9 @@ public class RedirectProcessor {
 
     private static boolean isInertiaRequest() {
         return InertiaRequestContext.isInertiaRequest();
+    }
+
+    private static boolean isPrefetch() {
+        return "true".equals(InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PREFETCH));
     }
 }

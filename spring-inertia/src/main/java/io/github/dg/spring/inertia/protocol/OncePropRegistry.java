@@ -3,6 +3,8 @@ package io.github.dg.spring.inertia.protocol;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.dg.spring.inertia.internal.InertiaRequestContext;
@@ -12,16 +14,14 @@ import io.github.dg.spring.inertia.model.OnceProp;
  * Request-scoped registry of once-props: props the client renders only once
  * per browser session (e.g. flash notifications).
  *
- * <p>When a once-prop has already been shown in the client history, the
- * server omits its value; the corresponding {@link OnceProp} metadata is
- * always sent so the client can track it. Shown keys are recorded in the
- * {@code HttpSession}.</p>
+ * <p>In Inertia v3, the client sends {@code X-Inertia-Except-Once-Props}
+ * header with the tracking keys of once-props it has already seen. The server
+ * omits the values for those keys but still sends the metadata so the client
+ * can track them. This implementation uses the client header instead of
+ * server-side session state.</p>
  */
 @RequestScope
 public class OncePropRegistry {
-
-    /** Session prefix for once-prop history entries. */
-    public static final String SESSION_PREFIX = "__inertia_once:";
 
     private final Map<String, OnceProp> metadata = new LinkedHashMap<>();
 
@@ -66,29 +66,40 @@ public class OncePropRegistry {
     }
 
     /**
-     * Whether the client has already seen this once-prop.
+     * Get the set of once-prop tracking keys that the client has already seen,
+     * based on the {@code X-Inertia-Except-Once-Props} header.
      *
-     * @param key the prop key
-     * @return {@code true} when the key is recorded in the session
+     * @return the set of tracking keys the client has seen
      */
-    public boolean alreadyShown(String key) {
-        var session = InertiaRequestContext.request() != null
-            ? InertiaRequestContext.request().getSession(false)
-            : null;
-        return session != null && session.getAttribute(SESSION_PREFIX + key) != null;
+    public Set<String> exceptOnceKeys() {
+        var header = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_EXCEPT_ONCE_PROPS);
+        if (header == null || header.toString().isBlank()) {
+            return Set.of();
+        }
+        return java.util.Arrays.stream(header.toString().split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toSet());
     }
 
     /**
-     * Mark a once-prop as shown so subsequent pages omit it.
+     * Check if a tracking key has been seen by the client (based on
+     * {@code X-Inertia-Except-Once-Props} header).
      *
-     * @param key the prop key
+     * @param trackingKey the tracking key
+     * @return {@code true} when the client has already seen this once-prop
+     */
+    public boolean alreadyShown(String trackingKey) {
+        return exceptOnceKeys().contains(trackingKey);
+    }
+
+    /**
+     * No-op: the client tracks shown once-props via the
+     * {@code X-Inertia-Except-Once-Props} header.
+     *
+     * @param key the prop key (ignored)
      */
     public void markShown(String key) {
-        var session = InertiaRequestContext.request() != null
-            ? InertiaRequestContext.request().getSession(true)
-            : null;
-        if (session != null) {
-            session.setAttribute(SESSION_PREFIX + key, Boolean.TRUE);
-        }
+        // No-op: client-side tracking via X-Inertia-Except-Once-Props header
     }
 }

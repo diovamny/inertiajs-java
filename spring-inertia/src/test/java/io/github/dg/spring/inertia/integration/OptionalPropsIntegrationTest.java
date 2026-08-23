@@ -57,14 +57,14 @@ class OptionalPropsIntegrationTest {
     }
 
     @Test
-    void partialReloadWithExceptDropsOptionals() throws Exception {
+    void partialReloadWithExceptResolvesNonExcludedOptionals() throws Exception {
         mockMvc.perform(get("/optional")
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "test-version")
                 .header("X-Inertia-Partial-Component", "OptionalPage")
                 .header("X-Inertia-Partial-Except", "title"))
             .andExpect(status().isOk())
-            .andExpect(inertia().prop("section1", nullValue()))
-            .andExpect(inertia().prop("section2", nullValue()));
+            .andExpect(inertia().prop("section1", equalTo("one")))
+            .andExpect(inertia().prop("section2", equalTo("two")));
     }
 }

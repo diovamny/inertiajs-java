@@ -115,11 +115,9 @@ if (!scrollProps.isObject()
         }
     }
 
-    @Test
+@Test
     void oncePropWithCustomKeyTracksSharedHistory() throws Exception {
-        var session = new MockHttpSession();
-
-        var first = page("/once-custom", Map.of(), session);
+        var first = page("/once-custom", Map.of());
         if (!"v".equals(first.path("props.aliased").asText())) {
             throw new AssertionError("Expected aliased once prop delivered on first visit");
         }
@@ -127,7 +125,8 @@ if (!scrollProps.isObject()
             throw new AssertionError("Expected onceProps keyed by custom key, was " + first.path("onceProps"));
         }
 
-        var second = page("/once-custom", Map.of(), session);
+        // Second request with X-Inertia-Except-Once-Props header
+        var second = page("/once-custom", Map.of("X-Inertia-Except-Once-Props", "shared-key"));
         if (second.has("props.aliased")) {
             throw new AssertionError("Expected aliased once prop omitted after shared-key was shown");
         }

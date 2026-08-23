@@ -1,6 +1,6 @@
 package io.github.dg.quarkus.inertia.protocol;
 
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import io.smallrye.mutiny.Uni;
@@ -27,7 +27,7 @@ import java.util.Map;
  * into the next visit (Laravel's {@code HandlePrecognitionRequests}
  * middleware parity).</p>
  */
-@RequestScoped
+@ApplicationScoped
 public class RedirectProcessor {
 
     private final CurrentVertxRequest currentVertxRequest;
@@ -105,70 +105,6 @@ public class RedirectProcessor {
         });
     }
 
-    private jakarta.ws.rs.core.Response buildRedirect(String url, boolean nonGet, Map<String, String> headers) {
-        if (isPrecognitionValidateOnly()) {
-            flashStore.drain();
-            return Response.status(Response.Status.NO_CONTENT)
-                .header("Precognition", "true")
-                .header("Precognition-Success", "true")
-                .build();
-        }
-        var status = nonGet ? Response.Status.SEE_OTHER : Response.Status.FOUND;
-        var builder = Response.status(status)
-            .header("Location", url)
-            .header("Vary", "X-Inertia");
-        applyHeaders(builder, headers);
-        return builder.build();
-    }
-
-    private boolean isPrecognitionValidateOnly() {
-        var ctx = Vertx.currentContext();
-        if (ctx != null) {
-            var precognition = ctx.getLocal("inertia-precognition");
-            var fields = ctx.getLocal("inertia-precognition-validate-fields");
-            if (precognition != null || fields != null) {
-                return Boolean.TRUE.equals(precognition) && fields != null;
-            }
-        }
-        var request = resolveRequest();
-        if (request == null) return false;
-        return "true".equalsIgnoreCase(request.getHeader("Precognition"))
-            && request.getHeader("Precognition-Validate-Only") != null;
-    }
-
-    private jakarta.ws.rs.core.Response buildConflict(String url, Map<String, String> headers) {
-        var builder = Response.status(Response.Status.CONFLICT)
-            .header("X-Inertia-Location", url)
-            .header("Vary", "X-Inertia");
-        applyHeaders(builder, headers);
-        return builder.build();
-    }
-
-    private void applyHeaders(Response.ResponseBuilder builder, Map<String, String> headers) {
-        if (headers == null) return;
-        for (var entry : headers.entrySet()) {
-            if (entry.getKey() == null || entry.getValue() == null) continue;
-            builder.header(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private boolean isExternal(String url) {
-        if (url == null || url.isBlank()) return false;
-        if (url.startsWith("/")) return false;
-        try {
-            var redirectUri = java.net.URI.create(url);
-            if (!redirectUri.isAbsolute()) return false;
-            var request = resolveRequest();
-            if (request == null) return true;
-            var requestScheme = request.scheme();
-            var requestAuthority = request.host();
-            return !requestScheme.equals(redirectUri.getScheme())
-                || !java.util.Objects.equals(requestAuthority, redirectUri.getAuthority());
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
     /**
      * Redirect back to the previous page (from the {@code Referer}
      * header), falling back to {@code /} when unknown.
@@ -203,8 +139,8 @@ public class RedirectProcessor {
     /**
      * Redirect back with extra response headers.
      *
-     * @param status   the response status to force
-     * @param headers  additional response headers
+     * @param status  the response status to force
+     * @param headers additional response headers
      * @return the redirect response as a Uni
      */
     public Uni<Object> back(int status, Map<String, String> headers) {
@@ -238,6 +174,195 @@ public class RedirectProcessor {
             });
         }
         return process(url, headers);
+    }
+
+    // ========================================================================
+    // Synchronous API (new)
+    // ========================================================================
+
+    /**
+     * Redirect to a URL (plain 302 for GET, 303 otherwise) synchronously.
+     *
+     * @param url the target URL
+     * @return the redirect response
+     */
+    public Response processSync(String url) {
+        return processSync(url, false);
+    }
+
+    /**
+     * Redirect to a URL, optionally forcing a full page visit, synchronously.
+     *
+     * @param url      the target URL
+     * @param fullPage when {@code true} and the request is an Inertia
+     *                 request, a 409 conflict response is returned
+     * @return the redirect or conflict response
+     */
+    public Response processSync(String url, boolean fullPage) {
+        if (fullPage && isInertiaRequest()) {
+            return buildConflict(url, java.util.Map.of());
+        }
+        return buildRedirect(url, isNonGetRequest(), java.util.Map.of());
+    }
+
+    /**
+     * Redirect to a URL with extra headers synchronously.
+     *
+     * @param url     the target URL
+     * @param headers additional response headers
+     * @return the redirect or conflict response
+     */
+    public Response processSync(String url, Map<String, String> headers) {
+        if (isInertiaRequest() && isExternal(url)) {
+            return buildConflict(url, headers);
+        }
+        return buildRedirect(url, isNonGetRequest(), headers);
+    }
+
+    /**
+     * Redirect outside of the Inertia application synchronously.
+     *
+     * @param url the external target URL
+     * @return the redirect response
+     */
+    public Response externalSync(String url) {
+        if (isInertiaRequest() && isExternal(url)) {
+            return buildConflict(url, java.util.Map.of());
+        }
+        return buildRedirect(url, isNonGetRequest(), java.util.Map.of());
+    }
+
+    /**
+     * Redirect back to the previous page (from the {@code Referer}
+     * header), falling back to {@code /} when unknown, synchronously.
+     *
+     * @return the redirect response
+     */
+    public Response backSync() {
+        return backSync("/");
+    }
+
+    /**
+     * Redirect back to the previous page with a custom fallback, synchronously.
+     *
+     * @param fallback URL used when no referer is available
+     * @return the redirect response
+     */
+    public Response backSync(String fallback) {
+        return back0Sync(fallback, -1, java.util.Map.of());
+    }
+
+    /**
+     * Redirect back with a forced HTTP status, synchronously.
+     *
+     * @param status   the response status to force
+     * @param fallback URL used when no referer is available
+     * @return the redirect response
+     */
+    public Response backSync(int status, String fallback) {
+        return back0Sync(fallback, status, java.util.Map.of());
+    }
+
+    /**
+     * Redirect back with extra response headers, synchronously.
+     *
+     * @param status  the response status to force
+     * @param headers additional response headers
+     * @return the redirect response
+     */
+    public Response backSync(int status, Map<String, String> headers) {
+        return back0Sync("/", status, headers);
+    }
+
+    /**
+     * Redirect back with a forced status, extra headers and a fallback, synchronously.
+     *
+     * @param status   the response status to force
+     * @param headers  additional response headers
+     * @param fallback URL used when no referer is available
+     * @return the redirect response
+     */
+    public Response backSync(int status, Map<String, String> headers, String fallback) {
+        return back0Sync(fallback, status, headers);
+    }
+
+    private Response back0Sync(String fallback, int forcedStatus, Map<String, String> headers) {
+        var referer = getRefererUrl();
+        var url = (referer != null && !referer.isBlank())
+            ? referer
+            : (fallback != null && !fallback.isBlank()) ? fallback : "/";
+        if (forcedStatus > 0) {
+            var builder = Response.status(forcedStatus)
+                .header("Location", url)
+                .header("Vary", "X-Inertia");
+            applyHeaders(builder, headers);
+            return builder.build();
+        }
+        return processSync(url, headers);
+    }
+
+    private Response buildRedirect(String url, boolean nonGet, Map<String, String> headers) {
+        if (isPrecognitionValidateOnly()) {
+            flashStore.drain();
+            return Response.status(Response.Status.NO_CONTENT)
+                .header("Precognition", "true")
+                .header("Precognition-Success", "true")
+                .build();
+        }
+        var status = nonGet ? Response.Status.SEE_OTHER : Response.Status.FOUND;
+        var builder = Response.status(status)
+            .header("Location", url)
+            .header("Vary", "X-Inertia");
+        applyHeaders(builder, headers);
+        return builder.build();
+    }
+
+    private boolean isPrecognitionValidateOnly() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var precognition = ctx.getLocal("inertia-precognition");
+            var fields = ctx.getLocal("inertia-precognition-validate-fields");
+            if (precognition != null || fields != null) {
+                return Boolean.TRUE.equals(precognition) && fields != null;
+            }
+        }
+        var request = resolveRequest();
+        if (request == null) return false;
+        return "true".equalsIgnoreCase(request.getHeader("Precognition"))
+            && request.getHeader("Precognition-Validate-Only") != null;
+    }
+
+    private Response buildConflict(String url, Map<String, String> headers) {
+        var builder = Response.status(Response.Status.CONFLICT)
+            .header("X-Inertia-Location", url)
+            .header("Vary", "X-Inertia");
+        applyHeaders(builder, headers);
+        return builder.build();
+    }
+
+    private void applyHeaders(Response.ResponseBuilder builder, Map<String, String> headers) {
+        if (headers == null) return;
+        for (var entry : headers.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) continue;
+            builder.header(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private boolean isExternal(String url) {
+        if (url == null || url.isBlank()) return false;
+        if (url.startsWith("/")) return false;
+        try {
+            var redirectUri = java.net.URI.create(url);
+            if (!redirectUri.isAbsolute()) return false;
+            var request = resolveRequest();
+            if (request == null) return true;
+            var requestScheme = request.scheme();
+            var requestAuthority = request.host();
+            return !requestScheme.equals(redirectUri.getScheme())
+                || !java.util.Objects.equals(requestAuthority, redirectUri.getAuthority());
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     private boolean isInertiaRequest() {

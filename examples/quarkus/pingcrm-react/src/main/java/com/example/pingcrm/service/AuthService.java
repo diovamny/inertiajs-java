@@ -10,12 +10,14 @@ import javax.crypto.spec.PBEKeySpec;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 
 import com.example.pingcrm.entity.Account;
 import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.AccountRepository;
 import com.example.pingcrm.repository.UserRepository;
+import io.github.dg.quarkus.inertia.protocol.RequestRoutingContext;
 
 /**
  * Session-based authentication for the demo. The Vert.x session cookie keeps
@@ -32,6 +34,9 @@ public class AuthService {
 
     @Inject
     Instance<RoutingContext> routingContext;
+
+    @Inject
+    RequestRoutingContext requestRoutingContext;
 
     @Inject
     UserRepository userRepository;
@@ -109,11 +114,27 @@ public class AuthService {
     }
 
     private RoutingContext resolve() {
-        try {
-            return routingContext.get();
-        } catch (Exception e) {
-            return null;
+        // Primary: Request-scoped bean (propagated to @Blocking worker threads)
+        if (requestRoutingContext.hasRoutingContext()) {
+            return requestRoutingContext.getRoutingContext();
         }
+        // Fallback: Injected RoutingContext (works in @Blocking worker threads)
+        try {
+            var rc = routingContext.get();
+            if (rc != null) {
+                return rc;
+            }
+        } catch (Exception ignored) {
+        }
+        // Fallback: Vert.x context local (set by InertiaRequestFilter)
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var local = ctx.getLocal("inertia-routing-context");
+            if (local instanceof RoutingContext rc) {
+                return rc;
+            }
+        }
+        return null;
     }
 
     private io.vertx.ext.web.Session requireSession() {

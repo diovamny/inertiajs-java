@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
@@ -25,25 +24,25 @@ class OncePropsIntegrationTest {
 
     @Test
     void oncePropIsDeliveredThenOmitted() throws Exception {
-        var session = new MockHttpSession();
-
+        // First request: once prop is delivered
         mockMvc.perform(get("/once")
-                .session(session)
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "test-version"))
             .andExpect(status().isOk())
             .andExpect(inertia().prop("notice", equalTo("Hello")));
 
+        // Second request: client sends X-Inertia-Except-Once-Props with the tracking key
         mockMvc.perform(get("/once")
-                .session(session)
                 .header("X-Inertia", "true")
-                .header("X-Inertia-Version", "test-version"))
+                .header("X-Inertia-Version", "test-version")
+                .header("X-Inertia-Except-Once-Props", "notice"))
             .andExpect(status().isOk())
             .andExpect(inertia().prop("notice", nullValue()));
     }
 
     @Test
     void oncePropIsDeliveredInDifferentSessions() throws Exception {
+        // Without X-Inertia-Except-Once-Props, once prop is delivered every time
         mockMvc.perform(get("/once")
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "test-version"))

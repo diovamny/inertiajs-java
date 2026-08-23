@@ -51,86 +51,86 @@ public class FormController {
     @GET
     @Path("use-form")
     @Blocking
-    public Uni<Object> useForm() {
-        return inertia.render("Features/Forms/UseForm");
+    public Response useForm() {
+        return inertia.renderSync("Features/Forms/UseForm");
     }
 
     @POST
     @Path("use-form")
     @Consumes(MediaType.APPLICATION_JSON)
     @Blocking
-    public Uni<Object> submitUseForm(SimpleFormRequest form) {
+    public Response submitUseForm(SimpleFormRequest form) {
         validateSimple(form);
-        return inertia.back().with("message", "Form submitted successfully! Name: " + form.name);
+        return inertia.back().with("message", "Form submitted successfully! Name: " + form.name).toResponse();
     }
 
     @GET
     @Path("form-component")
     @Blocking
-    public Uni<Object> formComponent() {
-        return inertia.render("Features/Forms/FormComponent");
+    public Response formComponent() {
+        return inertia.renderSync("Features/Forms/FormComponent");
     }
 
     @POST
     @Path("form-component")
     @Consumes(MediaType.APPLICATION_JSON)
     @Blocking
-    public Uni<Object> submitFormComponent(SimpleFormRequest form) {
+    public Response submitFormComponent(SimpleFormRequest form) {
         validateSimple(form);
-        return inertia.back().with("message", "Form submitted successfully! Name: " + form.name);
+        return inertia.back().with("message", "Form submitted successfully! Name: " + form.name).toResponse();
     }
 
     @GET
     @Path("file-uploads")
     @Blocking
-    public Uni<Object> fileUploads() {
-        return inertia.render("Features/Forms/FileUploads");
+    public Response fileUploads() {
+        return inertia.renderSync("Features/Forms/FileUploads");
     }
 
     @POST
     @Path("file-uploads")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Blocking
-    public Uni<Object> submitFileUploads(@RestForm("files") List<FileUpload> files,
+    public Response submitFileUploads(@RestForm("files") List<FileUpload> files,
         @RestForm("photo") FileUpload photo) {
         var fileList = files == null ? List.<FileUpload>of() : files;
         if (fileList.size() > 5) {
             return inertia.back().withErrors(Map.of("files",
-                "The files field must not have more than 5 items."));
+                "The files field must not have more than 5 items.")).toResponse();
         }
         var count = fileList.size() + (photo != null ? 1 : 0);
-        return inertia.back().with("message", "Uploaded " + count + " file(s) successfully!");
+        return inertia.back().with("message", "Uploaded " + count + " file(s) successfully!").toResponse();
     }
 
 
     @GET
     @Path("validation")
     @Blocking
-    public Uni<Object> validation() {
-        return inertia.render("Features/Forms/Validation");
+    public Response validation() {
+        return inertia.renderSync("Features/Forms/Validation");
     }
 
     @POST
     @Path("validation")
     @Consumes(MediaType.APPLICATION_JSON)
     @Blocking
-    public Uni<Object> submitValidation(ValidationRequest form) {
+    public Response submitValidation(ValidationRequest form) {
         form.name = FormValidator.blankToNull(form.name);
         form.email = FormValidator.blankToNull(form.email);
         form.website = FormValidator.blankToNull(form.website);
         FormValidator.validate(validator, form);
-        return inertia.back().with("message", "Primary form submitted successfully!");
+        return inertia.back().with("message", "Primary form submitted successfully!").toResponse();
     }
 
     @POST
     @Path("validation/secondary")
     @Consumes(MediaType.APPLICATION_JSON)
     @Blocking
-    public Uni<Object> submitValidationSecondary(ValidationErrorBagRequest form) {
+    public Response submitValidationSecondary(ValidationErrorBagRequest form) {
         form.title = FormValidator.blankToNull(form.title);
         form.body = FormValidator.blankToNull(form.body);
         FormValidator.validate(validator, form);
-        return inertia.back().with("message", "Secondary form submitted successfully!");
+        return inertia.back().with("message", "Secondary form submitted successfully!").toResponse();
     }
 
     private static final Set<String> PRECOGNITION_FIELDS =
@@ -139,15 +139,15 @@ public class FormController {
     @GET
     @Path("precognition")
     @Blocking
-    public Uni<Object> precognition() {
-        return inertia.render("Features/Forms/Precognition");
+    public Response precognition() {
+        return inertia.renderSync("Features/Forms/Precognition");
     }
 
     @POST
     @Path("precognition")
     @Consumes(MediaType.APPLICATION_JSON)
     @Blocking
-    public Uni<Object> storeAccount(PrecognitionRequest form) {
+    public Response storeAccount(PrecognitionRequest form) {
         form.username = FormValidator.blankToNull(form.username);
         form.email = FormValidator.blankToNull(form.email);
         form.password = FormValidator.blankToNull(form.password);
@@ -160,9 +160,9 @@ public class FormController {
         FormValidator.validate(validator, form);
         if (form.password != null && !form.password.equals(form.password_confirmation)) {
             return inertia.back().withErrors(Map.of(
-                "password_confirmation", "The password confirmation does not match."));
+                "password_confirmation", "The password confirmation does not match.")).toResponse();
         }
-        return inertia.back().with("message", "Account created for " + form.username + "!");
+        return inertia.back().with("message", "Account created for " + form.username + "!").toResponse();
     }
 
     /**
@@ -173,7 +173,7 @@ public class FormController {
      * errors wrapped as {@code {"errors": {...}}} — the laravel-precognition
      * client contract.
      */
-    private Uni<Object> precognitionResponse(PrecognitionRequest form) {
+    private Response precognitionResponse(PrecognitionRequest form) {
         var ctx = Vertx.currentContext();
         var validateOnly = ctx != null
             ? (String) ctx.getLocal("inertia-precognition-validate-fields")
@@ -185,17 +185,17 @@ public class FormController {
             errors.put("password_confirmation", "The password confirmation does not match.");
         }
         if (errors.isEmpty()) {
-            return Uni.createFrom().item(Response.noContent()
+            return Response.noContent()
                 .header("Precognition", "true")
                 .header("Precognition-Success", "true")
-                .build());
+                .build();
         }
-        return Uni.createFrom().item(Response.status(422)
+        return Response.status(422)
             .entity(Map.of("errors", errors))
             .type(MediaType.APPLICATION_JSON_TYPE)
             .header("Precognition", "true")
             .header("Vary", "Precognition")
-            .build());
+            .build();
     }
 
     private boolean isPrecognition() {
@@ -206,49 +206,49 @@ public class FormController {
     @GET
     @Path("optimistic-updates")
     @Blocking
-    public Uni<Object> optimisticUpdates() {
-        return inertia.render("Features/Forms/OptimisticUpdates", Map.of("contacts", latestContacts()));
+    public Response optimisticUpdates() {
+        return inertia.renderSync("Features/Forms/OptimisticUpdates", Map.of("contacts", latestContacts()));
     }
 
     @POST
     @Path("optimistic-toggle/{contact}")
     @Blocking
-    public Uni<Object> toggleFavorite(@PathParam("contact") long contactId,
+    public Response toggleFavorite(@PathParam("contact") long contactId,
             @QueryParam("simulate_error") boolean simulateError) {
         Demo.sleepSeconds(1);
         if (simulateError) {
             return inertia.back().withErrors(Map.of(
-                "contact", "Simulated validation error for optimistic update rollback demo."));
+                "contact", "Simulated validation error for optimistic update rollback demo.")).toResponse();
         }
         var contact = (Contact) Contact.findById(contactId);
         if (contact == null) {
             return inertia.back().withErrors(Map.of(
-                "contact", "The selected contact is invalid."));
+                "contact", "The selected contact is invalid.")).toResponse();
         }
         write.toggleFavorite(contact);
         return inertia.back().with("message",
-            contact.isFavorite ? "Added to favorites." : "Removed from favorites.");
+            contact.isFavorite ? "Added to favorites." : "Removed from favorites.").toResponse();
     }
 
     @GET
     @Path("use-form-context")
     @Blocking
-    public Uni<Object> useFormContext() {
-        return inertia.render("Features/Forms/UseFormContext");
+    public Response useFormContext() {
+        return inertia.renderSync("Features/Forms/UseFormContext");
     }
 
     @GET
     @Path("dotted-keys")
     @Blocking
-    public Uni<Object> dottedKeys() {
-        return inertia.render("Features/Forms/DottedKeys");
+    public Response dottedKeys() {
+        return inertia.renderSync("Features/Forms/DottedKeys");
     }
 
     @POST
     @Path("dotted-keys")
     @Consumes(MediaType.APPLICATION_JSON)
     @Blocking
-    public Uni<Object> submitDottedKeys(DottedKeysRequest form) {
+    public Response submitDottedKeys(DottedKeysRequest form) {
         FormValidator.validate(validator, form);
         var parsed = new LinkedHashMap<String, Object>();
         if (form.user != null) {
@@ -262,7 +262,7 @@ public class FormController {
                 "city", form.address.city));
         }
         parsed.put("tags", form.tags != null ? form.tags : java.util.List.of());
-        return inertia.back().with("message", "Form submitted successfully!").with("parsedData", parsed);
+        return inertia.back().with("message", "Form submitted successfully!").with("parsedData", parsed).toResponse();
     }
 
     private void validateSimple(SimpleFormRequest form) {

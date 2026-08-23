@@ -22,6 +22,11 @@ import io.github.dg.quarkus.inertia.config.InertiaConfig;
  * {@code inertia.csrf-enabled=false}). Keeps the session token synchronized
  * across requests.
  *
+ * <p>This filter only applies to Inertia requests (requests with
+ * {@code X-Inertia: true} header). Non-Inertia requests pass through
+ * without CSRF validation, allowing other security configurations to handle
+ * them.
+ *
  * <p>When the reactive routes pre-handler already validated the request
  * (session present before routing), the {@code inertia-csrf-handled} flag
  * makes this filter a no-op so the token is never double-checked.</p>
@@ -44,6 +49,10 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
     public void filter(ContainerRequestContext request) {
         if (!config.csrfEnabled()) return;
         if (csrfHandled()) return;
+        // Only validate state-changing Inertia requests. The CSRF cookie is
+        // issued on every response (see the response filter) so the initial
+        // HTML visit can obtain the token before an Inertia request occurs.
+        if (!isInertiaRequest(request)) return;
 
         var xsrfToken = request.getHeaderString("X-XSRF-TOKEN");
         if (xsrfToken != null && !xsrfToken.isBlank()) {
@@ -60,11 +69,17 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) {
         if (!config.csrfEnabled()) return;
-
+        // Issue the XSRF-TOKEN cookie on every response so the first HTML
+        // visit (which is not yet an Inertia request) can obtain the token.
         var token = getOrCreateToken();
         if (token == null) return;
 
         response.getHeaders().add("Set-Cookie", csrfService.cookieHeader(token));
+    }
+
+    private boolean isInertiaRequest(ContainerRequestContext request) {
+        var header = request.getHeaderString("X-Inertia");
+        return header != null && ("true".equalsIgnoreCase(header) || Boolean.parseBoolean(header));
     }
 
     private boolean csrfHandled() {
@@ -75,9 +90,9 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
     private boolean tokenMatches(String provided) {
         if (provided == null || provided.isBlank()) return false;
         var rc = resolveRoutingContext();
-        if (rc == null) return true;
+        if (rc == null) return false;
         var session = rc.session();
-        if (session == null) return true;
+        if (session == null) return false;
         var stored = (String) session.get(InertiaCsrfService.SESSION_ATTR);
         return csrfService.matches(stored, provided);
     }

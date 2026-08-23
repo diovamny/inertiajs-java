@@ -54,6 +54,24 @@ public interface InertiaConfig {
     java.util.Optional<java.util.List<String>> ssrExcludePaths();
 
     /**
+     * Connection timeout for SSR requests.
+     * <p>Property: {@code inertia.ssr-connect-timeout}.</p>
+     *
+     * @return the timeout, default {@code 5s}
+     */
+    @WithDefault("5s")
+    java.time.Duration ssrConnectTimeout();
+
+    /**
+     * Read timeout for SSR requests.
+     * <p>Property: {@code inertia.ssr-read-timeout}.</p>
+     *
+     * @return the timeout, default {@code 10s}
+     */
+    @WithDefault("10s")
+    java.time.Duration ssrReadTimeout();
+
+    /**
      * Strategy used to compute the asset version for cache-busting.
      * <p>Property: {@code inertia.version-strategy}.</p>
      *
@@ -147,6 +165,16 @@ public interface InertiaConfig {
     String errorComponent();
 
     /**
+     * Whether to include exception details in error responses (development
+     * mode). In production, a generic message is returned.
+     * <p>Property: {@code inertia.error-details-enabled}.</p>
+     *
+     * @return {@code true} to include details, default {@code false}
+     */
+    @WithDefault("false")
+    boolean errorDetailsEnabled();
+
+    /**
      * Whether the ETag lazy-response optimization is enabled.
      * <p>Property: {@code inertia.lazy-etag-enabled}.</p>
      *
@@ -154,4 +182,15 @@ public interface InertiaConfig {
      */
     @WithDefault("true")
     boolean lazyEtagEnabled();
+
+    /**
+     * Whether to use Qute for rendering the root HTML template instead of
+     * the fast placeholder-based renderer. Requires the {@code quarkus-qute}
+     * dependency.
+     * <p>Property: {@code inertia.use-qute}.</p>
+     *
+     * @return {@code true} to use Qute, default {@code false}
+     */
+    @WithDefault("false")
+    boolean useQute();
 }

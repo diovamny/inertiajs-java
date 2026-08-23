@@ -9,6 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 import io.github.dg.spring.inertia.config.InertiaProperties;
 import io.github.dg.spring.inertia.model.PageObject;
 import io.github.dg.spring.inertia.spi.JsonProvider;
+import io.github.dg.spring.inertia.util.SafeJsonEncoder;
 
 /**
  * Renders the full HTML page for non-Inertia visits.
@@ -69,7 +70,7 @@ public class HtmlRenderer {
             html = html.replace(SSR_HEAD_PLACEHOLDER, "");
             html = html.replace(SSR_BODY_PLACEHOLDER, "");
         }
-        return html.replace(PAGE_JSON_PLACEHOLDER, rawJson);
+        return html.replace(PAGE_JSON_PLACEHOLDER, SafeJsonEncoder.encodeForScript(rawJson));
     }
 
     /**

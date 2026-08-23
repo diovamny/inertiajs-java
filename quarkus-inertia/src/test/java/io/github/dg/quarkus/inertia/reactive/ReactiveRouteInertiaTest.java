@@ -162,7 +162,7 @@ class ReactiveRouteInertiaTest {
             .cookies(response.cookies())
             .header("X-XSRF-TOKEN", token)
             .header("X-Inertia", "true")
-            .header("Referer", "http://localhost:8081/reactive/hello")
+            .header("Referer", "/reactive/hello")
             .redirects().follow(false)
             .when().post("/reactive/back")
             .then()

@@ -1,5 +1,6 @@
 package io.github.dg.spring.inertia.config;
 
+import java.time.Duration;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -12,6 +13,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   ssr-enabled: false
  *   ssr-url: http://localhost:13714/render
  *   ssr-exclude-paths: []
+ *   ssr-connect-timeout: 5s
+ *   ssr-read-timeout: 10s
  *   version-strategy: sha256
  *   version-custom: null
  *   encrypt-history: false
@@ -40,6 +43,12 @@ public class InertiaProperties {
     /** Paths excluded from SSR. */
     private List<String> ssrExcludePaths = List.of();
 
+    /** Connection timeout for SSR requests. */
+    private Duration ssrConnectTimeout = Duration.ofSeconds(5);
+
+    /** Read timeout for SSR requests. */
+    private Duration ssrReadTimeout = Duration.ofSeconds(10);
+
     /** Version strategy: {@code sha256} (default) or {@code vite-manifest}. */
     private String versionStrategy = "sha256";
 
@@ -48,6 +57,9 @@ public class InertiaProperties {
 
     /** Whether the client must encrypt history state. */
     private boolean encryptHistory = false;
+
+    /** Whether the client must clear history on the next visit. */
+    private boolean clearHistory = false;
 
     /** Whether prop keys are converted from camelCase to snake_case. */
     private boolean camelizeProps = false;
@@ -66,6 +78,9 @@ public class InertiaProperties {
 
     /** Component used for error pages. */
     private String errorComponent = "ErrorPage";
+
+    /** Whether to include exception details in error responses. */
+    private boolean errorDetailsEnabled = false;
 
     /** Whether the ETag / 304 handling is active. */
     private boolean lazyEtagEnabled = true;
@@ -105,6 +120,22 @@ public class InertiaProperties {
         this.ssrExcludePaths = ssrExcludePaths;
     }
 
+    public Duration getSsrConnectTimeout() {
+        return ssrConnectTimeout;
+    }
+
+    public void setSsrConnectTimeout(Duration ssrConnectTimeout) {
+        this.ssrConnectTimeout = ssrConnectTimeout;
+    }
+
+    public Duration getSsrReadTimeout() {
+        return ssrReadTimeout;
+    }
+
+    public void setSsrReadTimeout(Duration ssrReadTimeout) {
+        this.ssrReadTimeout = ssrReadTimeout;
+    }
+
     public String getVersionStrategy() {
         return versionStrategy;
     }
@@ -127,6 +158,14 @@ public class InertiaProperties {
 
     public void setEncryptHistory(boolean encryptHistory) {
         this.encryptHistory = encryptHistory;
+    }
+
+    public boolean isClearHistory() {
+        return clearHistory;
+    }
+
+    public void setClearHistory(boolean clearHistory) {
+        this.clearHistory = clearHistory;
     }
 
     public boolean isCamelizeProps() {
@@ -175,6 +214,14 @@ public class InertiaProperties {
 
     public void setErrorComponent(String errorComponent) {
         this.errorComponent = errorComponent;
+    }
+
+    public boolean isErrorDetailsEnabled() {
+        return errorDetailsEnabled;
+    }
+
+    public void setErrorDetailsEnabled(boolean errorDetailsEnabled) {
+        this.errorDetailsEnabled = errorDetailsEnabled;
     }
 
     public boolean isLazyEtagEnabled() {

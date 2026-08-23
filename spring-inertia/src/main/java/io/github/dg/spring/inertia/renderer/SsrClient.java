@@ -1,9 +1,11 @@
 package io.github.dg.spring.inertia.renderer;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import io.github.dg.spring.inertia.config.InertiaProperties;
@@ -18,17 +20,33 @@ public class SsrClient {
 
     private final RestClient restClient;
     private final JsonProvider jsonProvider;
+    private final Duration connectTimeout;
+    private final Duration readTimeout;
 
     public SsrClient(InertiaProperties properties, JsonProvider jsonProvider) {
-        this.restClient = RestClient.builder().baseUrl(properties.getSsrUrl()).build();
         this.jsonProvider = jsonProvider;
+        this.connectTimeout = properties.getSsrConnectTimeout();
+        this.readTimeout = properties.getSsrReadTimeout();
+
+        var requestFactory = new SimpleClientHttpRequestFactory();
+        if (connectTimeout != null) {
+            requestFactory.setConnectTimeout((int) connectTimeout.toMillis());
+        }
+        if (readTimeout != null) {
+            requestFactory.setReadTimeout((int) readTimeout.toMillis());
+        }
+
+        this.restClient = RestClient.builder()
+            .baseUrl(properties.getSsrUrl())
+            .requestFactory(requestFactory)
+            .build();
     }
 
     /**
      * Render a page object server-side.
      *
      * @param page the page object
-     * @return the SSR result, or empty when the server is unavailable
+     * @return the SSR result, or empty when the server is unavailable or times out
      */
     public Optional<SsrResult> render(PageObject page) {
         try {
@@ -40,6 +58,7 @@ public class SsrClient {
                 .body(SsrResult.class);
             return Optional.ofNullable(body);
         } catch (Exception e) {
+            // Log the error but don't expose details to the client
             return Optional.empty();
         }
     }

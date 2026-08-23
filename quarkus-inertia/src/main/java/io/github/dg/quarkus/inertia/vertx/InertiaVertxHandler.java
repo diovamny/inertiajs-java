@@ -68,7 +68,7 @@ public class InertiaVertxHandler {
             rc.put(ReactiveResponseWriter.REQUEST_CONTEXT_KEY, ctx);
 
             headerExtractor.extract(ctx, rc.request().method().name(),
-                rc.request().absoluteURI(), name -> rc.request().getHeader(name));
+                rc.request().uri(), name -> rc.request().getHeader(name));
         }
 
         if (handleCsrf(rc)) {

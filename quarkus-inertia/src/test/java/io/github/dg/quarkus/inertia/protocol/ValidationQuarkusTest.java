@@ -23,7 +23,7 @@ class ValidationQuarkusTest {
             .cookies(cookies)
             .header("X-XSRF-TOKEN", token)
             .header("X-Inertia", "true")
-            .header("Referer", "http://localhost:8081/validation-test")
+            .header("Referer", "/validation-test")
             .formParam("name", "")
             .redirects().follow(false)
             .when().post("/validation-test")

@@ -8,14 +8,18 @@ import java.util.Map;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 
 import com.example.pingcrm.entity.Account;
 import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.AccountRepository;
 import com.example.pingcrm.repository.UserRepository;
+import io.github.dg.quarkus.inertia.protocol.RequestRoutingContext;
+import io.github.dg.quarkus.inertia.protocol.RequestSessionId;
+import io.github.dg.quarkus.inertia.protocol.TestSessionHolder;
 
 /**
  * Session-based authentication for the demo. The Vert.x session cookie keeps
@@ -25,13 +29,20 @@ import com.example.pingcrm.repository.UserRepository;
 public class AuthService {
 
     static final String SESSION_USER_KEY = "pingcrm.userId";
+    private static final String SESSION_COOKIE_NAME = "vertx-web.session";
 
     private static final int PBKDF2_ITERATIONS = 210_000;
     private static final int PBKDF2_KEY_BITS = 256;
     private static final int SALT_BYTES = 16;
 
     @Inject
-    Instance<RoutingContext> routingContext;
+    CurrentVertxRequest currentVertxRequest;
+
+    @Inject
+    RequestRoutingContext requestRoutingContext;
+
+    @Inject
+    RequestSessionId requestSessionId;
 
     @Inject
     UserRepository userRepository;
@@ -109,11 +120,46 @@ public class AuthService {
     }
 
     private RoutingContext resolve() {
-        try {
-            return routingContext.get();
-        } catch (Exception e) {
-            return null;
+        // Primary: Request-scoped bean (propagated to @Blocking worker threads)
+        if (requestRoutingContext.hasRoutingContext()) {
+            return requestRoutingContext.getRoutingContext();
         }
+        // Fallback: CurrentVertxRequest (works in @Blocking worker threads)
+        try {
+            var rc = currentVertxRequest.getCurrent();
+            if (rc != null) {
+                return rc;
+            }
+        } catch (Exception ignored) {
+        }
+        // Fallback: Vert.x context local (set by InertiaRequestFilter)
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var local = ctx.getLocal("inertia-routing-context");
+            if (local instanceof RoutingContext rc) {
+                return rc;
+            }
+        }
+        // Test fallback: Try to get routing context from session ID in request-scoped bean
+        var testRc = getTestRoutingContextFromSessionId();
+        if (testRc != null) {
+            return testRc;
+        }
+        return null;
+    }
+
+    private RoutingContext getTestRoutingContextFromSessionId() {
+        try {
+            if (requestSessionId.hasSessionId()) {
+                var sessionId = requestSessionId.getSessionId();
+                var testRc = TestSessionHolder.get(sessionId);
+                if (testRc != null) {
+                    return testRc;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     private io.vertx.ext.web.Session requireSession() {
@@ -124,6 +170,8 @@ public class AuthService {
         }
         return session;
     }
+
+    // ... rest unchanged
 
     // ------------------------------------------------------------------
     // Password hashing (PBKDF2-HMAC-SHA256), format: pbkdf2$iter$salt$key

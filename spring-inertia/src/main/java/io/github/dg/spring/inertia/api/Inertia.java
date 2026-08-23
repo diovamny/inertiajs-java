@@ -320,6 +320,13 @@ public interface Inertia {
     void setEncryptHistory(boolean encrypt);
 
     /**
+     * Clear the client history on the next visit.
+     *
+     * @param clear {@code true} to clear history
+     */
+    void setClearHistory(boolean clear);
+
+    /**
      * Enable camelCase-to-snake_case prop conversion for the current visit.
      *
      * @param camelize {@code true} to convert the prop keys

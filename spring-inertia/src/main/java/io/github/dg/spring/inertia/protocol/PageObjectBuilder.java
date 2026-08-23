@@ -2,6 +2,7 @@ package io.github.dg.spring.inertia.protocol;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,6 +43,7 @@ public class PageObjectBuilder {
     public static final String CONTEXT_VERSION_MISMATCH = "inertia-version-mismatch";
     public static final String CONTEXT_CUSTOM_HEADERS = "inertia-custom-headers";
     public static final String CONTEXT_ENCRYPT_HISTORY = "inertia-encrypt-history";
+    public static final String CONTEXT_CLEAR_HISTORY = "inertia-clear-history";
     public static final String CONTEXT_CAMELIZE_PROPS = "inertia-camelize-props";
     /** Session attribute carrying the preserve-fragment flag across a redirect. */
     public static final String SESSION_PRESERVE_FRAGMENT = "__inertia_preserve_fragment";
@@ -99,8 +101,10 @@ public class PageObjectBuilder {
 
         InertiaRequestContext.set(CONTEXT_PAGE_VERSION, version);
         var clientVersion = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_VERSION);
+        var isPrefetch = "true".equals(InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PREFETCH));
         InertiaRequestContext.set(CONTEXT_VERSION_MISMATCH,
-            "GET".equalsIgnoreCase(InertiaRequestContext.method())
+            !isPrefetch
+                && "GET".equalsIgnoreCase(InertiaRequestContext.method())
                 && clientVersion != null
                 && version != null
                 && !version.equals(String.valueOf(clientVersion)));
@@ -124,17 +128,12 @@ public class PageObjectBuilder {
         if (partial) {
             if (partialReloadProcessor.isPartialReset()) {
                 mergePropProcessor.reset();
-            } else {
-                merged = mergePropProcessor.mergeProps(merged, mergeProps, prependProps, deepMergeProps, matchPropsOn);
             }
             merged = partialReloadProcessor.filterProps(merged, partialReloadBaseProps(merged));
-            mergePropProcessor.propagateProps(merged);
-        } else {
-            mergePropProcessor.propagateProps(merged);
         }
 
         merged = resolveLazyProps(merged);
-        merged = unwrapOptionals(merged);
+        merged = unwrapOptionals(merged, partial);
 
         var rescued = rescuedKeys();
 
@@ -155,7 +154,7 @@ public class PageObjectBuilder {
             rescued.isEmpty() ? null : List.copyOf(rescued),
             meta(),
             encryptHistoryEnabled(),
-            false,
+            clearHistoryEnabled(),
             preserveFragmentEnabled());
         return page;
     }
@@ -182,6 +181,14 @@ public class PageObjectBuilder {
             return Boolean.TRUE.equals(override);
         }
         return properties.isEncryptHistory();
+    }
+
+    private boolean clearHistoryEnabled() {
+        var override = InertiaRequestContext.get(CONTEXT_CLEAR_HISTORY);
+        if (override != null) {
+            return Boolean.TRUE.equals(override);
+        }
+        return properties.isClearHistory();
     }
 
     private void injectValidationErrors(Map<String, Object> merged, boolean alwaysIncludeErrors) {
@@ -248,11 +255,15 @@ public class PageObjectBuilder {
     }
 
     private void applyOnceProps(Map<String, Object> merged) {
+        var exceptKeys = oncePropRegistry.exceptOnceKeys();
+        var onlyKeys = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA));
         for (var entry : oncePropRegistry.metadata().entrySet()) {
-            if (oncePropRegistry.alreadyShown(entry.getKey())) {
-                merged.remove(entry.getValue().prop());
-            } else {
-                oncePropRegistry.markShown(entry.getKey());
+            if (exceptKeys.contains(entry.getKey())) {
+                // Explicit partial reload request overrides Except-Once-Props.
+                // Check against the actual prop key, not the tracking key.
+                if (!onlyKeys.contains(entry.getValue().prop())) {
+                    merged.remove(entry.getValue().prop());
+                }
             }
         }
     }
@@ -275,20 +286,15 @@ public class PageObjectBuilder {
     }
 
     /**
-     * The props that survive a partial reload unconditionally: always props
-     * plus every shared prop. Mirrors Laravel, where shared props stay in
-     * every response (including partial reloads) so layouts that rely on
-     * them (e.g. the authenticated user) never go missing.
+     * The props that survive a partial reload unconditionally: only props
+     * explicitly registered as "always". Regular shared props are treated
+     * as ordinary props and subject to the only/except filter.
      *
      * @param merged the accumulated page props
      * @return the base props for the partial reload filter
      */
     private Map<String, Object> partialReloadBaseProps(Map<String, Object> merged) {
-        var base = alwaysPropsMap(merged);
-        for (var entry : sharedDataRegistry.sharedProps().entrySet()) {
-            base.putIfAbsent(entry.getKey(), entry.getValue());
-        }
-        return base;
+        return alwaysPropsMap(merged);
     }
 
     @SuppressWarnings("unchecked")
@@ -378,13 +384,34 @@ public class PageObjectBuilder {
         return props;
     }
 
-    private Map<String, Object> unwrapOptionals(Map<String, Object> props) {
+    private Map<String, Object> unwrapOptionals(Map<String, Object> props, boolean isPartial) {
+        // In a full page visit, optional props are not evaluated - they remain
+        // as Optional and will be serialized as null (or omitted).
+        // In a partial reload, only optional props that were selected by the
+        // partial reload headers are unwrapped.
+        if (!isPartial) {
+            return props;
+        }
+        var onlyKeys = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA));
+        var exceptKeys = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT));
         var toRemove = new ArrayList<String>();
         var toAdd = new LinkedHashMap<String, Object>();
         for (var entry : props.entrySet()) {
             if (entry.getValue() instanceof Optional<?> optional) {
-                toRemove.add(entry.getKey());
-                optional.ifPresent(value -> toAdd.put(entry.getKey(), value));
+                var key = entry.getKey();
+                // Resolve optional only if selected by only or not excluded by except
+                boolean selected;
+                if (!onlyKeys.isEmpty()) {
+                    selected = onlyKeys.contains(key);
+                } else if (!exceptKeys.isEmpty()) {
+                    selected = !exceptKeys.contains(key);
+                } else {
+                    selected = true;
+                }
+                if (selected) {
+                    toRemove.add(key);
+                    optional.ifPresent(value -> toAdd.put(key, value));
+                }
             }
         }
         toRemove.forEach(props::remove);
@@ -550,27 +577,58 @@ public class PageObjectBuilder {
         return value != null ? String.valueOf(value) : null;
     }
 
+    @SuppressWarnings("unchecked")
     private static Map<String, Object> camelize(Map<String, Object> props) {
         var result = new LinkedHashMap<String, Object>();
         for (var entry : props.entrySet()) {
-            result.put(toSnakeCase(entry.getKey()), entry.getValue());
+            result.put(toCamelCase(entry.getKey()), camelizeValue(entry.getValue()));
         }
         return result;
     }
 
-    private static String toSnakeCase(String key) {
-        var sb = new StringBuilder();
-        for (int i = 0; i < key.length(); i++) {
-            var c = key.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    sb.append('_');
-                }
-                sb.append(Character.toLowerCase(c));
-            } else {
-                sb.append(c);
+    @SuppressWarnings("unchecked")
+    private static Object camelizeValue(Object value) {
+        if (value instanceof Map) {
+            var map = (Map<String, Object>) value;
+            var result = new LinkedHashMap<String, Object>();
+            for (var entry : map.entrySet()) {
+                result.put(toCamelCase(entry.getKey()), camelizeValue(entry.getValue()));
+            }
+            return result;
+        }
+        if (value instanceof List) {
+            return ((List<?>) value).stream().map(PageObjectBuilder::camelizeValue).toList();
+        }
+        return value;
+    }
+
+    private static String toCamelCase(String key) {
+        if (key == null || key.isEmpty()) return key;
+        if (!key.contains("_")) return key;
+        var parts = key.split("_");
+        var sb = new StringBuilder(parts[0].toLowerCase());
+        for (int i = 1; i < parts.length; i++) {
+            var p = parts[i];
+            if (!p.isEmpty()) {
+                sb.append(Character.toUpperCase(p.charAt(0)));
+                sb.append(p.substring(1).toLowerCase());
             }
         }
         return sb.toString();
+    }
+
+    private static List<String> attrList(String name) {
+        var value = InertiaRequestContext.get(name);
+        if (value == null) {
+            return List.of();
+        }
+        var list = new ArrayList<String>();
+        for (var part : String.valueOf(value).split(",")) {
+            var trimmed = part.trim();
+            if (!trimmed.isBlank()) {
+                list.add(trimmed);
+            }
+        }
+        return list;
     }
 }

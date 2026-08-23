@@ -224,4 +224,23 @@ class RedirectProcessorUnitTest {
         verify(flashStore, never()).drain();
         vertx.close();
     }
+
+    @Test
+    void shouldReturnNormalRedirectForFragmentDuringPrefetch() throws Exception {
+        when(httpRequest.getHeader("X-Inertia")).thenReturn("true");
+        when(httpRequest.getHeader("Purpose")).thenReturn("prefetch");
+        var vertx = Vertx.vertx();
+        var done = new java.util.concurrent.CompletableFuture<Response>();
+        vertx.getOrCreateContext().runOnContext(v -> {
+            var ctx = io.vertx.core.Vertx.currentContext();
+            ctx.putLocal("inertia-prefetch", Boolean.TRUE);
+            var result = processor.process("/section#top");
+            done.complete((Response) result.await().indefinitely());
+        });
+        var response = done.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeaderString("Location")).isEqualTo("/section#top");
+        assertThat(response.getHeaderString("X-Inertia-Redirect")).isNull();
+        vertx.close();
+    }
 }

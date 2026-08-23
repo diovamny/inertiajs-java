@@ -10,13 +10,14 @@
     <packaging>pom</packaging>
 
     <name>Inertia.js Quarkus Demos</name>
-    <description>Quarkus demos: demo-app, kitchen-sink, pingcrm, pingcrm-react</description>
+    <description>Quarkus demos: demo-app, kitchen-sink, pingcrm, pingcrm-react, quarkus-pingcrm-svelte</description>
 
     <modules>
         <module>demo-app</module>
         <module>kitchen-sink</module>
         <module>pingcrm</module>
         <module>pingcrm-react</module>
+        <module>quarkus-pingcrm-svelte</module>
     </modules>
 
     <properties>
@@ -24,5 +25,25 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+        <quarkus.platform.version>3.38.0</quarkus.platform.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.34</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

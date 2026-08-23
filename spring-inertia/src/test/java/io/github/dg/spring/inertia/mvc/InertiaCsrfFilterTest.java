@@ -34,6 +34,7 @@ class InertiaCsrfFilterTest {
         properties.setCsrfEnabled(true);
         filter = new InertiaCsrfFilter(properties, new InertiaCsrfService());
         request = new MockHttpServletRequest("GET", "/dashboard");
+        request.addHeader("X-Inertia", "true");
         response = new MockHttpServletResponse();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request, response));
     }

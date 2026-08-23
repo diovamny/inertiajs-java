@@ -94,8 +94,8 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
         }
     }
 
-    private void handleConditionalRequest(ContainerRequestContext request, ContainerResponseContext response,
-                                          io.vertx.core.Context ctx, Object entity) {
+private void handleConditionalRequest(ContainerRequestContext request, ContainerResponseContext response,
+                                           io.vertx.core.Context ctx, Object entity) {
         if (!config.lazyEtagEnabled()) return;
 
         String etag;
@@ -110,11 +110,25 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
 
         if ("GET".equalsIgnoreCase(request.getMethod())) {
             var ifNoneMatch = request.getHeaderString("If-None-Match");
-            if (ifNoneMatch != null && ifNoneMatch.replace("W/", "").trim().equals(etag)) {
+            if (ifNoneMatch != null && matchesIfNoneMatch(ifNoneMatch, etag)) {
                 response.setStatus(304);
                 response.setEntity(null, null, null);
             }
         }
+    }
+
+    /**
+     * Check if the If-None-Match header matches the ETag, supporting
+     * wildcard {@code *} and weak validators {@code W/}.
+     */
+    private static boolean matchesIfNoneMatch(String ifNoneMatch, String etag) {
+        for (var candidate : ifNoneMatch.split(",")) {
+            var trimmed = candidate.trim();
+            if (trimmed.equals("*") || trimmed.equals(etag) || trimmed.equals("W/" + etag)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String computeEtag(Object entity, io.vertx.core.Context ctx) {

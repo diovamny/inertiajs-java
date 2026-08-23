@@ -2,7 +2,7 @@ package io.github.dg.quarkus.inertia.internal;
 
 import java.util.HashMap;
 import java.util.Map;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import io.vertx.ext.web.RoutingContext;
@@ -12,10 +12,10 @@ import io.github.dg.quarkus.inertia.spi.FlashStore;
 /**
  * Default {@link FlashStore} implementation storing flash data inside the
  * Vert.x session under a reserved key; data survives the redirect and is
- * drained when the next page is rendered. Request-scoped and bound to the
- * current routing context.
+ * drained when the next page is rendered. Application-scoped, using the
+ * current routing context for per-request session access.
  */
-@RequestScoped
+@ApplicationScoped
 public class VertxSessionFlashStore implements FlashStore {
 
     static final String SESSION_KEY = "__inertia_flash";

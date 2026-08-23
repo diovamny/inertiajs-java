@@ -19,6 +19,7 @@ import io.smallrye.mutiny.groups.UniRepeat;
 import io.smallrye.mutiny.groups.UniSubscribe;
 
 import io.github.dg.quarkus.inertia.spi.FlashStore;
+import jakarta.ws.rs.core.Response;
 
 /**
  * A redirect response that can be chained with flash data before being
@@ -219,5 +220,16 @@ public class InertiaRedirect implements Uni<Object> {
     @Override
     public Uni<Object> log() {
         return delegate.log();
+    }
+
+    /**
+     * Returns the redirect response synchronously by blocking on the underlying Uni.
+     * Use this in synchronous (blocking) endpoints that return {@link Response} directly.
+     *
+     * @return the redirect response
+     */
+    @SuppressWarnings("unchecked")
+    public Response toResponse() {
+        return (Response) delegate.await().atMost(java.time.Duration.ofSeconds(5));
     }
 }

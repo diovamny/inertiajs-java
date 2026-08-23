@@ -15,6 +15,8 @@ class InertiaConfigUnitTest {
             @Override public String rootTemplate() { return rootTemplate; }
             @Override public boolean ssrEnabled() { return false; }
             @Override public String ssrUrl() { return "http://localhost:13714"; }
+            @Override public java.time.Duration ssrConnectTimeout() { return java.time.Duration.ofSeconds(5); }
+            @Override public java.time.Duration ssrReadTimeout() { return java.time.Duration.ofSeconds(10); }
             @Override public String versionStrategy() { return versionStrategy; }
             @Override public Optional<String> versionCustom() { return versionCustom; }
             @Override public boolean encryptHistory() { return encryptHistory; }
@@ -27,6 +29,8 @@ class InertiaConfigUnitTest {
             @Override public String errorComponent() { return "ErrorPage"; }
             @Override public boolean lazyEtagEnabled() { return true; }
             @Override public Optional<java.util.List<String>> ssrExcludePaths() { return Optional.empty(); }
+            @Override public boolean useQute() { return false; }
+            @Override public boolean errorDetailsEnabled() { return false; }
         };
     }
 

@@ -2,7 +2,6 @@ package io.github.dg.spring.inertia.protocol;
 
 import java.time.Duration;
 import java.util.Map;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -14,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OncePropRegistryTest {
 
-    private final OncePropRegistry registry = new OncePropRegistry();
     private MockHttpServletRequest request;
 
     @BeforeEach
@@ -23,13 +21,15 @@ class OncePropRegistryTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request, new MockHttpServletResponse()));
     }
 
-    @AfterEach
-    void tearDown() {
-        RequestContextHolder.resetRequestAttributes();
+    private void extractHeaders() {
+        // Clear the extracted flag to allow re-extraction in tests
+        request.removeAttribute(InertiaHeaderExtractor.CONTEXT_HEADERS_EXTRACTED);
+        new InertiaHeaderExtractor().extract(request);
     }
 
     @Test
     void remembersMetadata() {
+        var registry = new OncePropRegistry();
         registry.remember("notice", null);
         registry.remember("token", Duration.ofMinutes(5));
         var metadata = registry.metadata();
@@ -40,26 +40,50 @@ class OncePropRegistryTest {
 
     @Test
     void unknownKeysAreNotShown() {
+        var registry = new OncePropRegistry();
+        extractHeaders();
         assertFalse(registry.alreadyShown("notice"));
     }
 
     @Test
-    void markShownSurvivesIntoSession() {
-        registry.markShown("notice");
+    void alreadyShownUsesExceptOncePropsHeader() {
+        var registry = new OncePropRegistry();
+        registry.remember("notice", null);
+        // Without header, not shown
+        extractHeaders();
+        assertFalse(registry.alreadyShown("notice"));
+        // With header, shown
+        request.addHeader("X-Inertia-Except-Once-Props", "notice");
+        extractHeaders();
         assertTrue(registry.alreadyShown("notice"));
     }
 
     @Test
+    void markShownIsNoOp() {
+        var registry = new OncePropRegistry();
+        registry.remember("notice", null);
+        registry.markShown("notice");
+        // Still not shown without header
+        extractHeaders();
+        assertFalse(registry.alreadyShown("notice"));
+    }
+
+    @Test
     void metadataRoundTrips() {
+        var registry = new OncePropRegistry();
         registry.remember("notice", null);
         var once = registry.metadata().get("notice");
         assertTrue(once.prop().equals("notice"));
     }
 
     @Test
-    void shownStatePersistsAcrossRegistries() {
-        registry.markShown("notice");
-        var other = new OncePropRegistry();
-        assertTrue(other.alreadyShown("notice"));
+    void exceptOnceKeysParsesCommaSeparated() {
+        var registry = new OncePropRegistry();
+        request.addHeader("X-Inertia-Except-Once-Props", "notice,token,other");
+        extractHeaders();
+        var exceptKeys = registry.exceptOnceKeys();
+        assertTrue(exceptKeys.contains("notice"));
+        assertTrue(exceptKeys.contains("token"));
+        assertTrue(exceptKeys.contains("other"));
     }
 }

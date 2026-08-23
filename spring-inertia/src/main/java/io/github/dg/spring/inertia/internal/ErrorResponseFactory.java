@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import io.github.dg.spring.inertia.config.InertiaProperties;
 import io.github.dg.spring.inertia.model.PageObject;
 import io.github.dg.spring.inertia.protocol.InertiaHeaderExtractor;
 import io.github.dg.spring.inertia.spi.ErrorMapper;
@@ -16,6 +17,10 @@ import io.github.dg.spring.inertia.spi.JsonProvider;
  * validation/error handlers: a 500 with the given component and error
  * metadata, or the response produced by a registered
  * {@link ErrorMapper}.
+ *
+ * <p>In production mode, error messages are replaced with a generic message
+ * to avoid leaking internal details. Set {@code inertia.error-details-enabled}
+ * to {@code true} to include exception messages in error responses.</p>
  */
 public class ErrorResponseFactory {
 
@@ -25,11 +30,13 @@ public class ErrorResponseFactory {
     private final JsonProvider jsonProvider;
     private final String component;
     private final int status;
+    private final boolean errorDetailsEnabled;
 
-    public ErrorResponseFactory(JsonProvider jsonProvider, String component, int status) {
+    public ErrorResponseFactory(JsonProvider jsonProvider, InertiaProperties properties) {
         this.jsonProvider = jsonProvider;
-        this.component = component;
-        this.status = status;
+        this.component = properties.getErrorComponent();
+        this.status = properties.getErrorStatus();
+        this.errorDetailsEnabled = properties.isErrorDetailsEnabled();
     }
 
     /**
@@ -84,7 +91,8 @@ public class ErrorResponseFactory {
      * @return the JSON page payload
      */
     public String createErrorPage(Throwable error) {
-        return createErrorPage(status, String.valueOf(error));
+        var message = errorDetailsEnabled ? String.valueOf(error) : "Internal Server Error";
+        return createErrorPage(status, message);
     }
 
     /**
@@ -104,7 +112,7 @@ public class ErrorResponseFactory {
         return jsonProvider.toJson(page);
     }
 
-/**
+    /**
      * Whether the current request expects a JSON error payload (i.e. an
      * Inertia request).
      *

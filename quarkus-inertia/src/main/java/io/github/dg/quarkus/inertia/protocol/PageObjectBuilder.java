@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
@@ -25,12 +25,13 @@ import io.github.dg.quarkus.inertia.spi.UrlResolver;
 import io.github.dg.quarkus.inertia.version.VersionProvider;
 
 /**
- * Request-scoped assembler of the {@link PageObject}: collects shared,
+ * Application-scoped assembler of the {@link PageObject}: collects shared,
  * optional, once, merge, scroll and flash props, drains the flash store,
  * applies partial reloads and component/URL transformers, and produces the
  * final page object consumed by the response processors.
+ * Per-request state is stored in the Vert.x {@link RoutingContext}.
  */
-@RequestScoped
+@ApplicationScoped
 public class PageObjectBuilder {
 
     /** Session attribute carrying the preserve-fragment flag across a redirect. */
@@ -84,6 +85,10 @@ public class PageObjectBuilder {
             flashStore, currentVertxRequest, config, null, null);
     }
 
+    // ========================================================================
+    // Reactive API (existing)
+    // ========================================================================
+
     public Uni<PageObject> build(String component, Map<String, Object> props) {
         return build(component, props, isCurrentRequestPartial());
     }
@@ -100,15 +105,24 @@ public class PageObjectBuilder {
 
         var flashOut = resolveFlashData(allProps);
 
+        // Build partial context first so we can check only keys before draining once props.
+        var partialContext = buildPartialReloadContext();
+
         var onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
-        var clientHasOnceKeys = oncePropRegistry.propKeys(exceptOnceKeys);
+        if (isPartial && partialContext != null && partialContext.hasData()) {
+            var onlyData = partialContext.data();
+            var filtered = new java.util.HashSet<>(exceptOnceKeys);
+            for (var entry : onceMetadata.entrySet()) {
+                if (onlyData.contains(entry.getValue().prop())) {
+                    filtered.remove(entry.getKey());
+                }
+            }
+            exceptOnceKeys = filtered;
+        }
         if (oncePropRegistry.hasProps()) {
             var onceValues = oncePropRegistry.drain(exceptOnceKeys);
             allProps.putAll(mergePropProcessor.merge(allProps, onceValues));
-        }
-        if (!clientHasOnceKeys.isEmpty()) {
-            clientHasOnceKeys.forEach(allProps::remove);
         }
 
         wrapScrollPropValues(allProps);
@@ -124,8 +138,6 @@ public class PageObjectBuilder {
         var url = resolveUrl(currentUrl());
         var version = versionProvider.getVersion();
 
-        var partialContext = buildPartialReloadContext();
-
         var deferredGroups = sharedData.getDeferredPropGroups();
         var deferredKeys = deferredGroups.values().stream()
             .flatMap(List::stream)
@@ -136,12 +148,17 @@ public class PageObjectBuilder {
         }
 
         if (isPartial) {
-            var explicitDataKeys = explicitPartialDataKeys(partialContext);
-            if (explicitDataKeys != null) {
-                for (var entry : sharedData.getOptionalProps().entrySet()) {
-                    if (explicitDataKeys.contains(entry.getKey())) {
-                        allProps.put(entry.getKey(), entry.getValue());
-                    }
+            for (var entry : sharedData.getOptionalProps().entrySet()) {
+                boolean selected;
+                if (partialContext.hasData()) {
+                    selected = partialContext.data().contains(entry.getKey());
+                } else if (partialContext.hasExcept()) {
+                    selected = !partialContext.except().contains(entry.getKey());
+                } else {
+                    selected = true;
+                }
+                if (selected) {
+                    allProps.put(entry.getKey(), entry.getValue());
                 }
             }
         }
@@ -180,7 +197,7 @@ public class PageObjectBuilder {
             page = expandDotNotation(page);
 
             if (partialContext != null) {
-                page = partialReloadProcessor.apply(page, partialContext, sharedData.getShared());
+                page = partialReloadProcessor.apply(page, partialContext);
             }
 
             page = unwrapAlwaysProps(page);
@@ -192,6 +209,176 @@ public class PageObjectBuilder {
             return page;
         });
     }
+
+    // ========================================================================
+    // Synchronous API (new)
+    // ========================================================================
+
+    /**
+     * Build a page object synchronously, without resolving async props.
+     * Use this in blocking endpoints with synchronous props only.
+     * Throws {@link IllegalStateException} if async props (deferred/optional/cache)
+     * are present and would be required.
+     *
+     * @param component the component name
+     * @param props the page props
+     * @return the page object
+     */
+    public PageObject buildSync(String component, Map<String, Object> props) {
+        return buildSync(component, props, isCurrentRequestPartial());
+    }
+
+    /**
+     * Build a page object synchronously with explicit partial flag.
+     */
+    public PageObject buildSync(String component, Map<String, Object> props, boolean isPartial) {
+        var resolvedComponent = resolveComponent(component);
+        var allProps = new HashMap<String, Object>();
+        if (props != null && !props.isEmpty()) {
+            allProps.putAll(props);
+        } else {
+            allProps.putAll(instanceProps());
+        }
+        allProps.putAll(sharedData.getAll());
+
+        var flashOut = resolveFlashData(allProps);
+
+        // Build partial context first so we can check only keys before draining once props.
+        var partialContext = buildPartialReloadContext();
+
+        var onceMetadata = oncePropRegistry.metadata();
+        var exceptOnceKeys = exceptOncePropKeys();
+        if (isPartial && partialContext != null && partialContext.hasData()) {
+            var onlyData = partialContext.data();
+            var filtered = new java.util.HashSet<>(exceptOnceKeys);
+            for (var entry : onceMetadata.entrySet()) {
+                if (onlyData.contains(entry.getValue().prop())) {
+                    filtered.remove(entry.getKey());
+                }
+            }
+            exceptOnceKeys = filtered;
+        }
+        if (oncePropRegistry.hasProps()) {
+            var onceValues = oncePropRegistry.drain(exceptOnceKeys);
+            allProps.putAll(mergePropProcessor.merge(allProps, onceValues));
+        }
+
+        wrapScrollPropValues(allProps);
+
+        var errors = resolveErrors();
+        if (!allProps.containsKey("errors")) {
+            boolean hasErrors = errors instanceof Map<?, ?> errs && !errs.isEmpty();
+            if (config.alwaysIncludeErrors() || hasErrors) {
+                allProps.put("errors", AlwaysProp.of(errors));
+            }
+        }
+
+        var url = resolveUrl(currentUrl());
+        var version = versionProvider.getVersion();
+
+
+        var deferredGroups = sharedData.getDeferredPropGroups();
+        var deferredKeys = deferredGroups.values().stream()
+            .flatMap(List::stream)
+            .collect(java.util.stream.Collectors.toSet());
+
+        if (!isPartial) {
+            deferredKeys.forEach(allProps::remove);
+        }
+
+        if (isPartial) {
+            for (var entry : sharedData.getOptionalProps().entrySet()) {
+                boolean selected;
+                if (partialContext.hasData()) {
+                    selected = partialContext.data().contains(entry.getKey());
+                } else if (partialContext.hasExcept()) {
+                    selected = !partialContext.except().contains(entry.getKey());
+                } else {
+                    selected = true;
+                }
+                if (selected) {
+                    allProps.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+        var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
+        var resetKeys = resetProps();
+        var mergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getMergePropKeys()), resetKeys);
+        var prependProps = pruneReset(new java.util.ArrayList<>(sharedData.getPrependPropKeys()), resetKeys);
+        var deepMergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getDeepMergePropKeys()), resetKeys);
+        var matchPropsOn = pruneReset(new java.util.ArrayList<>(sharedData.getMatchPropKeys()), resetKeys);
+        var onceProps = onceMetadata.isEmpty() ? null : onceMetadata;
+        var scrollProps = sharedData.hasScrollProps()
+            ? buildScrollProps(mergeProps, prependProps, matchPropsOn)
+            : null;
+        var mergePropsOut = mergeProps.isEmpty() ? null : mergeProps;
+        var prependPropsOut = prependProps.isEmpty() ? null : prependProps;
+        var deepMergePropsOut = deepMergeProps.isEmpty() ? null : java.util.Collections.unmodifiableList(deepMergeProps);
+        var matchPropsOnOut = matchPropsOn.isEmpty() ? null : matchPropsOn;
+        var sharedKeys = sharedData.getSharedKeys();
+        var meta = sharedData.hasMeta() ? sharedData.getMeta() : null;
+
+        var encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
+        var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
+        var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
+
+        // Check for async props that would need resolution
+        checkAsyncProps(allProps, partialContext);
+
+        // Use props as-is without resolving suppliers
+        var resolvedProps = stripSupplierProps(allProps);
+
+        var rescuedProps = sharedData.hasRescuedProps()
+            ? sharedData.getActuallyRescuedProps()
+            : null;
+
+        var page = new PageObject(resolvedComponent, copyOfNullTolerant(resolvedProps), url, version,
+            flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
+            onceProps, scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
+            encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
+
+        page = expandDotNotation(page);
+
+        if (partialContext != null) {
+            page = partialReloadProcessor.apply(page, partialContext);
+        }
+
+        page = unwrapAlwaysProps(page);
+
+        if (config.camelizeProps()) {
+            page = camelizeProps(page);
+        }
+
+        return page;
+    }
+
+    private void checkAsyncProps(Map<String, Object> props, PartialReloadProcessor.PartialReloadContext partialContext) {
+        var requestedKeys = requestedKeys(partialContext);
+        for (var entry : props.entrySet()) {
+            if (entry.getValue() instanceof Supplier) {
+                var key = entry.getKey();
+                if (requestedKeys == null || requestedKeys.contains(key)) {
+                    throw new IllegalStateException(
+                        "Async prop '" + key + "' requires reactive endpoint. " +
+                        "Use inertia.renderAsync() or remove deferred/optional/cache props from synchronous render."
+                    );
+                }
+            }
+        }
+    }
+
+    private Map<String, Object> stripSupplierProps(Map<String, Object> props) {
+        var result = new HashMap<String, Object>();
+        for (var entry : props.entrySet()) {
+            if (!(entry.getValue() instanceof Supplier)) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    // ... rest of the methods unchanged from original
 
     /**
      * Drain the flash store and return the flash data delivered to the
@@ -240,7 +427,12 @@ public class PageObjectBuilder {
         for (var entry : props.entrySet()) {
             if (entry.getValue() instanceof Supplier) {
                 var key = entry.getKey();
-                if (requestedKeys == null || requestedKeys.contains(key)) {
+                // Full page visit (no partial context): resolve all suppliers.
+                // In a full visit the only suppliers present in the props are
+                // once props (deferred are removed, optional are not added),
+                // and once props must always be delivered.
+                // Partial reload: only resolve suppliers selected via only/except.
+                if (partialContext == null || (requestedKeys != null && requestedKeys.contains(key))) {
                     var supplier = (Supplier<Uni<Object>>) entry.getValue();
                     result = result.chain(map -> supplier.get()
                         .onFailure().recoverWithUni(failure -> {
@@ -271,7 +463,10 @@ public class PageObjectBuilder {
         if (partialContext == null) return null;
         if (partialContext.hasData()) return partialContext.data();
         if (partialContext.hasExcept()) {
-            return sharedData.getAll().keySet().stream()
+            var allKeys = new java.util.HashSet<String>();
+            allKeys.addAll(sharedData.getAll().keySet());
+            allKeys.addAll(sharedData.getOptionalProps().keySet());
+            return allKeys.stream()
                 .filter(key -> !partialContext.except().contains(key))
                 .collect(java.util.stream.Collectors.toSet());
         }
@@ -401,7 +596,8 @@ public class PageObjectBuilder {
         return !clientVersion.equals(versionProvider.getVersion());
     }
 
-    private java.util.Set<String> exceptOncePropKeys() {        var ctx = Vertx.currentContext();
+    private java.util.Set<String> exceptOncePropKeys() {
+        var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
         var raw = (String) ctx.getLocal("inertia-except-once-props");
         if (raw == null || raw.isBlank()) return java.util.Set.of();
@@ -572,7 +768,7 @@ public class PageObjectBuilder {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
             var val = ctx.getLocal("inertia-clear-history");
-            return Boolean.TRUE.equals(val);
+            if (val != null) return Boolean.TRUE.equals(val);
         }
         return false;
     }

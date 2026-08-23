@@ -62,6 +62,17 @@ class RedirectProcessorTest {
     }
 
     @Test
+    void fragmentRedirectOnPrefetchIsNormalRedirect() {
+        request.setMethod("GET");
+        request.addHeader("X-Inertia", "true");
+        request.addHeader("Purpose", "prefetch");
+        new InertiaHeaderExtractor().extract(request);
+        var redirect = processor.redirect("/section#top", false);
+        assertEquals(302, redirect.getStatusCode().value());
+        assertEquals("/section#top", redirect.getHeaders().getFirst("Location"));
+    }
+
+    @Test
     void locationOnInertiaVisitIs409() {
         request.addHeader("X-Inertia", "true");
         var redirect = processor.location("/download");

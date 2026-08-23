@@ -33,6 +33,12 @@ jobs:
       - name: Build and test Spring demo (kitchen-sink)
         run: mvn clean test -pl examples/spring/spring-kitchen-sink -Pexamples
 
+      - name: Build and test Quarkus demo (pingcrm)
+        run: mvn clean test -pl examples/quarkus/pingcrm -Pexamples
+
+      - name: Build and test Quarkus demo (kitchen-sink)
+        run: mvn clean test -pl examples/quarkus/kitchen-sink -Pexamples
+
       - name: Verify release artifacts (sources + javadoc)
         run: mvn clean package -Prelease -DskipTests
 

@@ -72,4 +72,24 @@ class PartialReloadProcessorTest {
         partial("Users", "count", null, "true");
         assertTrue(processor.isPartialReset());
     }
+
+    @Test
+    void exceptNestedLeafOnly() {
+        partial("Users", null, "auth.user.email", null);
+        var props = Map.<String, Object>of(
+            "auth", Map.of("user", Map.of("id", 1, "email", "john@test.com"), "role", "admin"),
+            "other", "value"
+        );
+        var filtered = processor.filterProps(props, Map.of());
+        assertTrue(filtered.containsKey("auth"));
+        assertTrue(filtered.containsKey("other"));
+        @SuppressWarnings("unchecked")
+        var auth = (Map<String, Object>) filtered.get("auth");
+        assertTrue(auth.containsKey("user"));
+        assertEquals("admin", auth.get("role"));
+        @SuppressWarnings("unchecked")
+        var user = (Map<String, Object>) auth.get("user");
+        assertEquals(1, user.get("id"));
+        assertFalse(user.containsKey("email"));
+    }
 }

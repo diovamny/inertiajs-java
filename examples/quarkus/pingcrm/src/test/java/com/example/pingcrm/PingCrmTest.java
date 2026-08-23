@@ -36,7 +36,7 @@ class PingCrmTest {
     private static long contactId;
     private static String photoUrl;
 
-    private static final String BASE = "http://localhost:8083";
+    private static final String BASE = "";
 
     private static RequestSpecification inertia() {
         return given().header("X-Inertia", "true");
