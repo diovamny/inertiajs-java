@@ -130,6 +130,52 @@ public final class InertiaPage {
     }
 
     /**
+     * The flash data map delivered to the client, empty when none.
+     *
+     * @return the flash map
+     */
+    public Map<String, Object> flash() {
+        return page.flash() != null ? page.flash() : Map.of();
+    }
+
+    /**
+     * The value of a flash key.
+     *
+     * @param key the flash key
+     * @return the value or {@code null}
+     */
+    public Object flash(String key) {
+        return page.flash() != null ? page.flash().get(key) : null;
+    }
+
+    /**
+     * Whether the client must encrypt history.
+     *
+     * @return the encryptHistory flag
+     */
+    public Boolean encryptHistory() {
+        return page.encryptHistory();
+    }
+
+    /**
+     * Whether the client must clear history.
+     *
+     * @return the clearHistory flag
+     */
+    public Boolean clearHistory() {
+        return page.clearHistory();
+    }
+
+    /**
+     * Whether the client must preserve URL fragment.
+     *
+     * @return the preserveFragment flag
+     */
+    public Boolean preserveFragment() {
+        return page.preserveFragment();
+    }
+
+    /**
      * The deferred groups ({@code group -> member names}), empty when none.
      *
      * @return the deferred props
@@ -528,6 +574,131 @@ public final class InertiaPage {
         if (!meta().get(key).equals(value)) {
             throw new AssertionError("Expected meta <" + key + "> to equal <" + value + "> but was <" + meta().get(key) + ">");
         }
+        return this;
+    }
+
+    /**
+     * Assert the given rescued props are declared.
+     *
+     * @param keys the prop keys
+     * @return this, for chaining
+     * @throws AssertionError when none are declared or any is missing
+     */
+    public InertiaPage assertRescuedProps(String... keys) {
+        if (rescuedProps().isEmpty()) {
+            throw new AssertionError("Expected rescued props <" + List.of(keys) + "> but there were none");
+        }
+        for (String key : keys) {
+            if (!rescuedProps().contains(key)) {
+                throw new AssertionError("Expected rescued prop <" + key + "> in " + rescuedProps());
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Assert the encryptHistory flag.
+     *
+     * @param expected expected value
+     * @return this, for chaining
+     * @throws AssertionError when value differs
+     */
+    public InertiaPage assertEncryptHistory(boolean expected) {
+        boolean actual = Boolean.TRUE.equals(encryptHistory());
+        if (actual != expected) {
+            throw new AssertionError("Expected encryptHistory to be <" + expected + "> but was <" + actual + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Assert the clearHistory flag.
+     *
+     * @param expected expected value
+     * @return this, for chaining
+     * @throws AssertionError when value differs
+     */
+    public InertiaPage assertClearHistory(boolean expected) {
+        boolean actual = Boolean.TRUE.equals(clearHistory());
+        if (actual != expected) {
+            throw new AssertionError("Expected clearHistory to be <" + expected + "> but was <" + actual + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Assert the preserveFragment flag.
+     *
+     * @param expected expected value
+     * @return this, for chaining
+     * @throws AssertionError when value differs
+     */
+    public InertiaPage assertPreserveFragment(boolean expected) {
+        boolean actual = Boolean.TRUE.equals(preserveFragment());
+        if (actual != expected) {
+            throw new AssertionError("Expected preserveFragment to be <" + expected + "> but was <" + actual + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Assert a flash entry equals the expected value.
+     *
+     * @param key      flash key
+     * @param expected expected value
+     * @return this, for chaining
+     * @throws AssertionError when absent or different
+     */
+    public InertiaPage assertFlash(String key, Object expected) {
+        Object actual = flash(key);
+        if (actual == null) {
+            throw new AssertionError("Expected flash <" + key + "> to be present but was absent");
+        }
+        if (!actual.equals(expected)) {
+            throw new AssertionError("Expected flash <" + key + "> to equal <" + expected + "> but was <" + actual + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Dump the page payload to stdout for test debugging.
+     *
+     * @return this, for chaining
+     */
+    public InertiaPage dump() {
+        System.out.println("=== [InertiaPage Dump (Quarkus)] ===");
+        System.out.println("Component: " + component());
+        System.out.println("Props: " + props());
+        System.out.println("URL: " + url());
+        System.out.println("Version: " + version());
+        System.out.println("Flash: " + flash());
+        System.out.println("DeferredProps: " + deferredProps());
+        System.out.println("MergeProps: " + mergeProps());
+        System.out.println("PrependProps: " + prependProps());
+        System.out.println("DeepMergeProps: " + deepMergeProps());
+        System.out.println("MatchPropsOn: " + matchPropsOn());
+        System.out.println("OnceProps: " + onceProps());
+        System.out.println("ScrollProps: " + scrollProps());
+        System.out.println("SharedProps: " + sharedProps());
+        System.out.println("RescuedProps: " + rescuedProps());
+        System.out.println("Meta: " + meta());
+        System.out.println("EncryptHistory: " + encryptHistory());
+        System.out.println("ClearHistory: " + clearHistory());
+        System.out.println("PreserveFragment: " + preserveFragment());
+        System.out.println("=====================================");
+        return this;
+    }
+
+    /**
+     * Dump a single prop to stdout.
+     *
+     * @param key prop key
+     * @return this, for chaining
+     */
+    public InertiaPage dump(String key) {
+        System.out.println("=== [InertiaPage Dump Prop: " + key + "] ===");
+        System.out.println(prop(key));
+        System.out.println("==========================================");
         return this;
     }
 

@@ -1,27 +1,34 @@
 package com.example.pingcrm.controller;
 
-import com.example.pingcrm.dto.ContactForm;
-import com.example.pingcrm.dto.FormValidator;
-import com.example.pingcrm.repository.ContactRepository;
-import com.example.pingcrm.repository.OrganizationRepository;
-import com.example.pingcrm.service.AuthService;
-import io.github.dg.quarkus.inertia.api.Inertia;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
-import io.quarkus.vertx.web.Param;
-import io.quarkus.vertx.web.Route.HttpMethod;
-import io.smallrye.mutiny.Uni;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import jakarta.inject.Inject;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import io.vertx.ext.web.RoutingContext;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import com.example.pingcrm.dto.ContactForm;
+import com.example.pingcrm.dto.FormValidator;
+import com.example.pingcrm.entity.Contact;
+import com.example.pingcrm.repository.ContactRepository;
+import com.example.pingcrm.service.AuthService;
+import com.example.pingcrm.service.ContactService;
+import com.example.pingcrm.service.OrganizationService;
+import io.github.dg.quarkus.inertia.api.Inertia;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
 
-@RouteBase(path = "/contacts")
+@Path("/contacts")
+
+@Blocking
 public class ContactsController {
 
     @Inject
@@ -31,98 +38,139 @@ public class ContactsController {
     AuthService auth;
 
     @Inject
-    ContactRepository contacts;
+    ContactService contacts;
 
     @Inject
-    OrganizationRepository organizations;
+    ContactRepository contactRepository;
+
+    @Inject
+    OrganizationService organizations;
 
     @Inject
     Validator validator;
 
-    @Route(path = "", methods = Route.HttpMethod.GET)
-    public Uni<Object> index(@Param("search") String search, @Param("page") int page) {
-        return auth.accountId()
-            .onItem().transformToUni(accId -> {
-                Long accountId = accId != null ? accId : 0L;
-                int pageNum = page > 0 ? page : 1;
-                return contacts.findByAccountIdAndSearch(accountId, search, pageNum - 1, 10)
-                    .onItem().transformToUni(contactList -> 
-                        contacts.countByAccountIdAndSearch(accountId, search)
-                            .onItem().transform(total -> 
-                                inertia.render("Contacts/Index", Map.of(
-                                    "contacts", contactList,
-                                    "total", total,
-                                    "page", pageNum,
-                                    "filters", Map.of("search", search != null ? search : "")
-                                ))
-                        )
-                );
-            });
+    @GET
+    @Blocking
+    public Uni<Object> index(@QueryParam("search") String search,
+            @QueryParam("trashed") String trashed,
+            @QueryParam("page") @DefaultValue("1") int page) {
+        var accountId = auth.accountId();
+        var result = contacts.page(accountId, search, trashed, page, 10);
+        var filters = new LinkedHashMap<String, Object>();
+        filters.put("search", search);
+        filters.put("trashed", trashed);
+        return inertia.render("Contacts/Index", Map.of(
+            "filters", filters,
+            "contacts", result));
     }
 
-    @Route(path = "/create", methods = Route.HttpMethod.GET)
+    @GET
+    @Path("create")
+    @Blocking
     public Uni<Object> create() {
-        return auth.accountId()
-            .onItem().transformToUni(accId -> {
-                Long accountId = accId != null ? accId : 0L;
-                return organizations.findOptionsByAccountId(accountId)
-                    .onItem().transform(orgs -> 
-                        inertia.render("Contacts/Create", Map.of("organizations", orgs))
-                    );
-            });
+        return inertia.render("Contacts/Create",
+            Map.of("organizations", organizations.options(auth.accountId())));
     }
 
-    @Route(path = "", methods = Route.HttpMethod.POST)
+    @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Object> store(ContactForm form, RoutingContext rc) {
-        FormValidator.normalize(form);
-        
-        var violations = validator.validate(form);
-        if (!violations.isEmpty()) {
-            var errors = new LinkedHashMap<String, String>();
-            for (var v : violations) {
-                errors.put(v.getPropertyPath().toString(), v.getMessage());
-            }
-            return Uni.createFrom().item(
-                inertia.back().withErrors(errors).toResponse()
-            );
+    @Blocking
+    public Uni<Object> store(ContactForm form) {
+        normalize(form);
+        FormValidator.validate(validator, form);
+        contacts.create(auth.accountId(), toValues(form));
+        return inertia.redirect("/contacts").with("success", "Contact created.");
+    }
+
+    @GET
+    @Path("{id}/edit")
+    @Blocking
+    public Uni<Object> edit(@PathParam("id") long id) {
+        var contact = findOwned(id);
+        if (contact == null) {
+            return notFound();
         }
-        
-        var orgId = FormValidator.parseId(form.organization_id);
-        if (orgId == null) {
-            return Uni.createFrom().item(
-                inertia.back().withErrors(Map.of("organization_id", "The selected organization is invalid.")).toResponse()
-            );
+        return inertia.render("Contacts/Edit", Map.of(
+            "contact", contact,
+            "organizations", organizations.options(auth.accountId())));
+    }
+
+    @PUT
+    @Path("{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> update(@PathParam("id") long id, ContactForm form) {
+        var contact = findOwned(id);
+        if (contact == null) {
+            return notFound();
         }
-        
-        return auth.accountId()
-            .onItem().transformToUni(accountId -> {
-                Long accId = accountId != null ? accountId : 0L;
-                
-                return organizations.count("id = ?1 and accountId = ?2 and deletedAt is null", orgId, accId)
-                    .onItem().transformToUni(count -> {
-                        if (count == 0) {
-                            return Uni.createFrom().item(
-                                inertia.back().withErrors(Map.of("organization_id", "The selected organization is invalid.")).toResponse()
-                            );
-                        }
-            
-                        var contact = new com.example.pingcrm.entity.Contact();
-                        contact.firstName = form.first_name;
-                        contact.lastName = form.last_name;
-                        contact.email = form.email;
-                        contact.phone = form.phone;
-                        contact.address = form.address;
-                        contact.city = form.city;
-                        contact.region = form.region;
-                        contact.country = form.country;
-                        contact.postalCode = form.postal_code;
-                        contact.organizationId = orgId;
-                        contact.accountId = accountId != null ? accountId : 0L;
-            
-                        return contacts.persist(contact)
-                            .replaceWith(inertia.redirect("/contacts").with("success", "Contact created.").toResponse());
-                    });
-            });
+        normalize(form);
+        FormValidator.validate(validator, form);
+        contacts.update(contact, toValues(form));
+        return inertia.back().with("success", "Contact updated.");
+    }
+
+    @DELETE
+    @Path("{id}")
+    @Blocking
+    public Uni<Object> destroy(@PathParam("id") long id) {
+        var contact = findOwned(id);
+        if (contact == null) {
+            return notFound();
+        }
+        contacts.softDelete(contact);
+        return inertia.back().with("success", "Contact deleted.");
+    }
+
+    @PUT
+    @Path("{id}/restore")
+    @Blocking
+    public Uni<Object> restore(@PathParam("id") long id) {
+        var contact = contactRepository.findByIdWithTrashed(id);
+        if (contact == null || !contact.accountId.equals(auth.accountId())) {
+            return notFound();
+        }
+        contacts.restore(contact);
+        return inertia.back().with("success", "Contact restored.");
+    }
+
+    private Contact findOwned(long id) {
+        var contact = contactRepository.findByIdWithTrashed(id);
+        if (contact == null || !contact.accountId.equals(auth.accountId())) {
+            return null;
+        }
+        return contact;
+    }
+
+    private Uni<Object> notFound() {
+        return inertia.redirect("/contacts").with("error", "Contact not found.");
+    }
+
+    private void normalize(ContactForm form) {
+        form.first_name = FormValidator.blankToNull(form.first_name);
+        form.last_name = FormValidator.blankToNull(form.last_name);
+        form.organization_id = FormValidator.blankToNull(form.organization_id);
+        form.email = FormValidator.blankToNull(form.email);
+        form.phone = FormValidator.blankToNull(form.phone);
+        form.address = FormValidator.blankToNull(form.address);
+        form.city = FormValidator.blankToNull(form.city);
+        form.region = FormValidator.blankToNull(form.region);
+        form.country = FormValidator.blankToNull(form.country);
+        form.postal_code = FormValidator.blankToNull(form.postal_code);
+    }
+
+    private Map<String, String> toValues(ContactForm form) {
+        var values = new LinkedHashMap<String, String>();
+        values.put("first_name", form.first_name);
+        values.put("last_name", form.last_name);
+        values.put("organization_id", form.organization_id);
+        values.put("email", form.email);
+        values.put("phone", form.phone);
+        values.put("address", form.address);
+        values.put("city", form.city);
+        values.put("region", form.region);
+        values.put("country", form.country);
+        values.put("postal_code", form.postal_code);
+        return values;
     }
 }

@@ -1,23 +1,27 @@
 package com.example.pingcrm.controller;
 
-import com.example.pingcrm.dto.LoginForm;
-import com.example.pingcrm.dto.FormValidator;
-import com.example.pingcrm.repository.UserRepository;
-import com.example.pingcrm.service.AuthService;
-import io.github.dg.quarkus.inertia.api.Inertia;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
-import io.quarkus.vertx.web.Param;
-import io.smallrye.mutiny.Uni;
+import java.util.Map;
 import jakarta.inject.Inject;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
-import io.vertx.ext.web.RoutingContext;
+import jakarta.ws.rs.core.Response;
 
-import java.util.Map;
+import com.example.pingcrm.dto.FormValidator;
+import com.example.pingcrm.dto.LoginForm;
+import com.example.pingcrm.repository.UserRepository;
+import com.example.pingcrm.service.AuthService;
+import io.github.dg.quarkus.inertia.api.Inertia;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
 
-@RouteBase(path = "/")
+@Path("/")
+
+@Blocking
 public class AuthController {
 
     @Inject
@@ -32,53 +36,40 @@ public class AuthController {
     @Inject
     Validator validator;
 
-    @Route(path = "login", methods = Route.HttpMethod.GET)
+    @GET
+    @Path("login")
+    @Blocking
     public Uni<Object> create() {
-        return auth.currentUser()
-            .onItem().transform(user -> {
-                if (user != null) {
-                    return inertia.redirect("/");
-                }
-                return inertia.render("Auth/Login");
-            });
+        if (auth.currentUser() != null) {
+            return inertia.redirect("/");
+        }
+        return inertia.render("Auth/Login");
     }
 
-    @Route(path = "login", methods = Route.HttpMethod.POST)
+    @POST
+    @Path("login")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Object> store(LoginForm form, RoutingContext rc) {
+    @Blocking
+    public Uni<Object> store(LoginForm form) {
         form.email = FormValidator.blankToNull(form.email);
         form.password = FormValidator.blankToNull(form.password);
+        FormValidator.validate(validator, form);
 
-        // Validation
-        var violations = validator.validate(form);
-        if (!violations.isEmpty()) {
-            var errors = new java.util.LinkedHashMap<String, String>();
-            for (var v : violations) {
-                errors.put(v.getPropertyPath().toString(), v.getMessage());
-            }
-            return Uni.createFrom().item(
-                inertia.back("/login").withErrors(errors).toResponse()
-            );
+        var user = form.email != null ? userRepository.findByEmail(form.email) : null;
+        if (user == null || user.deletedAt != null || user.password == null
+                || !AuthService.matches(form.password, user.password)) {
+            return inertia.back("/login").withErrors(Map.of("email", "These credentials do not match our records."));
         }
 
-        return userRepository.findByEmail(form.email)
-            .onItem().transformToUni(user -> {
-                if (user == null || user.deletedAt != null || user.password == null
-                        || !AuthService.matches(form.password, user.password)) {
-                    return Uni.createFrom().item(
-                        inertia.back("/login").withErrors(Map.of("email", "These credentials do not match our records.")).toResponse()
-                    );
-                }
-
-                // Login successful - set session via Quarkus Security
-                return auth.login(user)
-                    .replaceWith(inertia.redirect("/"));
-            });
+        auth.login(user);
+        return inertia.redirect("/");
     }
 
-    @Route(path = "logout", methods = Route.HttpMethod.DELETE)
-    public Uni<Object> destroy() {
-        return auth.logout()
-            .replaceWith(inertia.redirect("/login"));
+    @DELETE
+    @Path("logout")
+    @Blocking
+    public Response destroy() {
+        auth.logout();
+        return (Response) inertia.redirect("/login").await().indefinitely();
     }
 }

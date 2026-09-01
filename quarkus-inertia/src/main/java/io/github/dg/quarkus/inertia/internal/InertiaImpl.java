@@ -51,6 +51,9 @@ public class InertiaImpl implements Inertia {
     private final ReactiveResponseWriter reactiveWriter;
 
     @Inject
+    jakarta.enterprise.inject.Instance<io.github.dg.quarkus.inertia.spi.InertiaSharedDataContributor> sharedContributors;
+
+    @Inject
     public InertiaImpl(
             PageObjectBuilder pageBuilder,
             ResponseProcessor responseProcessor,
@@ -81,7 +84,18 @@ public class InertiaImpl implements Inertia {
     // ========================================================================
 
     @Override
+    public Uni<Object> render() {
+        return render((String) null, Map.of());
+    }
+
+    @Override
+    public Uni<Object> render(Map<String, Object> props) {
+        return render((String) null, props);
+    }
+
+    @Override
     public Uni<Object> render(String component, Map<String, Object> props) {
+        runSharedContributors();
         return pageBuilder.build(component, props)
             .chain(responseProcessor::process);
     }
@@ -127,7 +141,18 @@ public class InertiaImpl implements Inertia {
     // ========================================================================
 
     @Override
+    public Response renderSync() {
+        return renderSync((String) null, Map.of());
+    }
+
+    @Override
+    public Response renderSync(Map<String, Object> props) {
+        return renderSync((String) null, props);
+    }
+
+    @Override
     public Response renderSync(String component, Map<String, Object> props) {
+        runSharedContributors();
         var page = pageBuilder.buildSync(component, props);
         return responseProcessor.processSync(page);
     }
@@ -323,6 +348,34 @@ public class InertiaImpl implements Inertia {
     @Override
     public Uni<Object> location(String url) {
         return redirectProcessor.external(url);
+    }
+
+    @Override
+    public void viewData(String key, Object value) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            Map<String, Object> current = ctx.getLocal("inertia-view-data");
+            if (current == null) {
+                current = new java.util.LinkedHashMap<>();
+                ctx.putLocal("inertia-view-data", current);
+            }
+            current.put(key, value);
+        }
+    }
+
+    @Override
+    public void viewData(Map<String, Object> data) {
+        if (data != null) {
+            var ctx = io.vertx.core.Vertx.currentContext();
+            if (ctx != null) {
+                Map<String, Object> current = ctx.getLocal("inertia-view-data");
+                if (current == null) {
+                    current = new java.util.LinkedHashMap<>();
+                    ctx.putLocal("inertia-view-data", current);
+                }
+                current.putAll(data);
+            }
+        }
     }
 
     @Override
@@ -560,15 +613,32 @@ public class InertiaImpl implements Inertia {
         }
     }
 
-    private io.vertx.ext.web.Session session() {
+    private void runSharedContributors() {
+        if (sharedContributors != null && !sharedContributors.isUnsatisfied()) {
+            var rc = resolveRoutingContext();
+            for (var contributor : sharedContributors) {
+                var contrib = contributor.contribute(rc);
+                if (contrib != null && !contrib.isEmpty()) {
+                    sharedData.setAll(contrib);
+                }
+            }
+        }
+    }
+
+    private io.vertx.ext.web.RoutingContext resolveRoutingContext() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
             var local = ctx.getLocal("inertia-routing-context");
             if (local instanceof io.vertx.ext.web.RoutingContext rc) {
-                return rc.session();
+                return rc;
             }
         }
         return null;
+    }
+
+    private io.vertx.ext.web.Session session() {
+        var rc = resolveRoutingContext();
+        return rc != null ? rc.session() : null;
     }
 
     boolean isEncryptHistory() {

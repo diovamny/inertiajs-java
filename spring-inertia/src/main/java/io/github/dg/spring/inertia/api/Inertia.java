@@ -23,6 +23,29 @@ import io.github.dg.spring.inertia.spi.ErrorMapper;
 public interface Inertia {
 
     /**
+     * Render an Inertia page auto-resolving the component name by convention.
+     *
+     * @return the response
+     */
+    Object render();
+
+    /**
+     * Render an Inertia page with props, auto-resolving the component name by convention.
+     *
+     * @param props the page props
+     * @return the response
+     */
+    Object render(Map<String, Object> props);
+
+    /**
+     * Render an Inertia page with an explicit component and empty props.
+     *
+     * @param component the frontend component name
+     * @return the response
+     */
+    Object render(String component);
+
+    /**
      * Render an Inertia page.
      *
      * @param component the frontend component name
@@ -40,6 +63,23 @@ public interface Inertia {
      * @return the response
      */
     Object render(String component, Map<String, Object> props, Map<String, Object> meta);
+
+    /**
+     * Set data for the root HTML template that is NOT included in the page props.
+     * Used for SEO meta tags, analytics tokens, or layout variables only
+     * needed server-side in the HTML template.
+     *
+     * @param key   the view data key (injected into __VIEW_KEY__ placeholder)
+     * @param value the value
+     */
+    void viewData(String key, Object value);
+
+    /**
+     * Set multiple root HTML template data entries at once.
+     *
+     * @param data map of view data entries
+     */
+    void viewData(Map<String, Object> data);
 
     /**
      * Build a custom response for an already-assembled page object.
@@ -142,6 +182,21 @@ public interface Inertia {
      * @return the value or {@code null}
      */
     Object shared(String key);
+
+    /**
+     * Read a shared prop with a fallback default.
+     *
+     * @param key          the prop key
+     * @param defaultValue fallback default when absent
+     * @return the value or defaultValue
+     */
+    Object shared(String key, Object defaultValue);
+
+    /**
+     * Flush all standard shared props for the current request.
+     * "Always" props are preserved.
+     */
+    void flushShared();
 
     /**
      * Register an "always" prop: included in every page, immune to partial

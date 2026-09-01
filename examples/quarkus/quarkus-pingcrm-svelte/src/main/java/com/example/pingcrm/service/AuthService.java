@@ -1,17 +1,21 @@
 package com.example.pingcrm.service;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.vertx.core.Vertx;
+import io.vertx.ext.web.RoutingContext;
+
 import com.example.pingcrm.entity.Account;
 import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.AccountRepository;
 import com.example.pingcrm.repository.UserRepository;
-import io.quarkus.hibernate.reactive.panache.Panache;
-import io.smallrye.mutiny.Uni;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-import org.jboss.logging.Logger;
+import io.github.dg.quarkus.inertia.protocol.RequestRoutingContext;
+import io.github.dg.quarkus.inertia.protocol.RequestSessionId;
+import io.github.dg.quarkus.inertia.protocol.TestSessionHolder;
 
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import javax.crypto.SecretKeyFactory;
@@ -21,10 +25,20 @@ import javax.crypto.spec.PBEKeySpec;
 public class AuthService {
 
     static final String SESSION_USER_KEY = "pingcrm.userId";
+    private static final String SESSION_COOKIE_NAME = "vertx-web.session";
 
     private static final int PBKDF2_ITERATIONS = 210_000;
     private static final int PBKDF2_KEY_BITS = 256;
     private static final int SALT_BYTES = 16;
+
+    @Inject
+    CurrentVertxRequest currentVertxRequest;
+
+    @Inject
+    RequestRoutingContext requestRoutingContext;
+
+    @Inject
+    RequestSessionId requestSessionId;
 
     @Inject
     UserRepository userRepository;
@@ -35,51 +49,125 @@ public class AuthService {
     private User cached;
     private boolean cachedSet;
 
-    private static final Logger LOG = Logger.getLogger(AuthService.class);
-
-    public Uni<User> currentUser() {
+    public User currentUser() {
         if (cachedSet) {
-            return Uni.createFrom().item(cached);
+            return cached;
         }
-        
-        // In reactive context, get user from security context or session
-        // For now, return null - in a real app this would come from security context
-        return Uni.createFrom().nullItem();
+        cachedSet = true;
+        var rc = resolve();
+        var session = rc != null ? rc.session() : null;
+        var id = session != null ? session.get(SESSION_USER_KEY) : null;
+        if (!(id instanceof Long userId)) {
+            cached = null;
+            return null;
+        }
+        cached = userRepository.findById(userId);
+        return cached;
     }
 
-    public Uni<Account> currentAccount() {
-        return currentUser()
-            .onItem().transformToUni(user -> {
-                if (user == null) return Uni.createFrom().nullItem();
-                return accountRepository.findById(user.accountId);
-            });
+    public Account currentAccount() {
+        var user = currentUser();
+        if (user == null) return null;
+        return accountRepository.findById(user.accountId);
     }
 
-    public Uni<Long> accountId() {
-        return currentUser()
-            .onItem().transform(user -> user != null ? user.accountId : null);
+    public Long accountId() {
+        var account = currentAccount();
+        return account != null ? account.id : null;
     }
 
-    public Uni<Void> login(User user) {
-        // In reactive Quarkus, session management is handled by Quarkus Security
-        // This would integrate with Quarkus Security / JWT
+    public void login(User user) {
+        var session = requireSession();
+        session.put(SESSION_USER_KEY, user.id);
         cached = user;
         cachedSet = true;
-        return Uni.createFrom().voidItem();
     }
 
-    public Uni<Void> logout() {
+    public void logout() {
+        var rc = resolve();
+        var session = rc != null ? rc.session() : null;
+        if (session != null) {
+            session.remove(SESSION_USER_KEY);
+        }
         cached = null;
         cachedSet = true;
-        return Uni.createFrom().voidItem();
+    }
+
+    public Map<String, Object> authProps() {
+        var payload = new LinkedHashMap<String, Object>();
+        var user = currentUser();
+        if (user == null) {
+            payload.put("user", null);
+            return payload;
+        }
+        var account = currentAccount();
+        var userMap = new LinkedHashMap<String, Object>();
+        userMap.put("id", user.id);
+        userMap.put("first_name", user.firstName);
+        userMap.put("last_name", user.lastName);
+        userMap.put("email", user.email);
+        userMap.put("owner", user.owner);
+        userMap.put("account", Map.of(
+            "id", account != null ? account.id : null,
+            "name", account != null ? account.name : null));
+        payload.put("user", userMap);
+        return payload;
+    }
+
+    private RoutingContext resolve() {
+        if (requestRoutingContext.hasRoutingContext()) {
+            return requestRoutingContext.getRoutingContext();
+        }
+        try {
+            var rc = currentVertxRequest.getCurrent();
+            if (rc != null) {
+                return rc;
+            }
+        } catch (Exception ignored) {
+        }
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var local = ctx.getLocal("inertia-routing-context");
+            if (local instanceof RoutingContext rc) {
+                return rc;
+            }
+        }
+        var testRc = getTestRoutingContextFromSessionId();
+        if (testRc != null) {
+            return testRc;
+        }
+        return null;
+    }
+
+    private RoutingContext getTestRoutingContextFromSessionId() {
+        try {
+            if (requestSessionId.hasSessionId()) {
+                var sessionId = requestSessionId.getSessionId();
+                var testRc = TestSessionHolder.get(sessionId);
+                if (testRc != null) {
+                    return testRc;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private io.vertx.ext.web.Session requireSession() {
+        var rc = resolve();
+        var session = rc != null ? rc.session() : null;
+        if (session == null) {
+            throw new IllegalStateException("No active session");
+        }
+        return session;
     }
 
     public static String hash(String password) {
         try {
-            var salt = new byte[16];
+            var salt = new byte[SALT_BYTES];
             new SecureRandom().nextBytes(salt);
-            var key = derive(password, salt, 210_000);
-            return "pbkdf2$" + 210_000 + "$" + hex(salt) + "$" + hex(key);
+            var key = derive(password, salt, PBKDF2_ITERATIONS);
+            return "pbkdf2$" + PBKDF2_ITERATIONS + "$" + hex(salt) + "$" + hex(key);
         } catch (Exception e) {
             throw new IllegalStateException("Password hashing failed", e);
         }
@@ -101,7 +189,7 @@ public class AuthService {
     }
 
     private static byte[] derive(String password, byte[] salt, int iterations) throws Exception {
-        var spec = new javax.crypto.spec.PBEKeySpec(password.toCharArray(), salt, iterations, 256);
+        var spec = new PBEKeySpec(password.toCharArray(), salt, iterations, PBKDF2_KEY_BITS);
         var factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         return factory.generateSecret(spec).getEncoded();
     }

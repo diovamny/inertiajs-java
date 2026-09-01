@@ -27,6 +27,15 @@ public interface InertiaConfig {
     String rootTemplate();
 
     /**
+     * Whether the root HTML template is cached in memory.
+     * <p>Property: {@code inertia.template-cache-enabled}.</p>
+     *
+     * @return {@code true} to cache template, default {@code true}
+     */
+    @WithDefault("true")
+    boolean templateCacheEnabled();
+
+    /**
      * Whether server-side rendering is enabled for initial visits.
      * <p>Property: {@code inertia.ssr-enabled}.</p>
      *
@@ -193,4 +202,21 @@ public interface InertiaConfig {
      */
     @WithDefault("false")
     boolean useQute();
+
+    /**
+     * Whether auto-resolving component names by convention is enabled.
+     * <p>Property: {@code inertia.convention-routing-enabled}.</p>
+     *
+     * @return {@code true} to enable convention routing, default {@code false}
+     */
+    @WithDefault("false")
+    boolean conventionRoutingEnabled();
+
+    /**
+     * Optional prefix prepended to auto-resolved component names.
+     * <p>Property: {@code inertia.convention-routing-prefix}.</p>
+     *
+     * @return the prefix, empty when not configured
+     */
+    java.util.Optional<String> conventionRoutingPrefix();
 }

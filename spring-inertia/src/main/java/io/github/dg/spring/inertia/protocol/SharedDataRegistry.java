@@ -36,7 +36,9 @@ public class SharedDataRegistry {
      * @param values the entries
      */
     public void setSharedProps(Map<String, Object> values) {
-        sharedProps.putAll(values);
+        if (values != null) {
+            sharedProps.putAll(values);
+        }
     }
 
     /**
@@ -47,6 +49,25 @@ public class SharedDataRegistry {
      */
     public Object sharedProp(String key) {
         return sharedProps.get(key);
+    }
+
+    /**
+     * Read a shared prop with a fallback default.
+     *
+     * @param key          the prop key
+     * @param defaultValue the default value if absent
+     * @return the value or {@code defaultValue}
+     */
+    public Object sharedProp(String key, Object defaultValue) {
+        return sharedProps.getOrDefault(key, defaultValue);
+    }
+
+    /**
+     * Flush all standard shared props for the current request.
+     * "Always" props are preserved.
+     */
+    public void flushShared() {
+        sharedProps.clear();
     }
 
     /**
@@ -74,7 +95,9 @@ public class SharedDataRegistry {
      * @param values the entries
      */
     public void setAlwaysProps(Map<String, AlwaysProp<?>> values) {
-        alwaysProps.putAll(values);
+        if (values != null) {
+            alwaysProps.putAll(values);
+        }
     }
 
     /**

@@ -1,10 +1,13 @@
 package io.github.dg.spring.inertia.config;
 
+import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;import org.springframework.context.annotation.Bean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.web.context.WebApplicationContext;
@@ -17,6 +20,7 @@ import io.github.dg.spring.inertia.internal.ErrorResponseFactory;
 import io.github.dg.spring.inertia.internal.InertiaImpl;
 import io.github.dg.spring.inertia.internal.JacksonJsonProvider;
 import io.github.dg.spring.inertia.internal.SpringFlashStore;
+import io.github.dg.spring.inertia.mvc.ConventionComponentResolver;
 import io.github.dg.spring.inertia.mvc.InertiaCsrfFilter;
 import io.github.dg.spring.inertia.mvc.InertiaFilter;
 import io.github.dg.spring.inertia.mvc.InertiaInterceptor;
@@ -34,6 +38,7 @@ import io.github.dg.spring.inertia.renderer.SsrClient;
 import io.github.dg.spring.inertia.security.InertiaCsrfService;
 import io.github.dg.spring.inertia.spi.ComponentTransformer;
 import io.github.dg.spring.inertia.spi.FlashStore;
+import io.github.dg.spring.inertia.spi.InertiaSharedDataContributor;
 import io.github.dg.spring.inertia.spi.JsonProvider;
 import io.github.dg.spring.inertia.spi.UrlResolver;
 import io.github.dg.spring.inertia.validation.InertiaValidationHandler;
@@ -121,6 +126,13 @@ public class InertiaAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(ComponentTransformer.class)
+    @ConditionalOnProperty(prefix = "inertia", name = "convention-routing-enabled", havingValue = "true")
+    public ComponentTransformer conventionComponentResolver(InertiaProperties properties) {
+        return new ConventionComponentResolver(properties);
+    }
+
+    @Bean
     @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public PageObjectBuilder pageObjectBuilder(InertiaProperties properties,
             SharedDataRegistry sharedDataRegistry,
@@ -195,8 +207,11 @@ public class InertiaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public InertiaInterceptor inertiaInterceptor(InertiaHeaderExtractor headerExtractor) {
-        return new InertiaInterceptor(headerExtractor);
+    public InertiaInterceptor inertiaInterceptor(
+            InertiaHeaderExtractor headerExtractor,
+            ObjectProvider<List<InertiaSharedDataContributor>> contributorsProvider,
+            ObjectProvider<SharedDataRegistry> sharedDataRegistryProvider) {
+        return new InertiaInterceptor(headerExtractor, contributorsProvider, sharedDataRegistryProvider);
     }
 
     @Bean

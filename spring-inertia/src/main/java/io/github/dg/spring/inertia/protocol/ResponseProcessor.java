@@ -10,6 +10,7 @@ import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.dg.spring.inertia.api.InertiaResponse;
 import io.github.dg.spring.inertia.config.InertiaProperties;
+import io.github.dg.spring.inertia.internal.InertiaImpl;
 import io.github.dg.spring.inertia.internal.InertiaRequestContext;
 import io.github.dg.spring.inertia.model.PageObject;
 import io.github.dg.spring.inertia.renderer.HtmlRenderer;
@@ -100,12 +101,15 @@ public class ResponseProcessor {
         return new InertiaResponse(HttpStatusCode.valueOf(status), headers, body);
     }
 
+    @SuppressWarnings("unchecked")
     private ResponseEntity<String> renderHtml(PageObject page) {
         var headers = new HttpHeaders();
         headers.setContentType(new MediaType("text", "html", java.nio.charset.StandardCharsets.UTF_8));
         headers.set("Vary", "X-Inertia");
         applyCustomHeaders(headers);
-        return ResponseEntity.status(pageStatus()).headers(headers).body(htmlRenderer.render(page));
+        var stored = InertiaRequestContext.get(InertiaImpl.CONTEXT_VIEW_DATA);
+        Map<String, Object> viewData = stored instanceof Map<?, ?> map ? (Map<String, Object>) map : null;
+        return ResponseEntity.status(pageStatus()).headers(headers).body(htmlRenderer.render(page, viewData));
     }
 
     private ResponseEntity<String> precognition(PageObject page) {

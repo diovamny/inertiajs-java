@@ -58,6 +58,21 @@ public interface Inertia {
     // ---------------------------------------------------------------------
 
     /**
+     * Render an Inertia page auto-resolving the component name by convention.
+     *
+     * @return a Uni resolving to the response object
+     */
+    Uni<Object> render();
+
+    /**
+     * Render an Inertia page with props, auto-resolving the component name by convention.
+     *
+     * @param props the page props
+     * @return a Uni resolving to the response object
+     */
+    Uni<Object> render(Map<String, Object> props);
+
+    /**
      * Render an Inertia page for the given component with the given props.
      *
      * <p>For Inertia requests the response is the JSON page object
@@ -157,6 +172,23 @@ public interface Inertia {
     // ---------------------------------------------------------------------
     // Synchronous JAX-RS Response API
     // ---------------------------------------------------------------------
+
+    /**
+     * Render an Inertia page auto-resolving the component name by convention,
+     * returning a synchronous JAX-RS Response.
+     *
+     * @return a JAX-RS Response
+     */
+    jakarta.ws.rs.core.Response renderSync();
+
+    /**
+     * Render an Inertia page with props auto-resolving the component name by convention,
+     * returning a synchronous JAX-RS Response.
+     *
+     * @param props the page props
+     * @return a JAX-RS Response
+     */
+    jakarta.ws.rs.core.Response renderSync(Map<String, Object> props);
 
     /**
      * Render an Inertia page and return a synchronous JAX-RS {@link Response}.
@@ -406,6 +438,23 @@ public interface Inertia {
     // ---------------------------------------------------------------------
     // Shared props
     // ---------------------------------------------------------------------
+
+    /**
+     * Set data for the root HTML template that is NOT included in the page props.
+     * Used for SEO meta tags, analytics tokens, or layout variables only
+     * needed server-side in the HTML template.
+     *
+     * @param key   the view data key
+     * @param value the value
+     */
+    void viewData(String key, Object value);
+
+    /**
+     * Set multiple root HTML template data entries at once.
+     *
+     * @param data map of view data entries
+     */
+    void viewData(Map<String, Object> data);
 
     /**
      * Expose all public getters of the given instance as page props when

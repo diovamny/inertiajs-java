@@ -14,5 +14,5 @@ public class UserForm {
 
     public String password;
 
-    public Boolean owner;
+    public String owner;
 }

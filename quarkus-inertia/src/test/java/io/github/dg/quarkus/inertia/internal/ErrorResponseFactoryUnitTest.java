@@ -37,6 +37,9 @@ class ErrorResponseFactoryUnitTest {
             @Override public java.util.Optional<java.util.List<String>> ssrExcludePaths() { return java.util.Optional.empty(); }
             @Override public boolean useQute() { return false; }
             @Override public boolean errorDetailsEnabled() { return true; }
+            @Override public boolean templateCacheEnabled() { return true; }
+            @Override public boolean conventionRoutingEnabled() { return false; }
+            @Override public java.util.Optional<String> conventionRoutingPrefix() { return java.util.Optional.empty(); }
         };
         factory.versionProvider = () -> version;
         return factory;

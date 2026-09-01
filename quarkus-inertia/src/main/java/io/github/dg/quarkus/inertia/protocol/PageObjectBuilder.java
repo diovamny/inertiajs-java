@@ -641,11 +641,13 @@ public class PageObjectBuilder {
     }
 
     private String resolveComponent(String component) {
-        if (component == null || componentTransformer == null || !componentTransformer.isResolvable()) {
-            return component;
+        if (componentTransformer != null && componentTransformer.isResolvable()) {
+            var transformed = componentTransformer.get().transform(component);
+            if (transformed != null && !transformed.isBlank()) {
+                return transformed;
+            }
         }
-        var transformed = componentTransformer.get().transform(component);
-        return transformed != null && !transformed.isBlank() ? transformed : component;
+        return component != null && !component.isBlank() ? component : "Index";
     }
 
     private String resolveUrl(String url) {

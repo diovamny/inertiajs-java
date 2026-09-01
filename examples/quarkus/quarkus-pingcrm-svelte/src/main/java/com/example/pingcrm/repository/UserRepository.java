@@ -1,49 +1,64 @@
 package com.example.pingcrm.repository;
 
 import com.example.pingcrm.entity.User;
-import io.quarkus.hibernate.reactive.panache.PanacheRepository;
-import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Parameters;
-import io.smallrye.mutiny.Uni;
-
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
+
 import java.util.List;
-import java.util.Optional;
 
 @ApplicationScoped
-public interface UserRepository extends PanacheRepository<User> {
-    
-    default Uni<List<User>> findByAccountIdAndSearch(Long accountId, String search, int page, int size) {
+public class UserRepository implements PanacheRepository<User> {
+
+    public List<User> findByAccountIdAndSearch(Long accountId, String search, int page, int size) {
         if (search != null && !search.isBlank()) {
             return find("accountId = ?1 and (lower(firstName) like ?2 or lower(lastName) like ?2 or lower(email) like ?2) and deletedAt is null",
-                    Parameters.with("accountId", accountId).and("search", "%" + search.toLowerCase() + "%"))
-                    .page(Page.of(page, size))
+                    accountId, "%" + search.toLowerCase() + "%")
+                    .page(page, size)
                     .list();
         }
         return find("accountId = ?1 and deletedAt is null", accountId)
-                .page(Page.of(page, size))
+                .page(page, size)
                 .list();
     }
-    
-    default Uni<List<User>> findByAccountId(Long accountId, int page, int size) {
-        return find("accountId = ?1 and deletedAt is null", accountId)
-                .page(Page.of(page, size))
-                .list();
-    }
-    
-    default Uni<Long> countByAccountId(Long accountId) {
+
+    public long countByAccountIdAndSearch(Long accountId, String search) {
+        if (search != null && !search.isBlank()) {
+            return count("accountId = ?1 and (lower(firstName) like ?2 or lower(lastName) like ?2 or lower(email) like ?2) and deletedAt is null",
+                    accountId, "%" + search.toLowerCase() + "%");
+        }
         return count("accountId = ?1 and deletedAt is null", accountId);
     }
-    
-    Uni<User> findByAccountIdAndEmail(Long accountId, String email);
-    
-    Uni<User> findByEmail(String email);
-    
-    Uni<User> findByAccountIdAndId(Long accountId, Long id);
-    
-    default Uni<Boolean> existsByAccountIdAndEmail(Long accountId, String email) {
-        return count("accountId = ?1 and email = ?2 and deletedAt is null", 
-                Parameters.with("accountId", accountId).and("email", email))
-                .map(count -> count > 0);
+
+    public long countByAccountId(Long accountId) {
+        return count("accountId = ?1 and deletedAt is null", accountId);
+    }
+
+    public User findByAccountIdAndEmail(Long accountId, String email) {
+        return find("accountId = ?1 and email = ?2 and deletedAt is null", accountId, email).firstResult();
+    }
+
+    public User findByEmail(String email) {
+        return find("email = ?1 and deletedAt is null", email).firstResult();
+    }
+
+    public User findByIdWithTrashed(Long id) {
+        return findById(id);
+    }
+
+    public boolean emailExistsForOtherUser(String email, Long excludeId) {
+        if (excludeId != null) {
+            return count("email = ?1 and id != ?2 and deletedAt is null", email, excludeId) > 0;
+        }
+        return count("email = ?1 and deletedAt is null", email) > 0;
+    }
+
+    public void softDelete(User user) {
+        user.deletedAt = java.time.Instant.now();
+        getEntityManager().merge(user);
+    }
+
+    public void restore(User user) {
+        user.deletedAt = null;
+        getEntityManager().merge(user);
     }
 }

@@ -28,4 +28,7 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     long countByAccountId(Long accountId);
     
     boolean existsByAccountIdAndEmail(Long accountId, String email);
+    
+    List<Contact> findByAccountIdAndOrganizationIdAndDeletedAtIsNullOrderByLastNameAscFirstNameAsc(
+            Long accountId, Long organizationId);
 }

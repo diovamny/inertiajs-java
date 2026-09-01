@@ -37,6 +37,8 @@ import io.github.dg.spring.inertia.spi.FlashStore;
 @RequestScope
 public class InertiaImpl implements Inertia {
 
+    public static final String CONTEXT_VIEW_DATA = "inertia-view-data";
+
     private final InertiaProperties properties;
     private final SharedDataRegistry sharedDataRegistry;
     private final OncePropRegistry oncePropRegistry;
@@ -68,6 +70,21 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Object render() {
+        return render(null, Map.of());
+    }
+
+    @Override
+    public Object render(Map<String, Object> props) {
+        return render(null, props);
+    }
+
+    @Override
+    public Object render(String component) {
+        return render(component, Map.of());
+    }
+
+    @Override
     public Object render(String component, Map<String, Object> props) {
         return responseProcessor.process(component, props);
     }
@@ -78,6 +95,22 @@ public class InertiaImpl implements Inertia {
             InertiaRequestContext.set(PageObjectBuilder.CONTEXT_META, meta);
         }
         return render(component, props);
+    }
+
+    @Override
+    public void viewData(String key, Object value) {
+        var viewData = viewDataRegistry();
+        viewData.put(key, value);
+        InertiaRequestContext.set(CONTEXT_VIEW_DATA, viewData);
+    }
+
+    @Override
+    public void viewData(Map<String, Object> data) {
+        if (data != null) {
+            var viewData = viewDataRegistry();
+            viewData.putAll(data);
+            InertiaRequestContext.set(CONTEXT_VIEW_DATA, viewData);
+        }
     }
 
     @Override
@@ -140,6 +173,16 @@ public class InertiaImpl implements Inertia {
     @Override
     public Object shared(String key) {
         return sharedDataRegistry.sharedProp(key);
+    }
+
+    @Override
+    public Object shared(String key, Object defaultValue) {
+        return sharedDataRegistry.sharedProp(key, defaultValue);
+    }
+
+    @Override
+    public void flushShared() {
+        sharedDataRegistry.flushShared();
     }
 
     @Override
@@ -333,6 +376,15 @@ public class InertiaImpl implements Inertia {
                 session.removeAttribute(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> viewDataRegistry() {
+        var stored = InertiaRequestContext.get(CONTEXT_VIEW_DATA);
+        if (stored instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+        return new LinkedHashMap<>();
     }
 
     @SuppressWarnings("unchecked")

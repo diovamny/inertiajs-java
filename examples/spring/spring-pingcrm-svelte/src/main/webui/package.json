@@ -1,0 +1,28 @@
+{
+  "name": "pingcrm-svelte",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@inertiajs/svelte": "^3.7.0",
+    "svelte": "^5.46.4"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@types/node": "^22.0.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^3.4.3",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5",
+    "vite": "^8.0.0"
+  },
+  "optionalDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}

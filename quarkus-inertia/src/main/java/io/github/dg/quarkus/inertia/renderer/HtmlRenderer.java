@@ -105,14 +105,22 @@ public class HtmlRenderer {
     private String renderWithQute(PageObject page, String json, String ssrBody, String ssrHead) {
         var template = resolveRootTemplate();
         var meta = page.meta() == null ? Map.of() : page.meta();
-        return template
+        var viewData = getViewData();
+        var quteData = template
             .data("page", page)
             .data("pageMeta", meta)
             .data("pageTitle", meta.get("title"))
             .data("dataPage", new RawString(SafeJsonEncoder.encodeForScript(json)))
+            .data("dataPageAttr", new RawString(escapeHtmlAttribute(json)))
             .data("ssrBody", ssrBody != null ? new RawString(ssrBody) : null)
-            .data("ssrHead", ssrHead != null ? new RawString(ssrHead) : null)
-            .render();
+            .data("ssrHead", ssrHead != null ? new RawString(ssrHead) : null);
+        if (viewData != null) {
+            for (var entry : viewData.entrySet()) {
+                quteData = quteData.data(entry.getKey(), entry.getValue());
+            }
+            quteData = quteData.data("viewData", viewData);
+        }
+        return quteData.render();
     }
 
     private String renderWithPlaceholders(PageObject page, String json, String ssrBody, String ssrHead) {
@@ -127,12 +135,34 @@ public class HtmlRenderer {
         pageTitle = escapeHtml(pageTitle);
         String ssrBodySafe = ssrBody != null ? ssrBody : "";
         String ssrHeadSafe = ssrHead != null ? ssrHead : "";
-        return template
+        String rendered = template
             .replace("__INERTIA_PAGE__", jsonRaw)
             .replace("__INERTIA_PAGE_JSON__", jsonEscaped)
             .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
             .replace("__INERTIA_SSR_BODY__", ssrBodySafe)
             .replace("__INERTIA_PAGE_TITLE__", pageTitle);
+
+        var viewData = getViewData();
+        if (viewData != null && !viewData.isEmpty()) {
+            for (var entry : viewData.entrySet()) {
+                var placeholder = "__VIEW_" + entry.getKey().toUpperCase() + "__";
+                var val = entry.getValue() != null ? escapeHtmlAttribute(String.valueOf(entry.getValue())) : "";
+                rendered = rendered.replace(placeholder, val);
+            }
+        }
+        return rendered;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getViewData() {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            var val = ctx.getLocal("inertia-view-data");
+            if (val instanceof Map<?, ?> map) {
+                return (Map<String, Object>) map;
+            }
+        }
+        return null;
     }
 
     private String getTemplateForCurrentRequest() {

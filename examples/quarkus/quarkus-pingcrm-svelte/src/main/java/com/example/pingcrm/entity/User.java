@@ -2,6 +2,7 @@ package com.example.pingcrm.entity;
 
 import java.time.Instant;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 @Table(name = "users")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class User {
+public class User extends PanacheEntityBase {
 
     @Id
     @SequenceGenerator(name = "userSeq", sequenceName = "users_seq", allocationSize = 1)

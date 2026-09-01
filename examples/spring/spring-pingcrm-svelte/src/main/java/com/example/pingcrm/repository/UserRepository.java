@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import org.springframework.data.repository.query.Param;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     
@@ -27,4 +29,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     long countByAccountId(Long accountId);
     
     boolean existsByAccountIdAndEmail(Long accountId, String email);
+    
+    @Query("select count(u) > 0 from User u where u.email = :email and (:exclude is null or u.id <> :exclude)")
+    boolean emailExistsForOtherUser(@Param("email") String email, @Param("exclude") Long excludeUserId);
 }

@@ -31,4 +31,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
 
     @Query("SELECT new Map(o.id as id, o.name as name) FROM Organization o WHERE o.accountId = ?1 AND o.deletedAt IS NULL ORDER BY o.name")
     List<Map<String, Object>> findOptionsByAccountId(Long accountId);
+
+    List<Organization> findByAccountIdOrderByName(Long accountId);
 }

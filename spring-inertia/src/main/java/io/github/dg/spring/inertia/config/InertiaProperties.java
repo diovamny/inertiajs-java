@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <pre>{@code
  * inertia:
  *   root-template: index.html
+ *   template-cache-enabled: true
  *   ssr-enabled: false
  *   ssr-url: http://localhost:13714/render
  *   ssr-exclude-paths: []
@@ -26,6 +27,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   error-component: ErrorPage
  *   lazy-etag-enabled: true
  *   root-view: null
+ *   convention-routing-enabled: false
+ *   convention-routing-prefix: ""
  * }</pre>
  */
 @ConfigurationProperties(prefix = "inertia")
@@ -33,6 +36,9 @@ public class InertiaProperties {
 
     /** Name of the root HTML template resolved from the classpath. */
     private String rootTemplate = "index.html";
+
+    /** Whether the root HTML template is cached in memory (disable in dev for live reload). */
+    private boolean templateCacheEnabled = true;
 
     /** Whether server-side rendering (SSR) is enabled. */
     private boolean ssrEnabled = false;
@@ -88,12 +94,26 @@ public class InertiaProperties {
     /** Optional explicit view name (template) for the root view. */
     private String rootView;
 
+    /** Whether auto-resolving component names by convention is enabled. */
+    private boolean conventionRoutingEnabled = false;
+
+    /** Optional prefix prepended to auto-resolved component names. */
+    private String conventionRoutingPrefix = "";
+
     public String getRootTemplate() {
         return rootTemplate;
     }
 
     public void setRootTemplate(String rootTemplate) {
         this.rootTemplate = rootTemplate;
+    }
+
+    public boolean isTemplateCacheEnabled() {
+        return templateCacheEnabled;
+    }
+
+    public void setTemplateCacheEnabled(boolean templateCacheEnabled) {
+        this.templateCacheEnabled = templateCacheEnabled;
     }
 
     public boolean isSsrEnabled() {
@@ -238,5 +258,21 @@ public class InertiaProperties {
 
     public void setRootView(String rootView) {
         this.rootView = rootView;
+    }
+
+    public boolean isConventionRoutingEnabled() {
+        return conventionRoutingEnabled;
+    }
+
+    public void setConventionRoutingEnabled(boolean conventionRoutingEnabled) {
+        this.conventionRoutingEnabled = conventionRoutingEnabled;
+    }
+
+    public String getConventionRoutingPrefix() {
+        return conventionRoutingPrefix;
+    }
+
+    public void setConventionRoutingPrefix(String conventionRoutingPrefix) {
+        this.conventionRoutingPrefix = conventionRoutingPrefix;
     }
 }

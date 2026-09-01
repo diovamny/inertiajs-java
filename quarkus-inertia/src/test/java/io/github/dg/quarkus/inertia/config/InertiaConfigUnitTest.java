@@ -31,6 +31,9 @@ class InertiaConfigUnitTest {
             @Override public Optional<java.util.List<String>> ssrExcludePaths() { return Optional.empty(); }
             @Override public boolean useQute() { return false; }
             @Override public boolean errorDetailsEnabled() { return false; }
+            @Override public boolean templateCacheEnabled() { return true; }
+            @Override public boolean conventionRoutingEnabled() { return false; }
+            @Override public Optional<String> conventionRoutingPrefix() { return Optional.empty(); }
         };
     }
 
