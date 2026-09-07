@@ -85,6 +85,17 @@ public class OrganizationsController {
             Map.of("organization", organizations.editData(organization)));
     }
 
+    @POST
+    @Path("{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> updateViaPost(@PathParam("id") long id, OrganizationForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return update(id, form);
+    }
+
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)

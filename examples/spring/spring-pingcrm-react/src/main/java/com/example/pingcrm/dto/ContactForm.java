@@ -25,4 +25,6 @@ public class ContactForm {
     public String postal_code;
 
     public String organization_id;
+
+    public String _method;
 }

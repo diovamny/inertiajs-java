@@ -23,4 +23,6 @@ public class ContactForm {
 
     @Size(max = 255, message = "max")
     public String organization_id;
+
+    public String _method;
 }

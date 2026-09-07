@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react'
-import type { FormEvent } from 'react'
+import type { SubmitEvent  } from 'react'
 import Layout from '@/Shared/Layout'
 import TextInput from '@/Shared/TextInput'
 import SelectInput from '@/Shared/SelectInput'
@@ -26,10 +26,11 @@ export default function UserEdit({ user }: Props) {
   })
   useSyncErrors(form)
 
-  const update = (e: FormEvent) => {
+  const update = (e: SubmitEvent ) => {
     e.preventDefault()
-    form.post(`/users/${user.id}`, {
-      onSuccess: () => form.reset('password', 'photo'),
+    form.put(`/users/${user.id}`, {
+        forceFormData: true,
+        onSuccess: () => form.reset('password', 'photo'),
     })
   }
 

@@ -1,4 +1,4 @@
-﻿# Testing Guide — Inertia.js Java Adapters
+# Testing Guide — Inertia.js Java Adapters
 
 This guide explains how to write tests for Inertia.js responses in both the **Spring Boot** and **Quarkus** adapters.
 
@@ -85,11 +85,20 @@ page.assertComponent("Home")
 
 | Method | Description |
 |--------|-------------|
+| `from(mockMvc, url)` | Executes initial Inertia GET and returns page with reload capabilities |
+| `from(mockMvc, result)` | Wraps MvcResult and attaches MockMvc for reload capabilities |
+| `withClient(mockMvc)` | Attaches MockMvc to enable reload operations |
+| `reloadOnly(props...)` | Actively reloads requesting only specified props |
+| `reloadExcept(props...)` | Actively reloads excluding specified props |
+| `loadDeferredProps(group?, callback?)` | Actively reloads deferred props (all or by group) |
 | `assertComponent(name)` | Asserts component name (returns `this`) |
 | `assertUrl(url)` | Asserts URL (returns `this`) |
 | `assertProp(key, value)` | Asserts prop value, supports dot notation |
 | `assertPropExists(key)` | Asserts prop key is present |
 | `assertPropAbsent(key)` | Asserts prop key is absent |
+| `assertMissing(key)` | Alias for `assertNoProp` / `assertPropAbsent` (Laravel parity) |
+| `assertPropCount(key, count)` | Asserts element count of Collection, Map or Array prop |
+| `assertPropMap(key, callback)` | Validates nested Map props with consumer assertions |
 | `assertEncryptHistory(bool)` | Asserts encryptHistory flag |
 | `assertClearHistory(bool)` | Asserts clearHistory flag |
 | `assertPreserveFragment(bool)` | Asserts preserveFragment flag |
@@ -166,15 +175,22 @@ page.assertComponent("Dashboard")
 | Method | Description |
 |--------|-------------|
 | `from(Response)` | Static factory, parses the Inertia JSON body |
+| `withExecutor(executor)` | Attaches an `InertiaReloadExecutor` for active reloads |
+| `reloadOnly(props...)` | Actively reloads requesting only specified props |
+| `reloadExcept(props...)` | Actively reloads excluding specified props |
+| `loadDeferredProps(group?, callback?)` | Actively reloads deferred props (all or by group) |
 | `assertComponent(name)` | Asserts component name (fluent) |
 | `assertUrl(url)` | Asserts URL field |
 | `assertProp(dotPath, value)` | Asserts prop value, supports dot notation |
 | `assertPropExists(key)` | Asserts prop key is present |
-| `assertPropAbsent(key)` | Asserts prop key is absent |
+| `assertNoProp(key)` / `assertMissing(key)` | Asserts prop key is absent |
+| `assertPropCount(key, count)` | Asserts element count of Collection, Map or Array prop |
+| `assertPropMap(key, callback)` | Validates nested Map props with consumer assertions |
 | `assertEncryptHistory(bool)` | Asserts encryptHistory flag |
 | `assertClearHistory(bool)` | Asserts clearHistory flag |
 | `assertPreserveFragment(bool)` | Asserts preserveFragment flag |
-| `assertDeferredProp(key)` | Asserts a deferred prop group entry |
+| `assertDeferredProps(props...)` | Asserts deferred props exist |
+| `assertDeferredPropsInGroup(group, props...)` | Asserts deferred group membership |
 | `assertRescuedProps(keys...)` | Asserts rescued props set |
 | `dump()` | Prints full page JSON to stdout |
 

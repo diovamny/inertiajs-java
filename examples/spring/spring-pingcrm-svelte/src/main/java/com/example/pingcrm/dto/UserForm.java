@@ -8,5 +8,6 @@ public record UserForm(
         String email,
         String password,
         String owner,
-        MultipartFile photo) {
+        MultipartFile photo,
+        String _method) {
 }

@@ -1,0 +1,11 @@
+{
+  "name": "inertia-e2e-harness",
+  "private": true,
+  "scripts": {
+    "test:e2e": "npx playwright test --config playwright.config.ts",
+    "verify:matrix": "node ../scripts/check-conformance-matrix.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

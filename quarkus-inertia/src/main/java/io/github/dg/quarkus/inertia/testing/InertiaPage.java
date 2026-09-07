@@ -1,8 +1,12 @@
 package io.github.dg.quarkus.inertia.testing;
 
+import java.lang.reflect.Array;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dg.quarkus.inertia.model.PageObject;
 
@@ -21,9 +25,15 @@ import io.github.dg.quarkus.inertia.model.PageObject;
 public final class InertiaPage {
 
     private final PageObject page;
+    private final InertiaReloadExecutor reloadExecutor;
 
     private InertiaPage(PageObject page) {
+        this(page, null);
+    }
+
+    private InertiaPage(PageObject page, InertiaReloadExecutor reloadExecutor) {
         this.page = page;
+        this.reloadExecutor = reloadExecutor;
     }
 
     /**
@@ -62,6 +72,177 @@ public final class InertiaPage {
      */
     public static InertiaPage from(PageObject page) {
         return new InertiaPage(page);
+    }
+
+    /**
+     * Attach a custom reload executor.
+     *
+     * @param executor the reload executor
+     * @return new InertiaPage with the executor attached
+     */
+    public InertiaPage withExecutor(InertiaReloadExecutor executor) {
+        return new InertiaPage(this.page, executor);
+    }
+
+    // --- Active Reload Operations (Laravel/Rails Parity) ---
+
+    /**
+     * Execute a partial reload request with custom only and except filters.
+     *
+     * @param only     props to include (null or empty for all)
+     * @param except   props to exclude (null or empty for none)
+     * @param callback optional assertion callback on the reloaded page
+     * @return the reloaded InertiaPage
+     */
+    public InertiaPage reload(List<String> only, List<String> except, Consumer<InertiaPage> callback) {
+        if (reloadExecutor == null) {
+            throw new IllegalStateException("No InertiaReloadExecutor configured. Call .withExecutor(...) or use a client factory to enable reload operations.");
+        }
+        InertiaPage reloaded = reloadExecutor.execute(this.url(), this.component(), this.version(), only, except);
+        if (callback != null) {
+            callback.accept(reloaded);
+        }
+        return reloaded;
+    }
+
+    /**
+     * Reload the page requesting ONLY the specified prop keys.
+     *
+     * @param props prop keys to request
+     * @return the reloaded page
+     */
+    public InertiaPage reloadOnly(String... props) {
+        return reloadOnly(props != null ? List.of(props) : List.of(), null);
+    }
+
+    /**
+     * Reload the page requesting ONLY the specified prop keys.
+     *
+     * @param props prop keys to request
+     * @return the reloaded page
+     */
+    public InertiaPage reloadOnly(List<String> props) {
+        return reloadOnly(props, null);
+    }
+
+    /**
+     * Reload the page requesting ONLY the specified prop keys, running assertions on the reloaded page.
+     *
+     * @param props    prop keys to request
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage reloadOnly(List<String> props, Consumer<InertiaPage> callback) {
+        return reload(props, null, reloaded -> {
+            if (props != null) {
+                for (String p : props) {
+                    reloaded.assertPropExists(p);
+                }
+            }
+            if (callback != null) {
+                callback.accept(reloaded);
+            }
+        });
+    }
+
+    /**
+     * Reload the page EXCLUDING the specified prop keys.
+     *
+     * @param props prop keys to exclude
+     * @return the reloaded page
+     */
+    public InertiaPage reloadExcept(String... props) {
+        return reloadExcept(props != null ? List.of(props) : List.of(), null);
+    }
+
+    /**
+     * Reload the page EXCLUDING the specified prop keys.
+     *
+     * @param props prop keys to exclude
+     * @return the reloaded page
+     */
+    public InertiaPage reloadExcept(List<String> props) {
+        return reloadExcept(props, null);
+    }
+
+    /**
+     * Reload the page EXCLUDING the specified prop keys, running assertions on the reloaded page.
+     *
+     * @param props    prop keys to exclude
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage reloadExcept(List<String> props, Consumer<InertiaPage> callback) {
+        return reload(null, props, reloaded -> {
+            if (props != null) {
+                for (String p : props) {
+                    reloaded.assertNoProp(p);
+                }
+            }
+            if (callback != null) {
+                callback.accept(reloaded);
+            }
+        });
+    }
+
+    /**
+     * Request all deferred props across all groups.
+     *
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps() {
+        return loadDeferredProps(null, null);
+    }
+
+    /**
+     * Request all deferred props across all groups, running assertions on the reloaded page.
+     *
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps(Consumer<InertiaPage> callback) {
+        return loadDeferredProps(null, callback);
+    }
+
+    /**
+     * Request deferred props in the specified group (or all groups if group is null).
+     *
+     * @param group the deferred group name, or null for all groups
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps(String group) {
+        return loadDeferredProps(group, null);
+    }
+
+    /**
+     * Request deferred props in the specified group, running assertions on the reloaded page.
+     *
+     * @param group    the deferred group name, or null for all groups
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps(String group, Consumer<InertiaPage> callback) {
+        List<String> targetProps;
+        if (group != null) {
+            targetProps = deferredProps().get(group);
+            if (targetProps == null || targetProps.isEmpty()) {
+                throw new AssertionError("Deferred group <" + group + "> not found in page deferred props: " + deferredProps());
+            }
+        } else {
+            targetProps = deferredProps().values().stream().flatMap(List::stream).distinct().toList();
+            if (targetProps.isEmpty()) {
+                throw new AssertionError("No deferred props declared on the page to load.");
+            }
+        }
+
+        return reload(targetProps, null, reloaded -> {
+            for (String prop : targetProps) {
+                reloaded.assertPropExists(prop);
+            }
+            if (callback != null) {
+                callback.accept(reloaded);
+            }
+        });
     }
 
     /**
@@ -422,6 +603,19 @@ public final class InertiaPage {
     }
 
     /**
+     * Assert a prop exists.
+     *
+     * @param key the prop key
+     * @return this, for chaining
+     */
+    public InertiaPage assertPropExists(String key) {
+        if (!hasProp(key)) {
+            throw new AssertionError("Expected prop <" + key + "> to be present but it was absent");
+        }
+        return this;
+    }
+
+    /**
      * Assert a prop is absent.
      *
      * @param key the prop key
@@ -432,6 +626,58 @@ public final class InertiaPage {
         if (hasProp(key)) {
             throw new AssertionError("Expected prop <" + key + "> to be absent but it was present");
         }
+        return this;
+    }
+
+    /**
+     * Alias for {@link #assertNoProp(String)}, matching Laravel's {@code missing()} assertion.
+     */
+    public InertiaPage assertMissing(String key) {
+        return assertNoProp(key);
+    }
+
+    /**
+     * Assert that a collection, map, or array prop has the expected element count.
+     *
+     * @param key          prop key
+     * @param expectedSize expected number of items
+     * @return this, for chaining
+     */
+    public InertiaPage assertPropCount(String key, int expectedSize) {
+        var val = prop(key);
+        if (val == null) {
+            throw new AssertionError("Expected prop '" + key + "' to have count <" + expectedSize + "> but prop is absent/null");
+        }
+        int actualSize;
+        if (val instanceof Collection<?> col) {
+            actualSize = col.size();
+        } else if (val instanceof Map<?, ?> map) {
+            actualSize = map.size();
+        } else if (val.getClass().isArray()) {
+            actualSize = Array.getLength(val);
+        } else {
+            throw new AssertionError("Expected prop '" + key + "' to be a Collection, Map or Array, but was " + val.getClass().getName());
+        }
+        if (actualSize != expectedSize) {
+            throw new AssertionError("Expected prop '" + key + "' to have count <" + expectedSize + "> but was <" + actualSize + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Execute assertions against a nested Map prop.
+     *
+     * @param key        prop key
+     * @param assertions consumer accepting the nested map
+     * @return this, for chaining
+     */
+    @SuppressWarnings("unchecked")
+    public InertiaPage assertPropMap(String key, Consumer<Map<String, Object>> assertions) {
+        var val = prop(key);
+        if (!(val instanceof Map<?, ?> map)) {
+            throw new AssertionError("Expected prop '" + key + "' to be a Map, but was: " + (val == null ? "null" : val.getClass().getName()));
+        }
+        assertions.accept((Map<String, Object>) map);
         return this;
     }
 

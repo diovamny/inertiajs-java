@@ -31,4 +31,6 @@ public class OrganizationForm {
 
     @Size(max = 25, message = "max")
     public String postal_code;
+
+    public String _method;
 }

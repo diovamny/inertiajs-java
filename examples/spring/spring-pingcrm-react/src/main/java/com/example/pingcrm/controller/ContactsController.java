@@ -81,8 +81,20 @@ public class ContactsController {
             "organizations", organizations.options(accountId)));
     }
 
+    @PostMapping(value = "/{id}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Object updateViaPost(@PathVariable long id, @ModelAttribute ContactForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return doUpdate(id, form);
+    }
+
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Object update(@PathVariable long id, @RequestBody ContactForm form) {
+        return doUpdate(id, form);
+    }
+
+    private Object doUpdate(long id, ContactForm form) {
         var accountId = auth.currentUser().map(u -> u.accountId).orElse(0L);
         var contact = contacts.findById(id);
         if (contact == null || !contact.accountId.equals(accountId)) {

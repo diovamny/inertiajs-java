@@ -16,6 +16,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
+import io.github.dg.quarkus.inertia.api.ProvidesInertiaProperties;
+import io.github.dg.quarkus.inertia.api.RenderContext;
 import io.github.dg.quarkus.inertia.config.InertiaConfig;
 import io.github.dg.quarkus.inertia.model.AlwaysProp;
 import io.github.dg.quarkus.inertia.model.PageObject;
@@ -95,6 +97,9 @@ public class PageObjectBuilder {
 
     public Uni<PageObject> build(String component, Map<String, Object> props, boolean isPartial) {
         var resolvedComponent = resolveComponent(component);
+        var partialContext = buildPartialReloadContext();
+        var renderContext = createRenderContext(resolvedComponent, isPartial, partialContext);
+
         var allProps = new HashMap<String, Object>();
         if (props != null && !props.isEmpty()) {
             allProps.putAll(props);
@@ -102,11 +107,10 @@ public class PageObjectBuilder {
             allProps.putAll(instanceProps());
         }
         allProps.putAll(sharedData.getAll());
+        injectSharedProviders(allProps, renderContext);
+        allProps = new HashMap<>(resolvePropertyProviders(allProps, renderContext));
 
         var flashOut = resolveFlashData(allProps);
-
-        // Build partial context first so we can check only keys before draining once props.
-        var partialContext = buildPartialReloadContext();
 
         var onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
@@ -233,6 +237,9 @@ public class PageObjectBuilder {
      */
     public PageObject buildSync(String component, Map<String, Object> props, boolean isPartial) {
         var resolvedComponent = resolveComponent(component);
+        var partialContext = buildPartialReloadContext();
+        var renderContext = createRenderContext(resolvedComponent, isPartial, partialContext);
+
         var allProps = new HashMap<String, Object>();
         if (props != null && !props.isEmpty()) {
             allProps.putAll(props);
@@ -240,11 +247,10 @@ public class PageObjectBuilder {
             allProps.putAll(instanceProps());
         }
         allProps.putAll(sharedData.getAll());
+        injectSharedProviders(allProps, renderContext);
+        allProps = new HashMap<>(resolvePropertyProviders(allProps, renderContext));
 
         var flashOut = resolveFlashData(allProps);
-
-        // Build partial context first so we can check only keys before draining once props.
-        var partialContext = buildPartialReloadContext();
 
         var onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
@@ -920,5 +926,54 @@ public class PageObjectBuilder {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public RenderContext createRenderContext(String component) {
+        var resolvedComponent = resolveComponent(component);
+        var partialContext = buildPartialReloadContext();
+        boolean isPartial = isCurrentRequestPartial();
+        return createRenderContext(resolvedComponent, isPartial, partialContext);
+    }
+
+    private RenderContext createRenderContext(String component, boolean isPartial, PartialReloadProcessor.PartialReloadContext partialContext) {
+        String url = resolveUrl(currentUrl());
+        Set<String> partialData = (isPartial && partialContext != null && partialContext.hasData())
+            ? partialContext.data() : Set.of();
+        Set<String> partialExcept = (isPartial && partialContext != null && partialContext.hasExcept())
+            ? partialContext.except() : Set.of();
+        return new RenderContext(component, url, isPartial, partialData, partialExcept);
+    }
+
+    private void injectSharedProviders(Map<String, Object> props, RenderContext renderContext) {
+        for (var provider : sharedData.getSharedProviders()) {
+            var provided = provider.toInertiaProperties(renderContext);
+            if (provided != null) {
+                provided.forEach((k, v) -> {
+                    if (!props.containsKey(k)) {
+                        props.put(k, v);
+                    }
+                });
+            }
+        }
+    }
+
+    private Map<String, Object> resolvePropertyProviders(Map<String, Object> props, RenderContext renderContext) {
+        if (props == null || props.isEmpty()) {
+            return props;
+        }
+        Map<String, Object> resolved = new HashMap<>();
+        for (var entry : props.entrySet()) {
+            var val = entry.getValue();
+            if (val instanceof ProvidesInertiaProperties provider) {
+                resolved.put(entry.getKey(), resolvePropertyProviders(provider.toInertiaProperties(renderContext), renderContext));
+            } else if (val instanceof Map<?, ?> map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> typedMap = (Map<String, Object>) map;
+                resolved.put(entry.getKey(), resolvePropertyProviders(typedMap, renderContext));
+            } else {
+                resolved.put(entry.getKey(), val);
+            }
+        }
+        return resolved;
     }
 }

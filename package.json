@@ -5,7 +5,9 @@
   "scripts": {
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed",
-    "test:ui": "npx playwright test --ui"
+    "test:ui": "npx playwright test --ui",
+    "test:e2e": "npx playwright test",
+    "verify:matrix": "node scripts/check-conformance-matrix.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1"

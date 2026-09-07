@@ -11,7 +11,7 @@ Server-side Inertia.js v3 adapters for the Java ecosystem, with GraalVM Native s
 
 ## Protocol Parity vs. Official Adapters
 
-Both adapters achieve **full Inertia.js v3 protocol compliance**.
+This project targets **protocol parity with Inertia v3** and keeps its status evidence-based. The goal is to match the documented protocol and framework integration points without claiming full parity until the matrix, E2E suite, and quality gates are green.
 
 | Feature | Laravel | Rails | Spring | Quarkus |
 |---------|:-------:|:-----:|:------:|:-------:|
@@ -42,7 +42,7 @@ Both adapters achieve **full Inertia.js v3 protocol compliance**.
 | GraalVM Native Image | N/A | N/A | YES | YES |
 | Testing DSL (InertiaPage) | YES | YES | YES | YES |
 
-**Test coverage:** 112 tests (Spring) + 247 tests (Quarkus) = **359 total, 0 failures**.
+**Current evidence:** the project currently has 359 Java tests across Spring and Quarkus and they pass locally in the standard Maven test run. This is a strong baseline, but it does not replace browser E2E validation or official client coverage.
 
 ---
 

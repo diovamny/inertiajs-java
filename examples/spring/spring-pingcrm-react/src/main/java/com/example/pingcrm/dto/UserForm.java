@@ -19,4 +19,6 @@ public class UserForm {
     public Boolean owner;
 
     public MultipartFile photo;
+
+    public String _method;
 }

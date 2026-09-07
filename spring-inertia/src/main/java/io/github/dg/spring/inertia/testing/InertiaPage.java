@@ -1,9 +1,19 @@
 package io.github.dg.spring.inertia.testing;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.lang.reflect.Array;
+
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.core.type.TypeReference;
 
@@ -11,12 +21,18 @@ import tools.jackson.core.type.TypeReference;
  * Deserialized view of the Inertia page payload for tests with a rich,
  * fluent assertion DSL mirroring Laravel's AssertableInertia.
  *
+ * <p>Supports both passive assertions on response payloads and active partial
+ * reload requests via {@link #reloadOnly(String...)}, {@link #reloadExcept(String...)},
+ * and {@link #loadDeferredProps()}.</p>
+ *
  * <pre>{@code
- * InertiaPage page = InertiaPage.fromJson(responseBody);
+ * InertiaPage page = InertiaPage.from(mockMvc, "/users");
  * page.assertComponent("Users/Index")
- *     .assertProp("users", expectedUsers)
- *     .assertNoProp("secret")
- *     .assertDeferredProps("analytics");
+ *     .assertPropCount("users", 10)
+ *     .assertMissing("secret")
+ *     .loadDeferredProps("stats", reloaded -> {
+ *         reloaded.assertProp("analytics.total", 100);
+ *     });
  * }</pre>
  */
 public final class InertiaPage {
@@ -41,6 +57,7 @@ public final class InertiaPage {
     private final Boolean encryptHistory;
     private final Boolean clearHistory;
     private final Boolean preserveFragment;
+    private final InertiaReloadExecutor reloadExecutor;
 
     public InertiaPage(
             String component,
@@ -48,7 +65,7 @@ public final class InertiaPage {
             String url,
             String version,
             Map<String, Object> flash) {
-        this(component, props, url, version, flash, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        this(component, props, url, version, flash, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public InertiaPage(
@@ -70,6 +87,30 @@ public final class InertiaPage {
             Boolean encryptHistory,
             Boolean clearHistory,
             Boolean preserveFragment) {
+        this(component, props, url, version, flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn,
+                onceProps, scrollProps, sharedProps, rescuedProps, meta, encryptHistory, clearHistory, preserveFragment, null);
+    }
+
+    public InertiaPage(
+            String component,
+            Map<String, Object> props,
+            String url,
+            String version,
+            Map<String, Object> flash,
+            Map<String, List<String>> deferredProps,
+            List<String> mergeProps,
+            List<String> prependProps,
+            List<String> deepMergeProps,
+            List<String> matchPropsOn,
+            Map<String, Object> onceProps,
+            Map<String, Object> scrollProps,
+            List<String> sharedProps,
+            List<String> rescuedProps,
+            Map<String, Object> meta,
+            Boolean encryptHistory,
+            Boolean clearHistory,
+            Boolean preserveFragment,
+            InertiaReloadExecutor reloadExecutor) {
         this.component = component;
         this.props = props != null ? props : Map.of();
         this.url = url;
@@ -88,7 +129,10 @@ public final class InertiaPage {
         this.encryptHistory = encryptHistory;
         this.clearHistory = clearHistory;
         this.preserveFragment = preserveFragment;
+        this.reloadExecutor = reloadExecutor;
     }
+
+    // --- Factory Methods ---
 
     /**
      * Parse a page payload using the default ObjectMapper.
@@ -168,10 +212,252 @@ public final class InertiaPage {
                 meta,
                 encryptHistory,
                 clearHistory,
-                preserveFragment);
+                preserveFragment,
+                null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid Inertia page JSON: " + json, e);
         }
+    }
+
+    /**
+     * Create an InertiaPage from a Spring MVC test MvcResult.
+     *
+     * @param result the test result
+     * @return parsed InertiaPage
+     */
+    public static InertiaPage from(MvcResult result) {
+        Objects.requireNonNull(result, "MvcResult must not be null");
+        String body = new String(result.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+        return fromJson(body);
+    }
+
+    /**
+     * Create an InertiaPage from a Spring MVC test MvcResult, attaching the MockMvc instance for reload operations.
+     *
+     * @param mockMvc the test client
+     * @param result  the test result
+     * @return parsed InertiaPage with active reload capabilities
+     */
+    public static InertiaPage from(MockMvc mockMvc, MvcResult result) {
+        return from(result).withClient(mockMvc);
+    }
+
+    /**
+     * Perform an initial GET request with X-Inertia: true and parse the resulting InertiaPage.
+     *
+     * @param mockMvc the test client
+     * @param url     the initial request URL
+     * @return parsed InertiaPage with active reload capabilities
+     */
+    public static InertiaPage from(MockMvc mockMvc, String url) {
+        Objects.requireNonNull(mockMvc, "mockMvc must not be null");
+        Objects.requireNonNull(url, "url must not be null");
+        try {
+            MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get(url).header("X-Inertia", "true")).andReturn();
+            return from(mockMvc, result);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to perform initial Inertia GET to: " + url, e);
+        }
+    }
+
+    /**
+     * Attach a MockMvc client to enable reload operations.
+     *
+     * @param mockMvc the MockMvc instance
+     * @return new InertiaPage with active reload capabilities
+     */
+    public InertiaPage withClient(MockMvc mockMvc) {
+        Objects.requireNonNull(mockMvc, "mockMvc must not be null");
+        return withExecutor((targetUrl, targetComp, targetVer, only, except) -> {
+            try {
+                MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(targetUrl)
+                        .header("X-Inertia", "true");
+                if (targetVer != null && !targetVer.isBlank()) {
+                    builder.header("X-Inertia-Version", targetVer);
+                }
+                if (targetComp != null && !targetComp.isBlank()) {
+                    builder.header("X-Inertia-Partial-Component", targetComp);
+                }
+                if (only != null && !only.isEmpty()) {
+                    builder.header("X-Inertia-Partial-Data", String.join(",", only));
+                }
+                if (except != null && !except.isEmpty()) {
+                    builder.header("X-Inertia-Partial-Except", String.join(",", except));
+                }
+                MvcResult reloadResult = mockMvc.perform(builder).andReturn();
+                return from(mockMvc, reloadResult);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to execute reload request to: " + targetUrl, e);
+            }
+        });
+    }
+
+    /**
+     * Attach a custom reload executor.
+     *
+     * @param executor the reload executor
+     * @return new InertiaPage with the executor attached
+     */
+    public InertiaPage withExecutor(InertiaReloadExecutor executor) {
+        return new InertiaPage(
+            component, props, url, version, flash, deferredProps, mergeProps,
+            prependProps, deepMergeProps, matchPropsOn, onceProps, scrollProps,
+            sharedProps, rescuedProps, meta, encryptHistory, clearHistory,
+            preserveFragment, executor
+        );
+    }
+
+    // --- Active Reload Operations (Laravel/Rails Parity) ---
+
+    /**
+     * Execute a partial reload request with custom only and except filters.
+     *
+     * @param only       props to include (null or empty for all)
+     * @param except     props to exclude (null or empty for none)
+     * @param callback   optional assertion callback on the reloaded page
+     * @return the reloaded InertiaPage
+     */
+    public InertiaPage reload(List<String> only, List<String> except, Consumer<InertiaPage> callback) {
+        if (reloadExecutor == null) {
+            throw new IllegalStateException("No InertiaReloadExecutor configured. Call .withClient(mockMvc) or InertiaPage.from(mockMvc, ...) to enable reload operations.");
+        }
+        InertiaPage reloaded = reloadExecutor.execute(this.url, this.component, this.version, only, except);
+        if (callback != null) {
+            callback.accept(reloaded);
+        }
+        return reloaded;
+    }
+
+    /**
+     * Reload the page requesting ONLY the specified prop keys.
+     *
+     * @param props prop keys to request
+     * @return the reloaded page
+     */
+    public InertiaPage reloadOnly(String... props) {
+        return reloadOnly(props != null ? List.of(props) : List.of(), null);
+    }
+
+    /**
+     * Reload the page requesting ONLY the specified prop keys.
+     *
+     * @param props prop keys to request
+     * @return the reloaded page
+     */
+    public InertiaPage reloadOnly(List<String> props) {
+        return reloadOnly(props, null);
+    }
+
+    /**
+     * Reload the page requesting ONLY the specified prop keys, running assertions on the reloaded page.
+     *
+     * @param props    prop keys to request
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage reloadOnly(List<String> props, Consumer<InertiaPage> callback) {
+        return reload(props, null, reloaded -> {
+            if (props != null) {
+                for (String p : props) {
+                    reloaded.assertPropExists(p);
+                }
+            }
+            if (callback != null) {
+                callback.accept(reloaded);
+            }
+        });
+    }
+
+    /**
+     * Reload the page EXCLUDING the specified prop keys.
+     *
+     * @param props prop keys to exclude
+     * @return the reloaded page
+     */
+    public InertiaPage reloadExcept(String... props) {
+        return reloadExcept(props != null ? List.of(props) : List.of(), null);
+    }
+
+    /**
+     * Reload the page EXCLUDING the specified prop keys.
+     *
+     * @param props prop keys to exclude
+     * @return the reloaded page
+     */
+    public InertiaPage reloadExcept(List<String> props) {
+        return reloadExcept(props, null);
+    }
+
+    /**
+     * Reload the page EXCLUDING the specified prop keys, running assertions on the reloaded page.
+     *
+     * @param props    prop keys to exclude
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage reloadExcept(List<String> props, Consumer<InertiaPage> callback) {
+        return reload(null, props, reloaded -> {
+            if (props != null) {
+                for (String p : props) {
+                    reloaded.assertNoProp(p);
+                }
+            }
+            if (callback != null) {
+                callback.accept(reloaded);
+            }
+        });
+    }
+
+    /**
+     * Request all deferred props across all groups.
+     *
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps() {
+        return loadDeferredProps(null, null);
+    }
+
+    /**
+     * Request all deferred props across all groups, running assertions on the reloaded page.
+     *
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps(Consumer<InertiaPage> callback) {
+        return loadDeferredProps(null, callback);
+    }
+
+    /**
+     * Request deferred props belonging to the specified group.
+     *
+     * @param group group name (e.g. "default")
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps(String group) {
+        return loadDeferredProps(group, null);
+    }
+
+    /**
+     * Request deferred props belonging to the specified group, running assertions on the reloaded page.
+     *
+     * @param group    group name (or null for all groups)
+     * @param callback assertion callback
+     * @return the reloaded page
+     */
+    public InertiaPage loadDeferredProps(String group, Consumer<InertiaPage> callback) {
+        if (this.deferredProps == null || this.deferredProps.isEmpty()) {
+            return this;
+        }
+        List<String> propsToLoad;
+        if (group == null || group.isBlank()) {
+            propsToLoad = this.deferredProps.values().stream().flatMap(List::stream).toList();
+        } else {
+            propsToLoad = this.deferredProps.getOrDefault(group, List.of());
+        }
+        if (propsToLoad.isEmpty()) {
+            return this;
+        }
+        return reloadOnly(propsToLoad, callback);
     }
 
     // --- Getters ---
@@ -248,49 +534,55 @@ public final class InertiaPage {
         return preserveFragment;
     }
 
-    public Object prop(String name) {
-        return props != null ? props.get(name) : null;
+    public boolean hasProp(String key) {
+        return prop(key) != null;
     }
 
-    public boolean hasProp(String name) {
-        return props != null && props.containsKey(name);
+    public Object prop(String key) {
+        if (key == null) return null;
+        if (!key.contains(".")) {
+            return props.get(key);
+        }
+        String[] parts = key.split("\\.");
+        Object current = props;
+        for (String part : parts) {
+            if (current instanceof Map<?, ?> map) {
+                current = map.get(part);
+            } else {
+                return null;
+            }
+        }
+        return current;
     }
 
     public Object flash(String key) {
         return flash != null ? flash.get(key) : null;
     }
 
-    public boolean hasDeferredProps() {
-        return deferredProps != null && !deferredProps.isEmpty();
-    }
-
-    // --- Fluent Assertions ---
+    // --- Assertions DSL ---
 
     public InertiaPage assertComponent(String expected) {
-        if (!Objects.equals(component, expected)) {
+        if (!Objects.equals(expected, component)) {
             throw new AssertionError("Expected component <" + expected + "> but was <" + component + ">");
         }
         return this;
     }
 
     public InertiaPage assertUrl(String expected) {
-        if (!Objects.equals(url, expected)) {
+        if (!Objects.equals(expected, url)) {
             throw new AssertionError("Expected url <" + expected + "> but was <" + url + ">");
         }
         return this;
     }
 
     public InertiaPage assertVersion(String expected) {
-        if (!Objects.equals(version, expected)) {
+        if (!Objects.equals(expected, version)) {
             throw new AssertionError("Expected version <" + expected + "> but was <" + version + ">");
         }
         return this;
     }
 
     public InertiaPage assertProp(String key, Object expected) {
-        if (!hasProp(key)) {
-            throw new AssertionError("Expected prop <" + key + "> to be present but it was absent");
-        }
         var actual = prop(key);
         if (!Objects.equals(expected, actual)) {
             throw new AssertionError("Expected prop <" + key + "> to equal <" + expected + "> but was <" + actual + ">");
@@ -298,17 +590,81 @@ public final class InertiaPage {
         return this;
     }
 
+    public InertiaPage assertPropExists(String key) {
+        if (!hasProp(key)) {
+            throw new AssertionError("Expected prop <" + key + "> to exist");
+        }
+        return this;
+    }
+
+    public InertiaPage assertNoProp(String key) {
+        if (hasProp(key)) {
+            throw new AssertionError("Expected prop <" + key + "> not to exist, but was <" + prop(key) + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Alias for {@link #assertNoProp(String)}, matching Laravel's {@code missing()} assertion.
+     */
+    public InertiaPage assertMissing(String key) {
+        return assertNoProp(key);
+    }
+
+    /**
+     * Assert that a collection, map, or array prop has the expected element count.
+     *
+     * @param key          prop key
+     * @param expectedSize expected number of items
+     * @return this
+     */
+    public InertiaPage assertPropCount(String key, int expectedSize) {
+        var val = prop(key);
+        if (val == null) {
+            throw new AssertionError("Expected prop '" + key + "' to have count <" + expectedSize + "> but prop is absent/null");
+        }
+        int actualSize;
+        if (val instanceof Collection<?> col) {
+            actualSize = col.size();
+        } else if (val instanceof Map<?, ?> map) {
+            actualSize = map.size();
+        } else if (val.getClass().isArray()) {
+            actualSize = Array.getLength(val);
+        } else {
+            throw new AssertionError("Expected prop '" + key + "' to be a Collection, Map or Array, but was " + val.getClass().getName());
+        }
+        if (actualSize != expectedSize) {
+            throw new AssertionError("Expected prop '" + key + "' to have count <" + expectedSize + "> but was <" + actualSize + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Execute assertions against a nested Map prop.
+     *
+     * @param key       prop key
+     * @param assertions consumer accepting the nested map
+     * @return this
+     */
+    @SuppressWarnings("unchecked")
+    public InertiaPage assertPropMap(String key, Consumer<Map<String, Object>> assertions) {
+        var val = prop(key);
+        if (!(val instanceof Map<?, ?> map)) {
+            throw new AssertionError("Expected prop '" + key + "' to be a Map, but was: " + (val == null ? "null" : val.getClass().getName()));
+        }
+        assertions.accept((Map<String, Object>) map);
+        return this;
+    }
+
     public InertiaPage assertHasProps(String... keys) {
         for (String key : keys) {
-            if (!hasProp(key)) {
-                throw new AssertionError("Expected prop <" + key + "> to be present but it was absent");
-            }
+            assertPropExists(key);
         }
         return this;
     }
 
     public InertiaPage assertHasProps(Map<String, Object> expected) {
-        for (Map.Entry<String, Object> entry : expected.entrySet()) {
+        for (var entry : expected.entrySet()) {
             assertProp(entry.getKey(), entry.getValue());
         }
         return this;
@@ -321,89 +677,76 @@ public final class InertiaPage {
         return this;
     }
 
-    public InertiaPage assertNoProp(String key) {
-        if (hasProp(key)) {
-            throw new AssertionError("Expected prop <" + key + "> to be absent but it was present with value: " + prop(key));
-        }
-        return this;
-    }
-
-    public InertiaPage assertDeferredProps(String... expectedProps) {
-        if (!hasDeferredProps()) {
-            throw new AssertionError("Expected deferred props <" + List.of(expectedProps) + "> but there were none");
-        }
-        var flattened = deferredProps.values().stream().flatMap(List::stream).toList();
-        for (String prop : expectedProps) {
-            if (!flattened.contains(prop)) {
-                throw new AssertionError("Expected deferred prop <" + prop + "> in " + deferredProps);
+    public InertiaPage assertDeferredProps(String... keys) {
+        for (String key : keys) {
+            boolean found = deferredProps.values().stream().anyMatch(list -> list.contains(key));
+            if (!found) {
+                throw new AssertionError("Expected deferred prop <" + key + "> to exist");
             }
         }
         return this;
     }
 
-    public InertiaPage assertDeferredPropsInGroup(String group, String... expectedProps) {
-        var groupProps = deferredProps.get(group);
-        if (groupProps == null) {
-            throw new AssertionError("Expected deferred group <" + group + "> in " + deferredProps);
+    public InertiaPage assertDeferredPropsInGroup(String group, String... keys) {
+        var list = deferredProps.get(group);
+        if (list == null) {
+            throw new AssertionError("Expected deferred prop group <" + group + "> to exist");
         }
-        for (String prop : expectedProps) {
-            if (!groupProps.contains(prop)) {
-                throw new AssertionError("Expected deferred prop <" + prop + "> in group <" + group + "> but was in " + groupProps);
+        for (String key : keys) {
+            if (!list.contains(key)) {
+                throw new AssertionError("Expected deferred prop <" + key + "> in group <" + group + ">");
             }
         }
         return this;
     }
 
     public InertiaPage assertNoDeferredProps() {
-        if (hasDeferredProps()) {
-            throw new AssertionError("Expected no deferred props but were " + deferredProps);
+        if (!deferredProps.isEmpty()) {
+            throw new AssertionError("Expected no deferred props, but was <" + deferredProps + ">");
         }
         return this;
     }
 
-    public InertiaPage assertMergeProps(String... expectedProps) {
-        for (String prop : expectedProps) {
-            if (!mergeProps.contains(prop)) {
-                throw new AssertionError("Expected mergeProps to contain <" + prop + "> but was " + mergeProps);
+    public InertiaPage assertMergeProps(String... keys) {
+        for (String key : keys) {
+            if (!mergeProps.contains(key)) {
+                throw new AssertionError("Expected merge prop <" + key + "> to exist");
             }
         }
         return this;
     }
 
-    public InertiaPage assertPrependProps(String... expectedProps) {
-        for (String prop : expectedProps) {
-            if (!prependProps.contains(prop)) {
-                throw new AssertionError("Expected prependProps to contain <" + prop + "> but was " + prependProps);
+    public InertiaPage assertPrependProps(String... keys) {
+        for (String key : keys) {
+            if (!prependProps.contains(key)) {
+                throw new AssertionError("Expected prepend prop <" + key + "> to exist");
             }
         }
         return this;
     }
 
-    public InertiaPage assertDeepMergeProps(String... expectedProps) {
-        for (String prop : expectedProps) {
-            if (!deepMergeProps.contains(prop)) {
-                throw new AssertionError("Expected deepMergeProps to contain <" + prop + "> but was " + deepMergeProps);
+    public InertiaPage assertDeepMergeProps(String... keys) {
+        for (String key : keys) {
+            if (!deepMergeProps.contains(key)) {
+                throw new AssertionError("Expected deepMerge prop <" + key + "> to exist");
             }
         }
         return this;
     }
 
-    public InertiaPage assertMatchPropsOn(String... expectedFields) {
-        for (String field : expectedFields) {
+    public InertiaPage assertMatchPropsOn(String... fields) {
+        for (String field : fields) {
             if (!matchPropsOn.contains(field)) {
-                throw new AssertionError("Expected matchPropsOn to contain <" + field + "> but was " + matchPropsOn);
+                throw new AssertionError("Expected matchPropsOn <" + field + "> to exist");
             }
         }
         return this;
     }
 
-    public InertiaPage assertOnceProps(String... expectedProps) {
-        if (onceProps.isEmpty()) {
-            throw new AssertionError("Expected once props <" + List.of(expectedProps) + "> but there were none");
-        }
-        for (String prop : expectedProps) {
-            if (!onceProps.containsKey(prop)) {
-                throw new AssertionError("Expected once prop <" + prop + "> in " + onceProps);
+    public InertiaPage assertOnceProps(String... keys) {
+        for (String key : keys) {
+            if (!onceProps.containsKey(key)) {
+                throw new AssertionError("Expected once prop <" + key + "> to exist");
             }
         }
         return this;
@@ -411,41 +754,42 @@ public final class InertiaPage {
 
     public InertiaPage assertNoOnceProps() {
         if (!onceProps.isEmpty()) {
-            throw new AssertionError("Expected no once props but were " + onceProps);
+            throw new AssertionError("Expected no once props, but was <" + onceProps + ">");
         }
         return this;
     }
 
     public InertiaPage assertScrollProps(String... keys) {
-        if (scrollProps.isEmpty()) {
-            throw new AssertionError("Expected scroll props <" + List.of(keys) + "> but there were none");
-        }
         for (String key : keys) {
             if (!scrollProps.containsKey(key)) {
-                throw new AssertionError("Expected scroll prop <" + key + "> in " + scrollProps);
+                throw new AssertionError("Expected scroll prop <" + key + "> to exist");
+            }
+        }
+        return this;
+    }
+
+    public InertiaPage assertSharedProps(String... keys) {
+        for (String key : keys) {
+            if (!sharedProps.contains(key)) {
+                throw new AssertionError("Expected shared prop <" + key + "> to exist");
             }
         }
         return this;
     }
 
     public InertiaPage assertRescuedProps(String... keys) {
-        if (rescuedProps.isEmpty()) {
-            throw new AssertionError("Expected rescued props <" + List.of(keys) + "> but there were none");
-        }
         for (String key : keys) {
             if (!rescuedProps.contains(key)) {
-                throw new AssertionError("Expected rescued prop <" + key + "> in " + rescuedProps);
+                throw new AssertionError("Expected rescued prop <" + key + "> to exist");
             }
         }
         return this;
     }
 
-    public InertiaPage assertMeta(String key, Object expectedValue) {
-        if (!meta.containsKey(key)) {
-            throw new AssertionError("Expected meta <" + key + "> to be present but was absent");
-        }
-        if (!Objects.equals(meta.get(key), expectedValue)) {
-            throw new AssertionError("Expected meta <" + key + "> to equal <" + expectedValue + "> but was <" + meta.get(key) + ">");
+    public InertiaPage assertMeta(String key, Object expected) {
+        var actual = meta.get(key);
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected meta <" + key + "> to equal <" + expected + "> but was <" + actual + ">");
         }
         return this;
     }

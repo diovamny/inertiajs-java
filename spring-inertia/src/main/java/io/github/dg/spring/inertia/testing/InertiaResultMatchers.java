@@ -127,6 +127,17 @@ public class InertiaResultMatchers {
     }
 
     /**
+     * Assert that a collection, map or array prop has the given item count.
+     *
+     * @param name  the prop name
+     * @param count the expected count
+     * @return the matcher
+     */
+    public ResultMatcher propCount(String name, int count) {
+        return result -> pageOf(result).assertPropCount(name, count);
+    }
+
+    /**
      * Assert that a prop is missing/absent.
      *
      * @param name the prop name

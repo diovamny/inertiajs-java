@@ -10,6 +10,7 @@ import io.smallrye.mutiny.Uni;
 
 import io.github.dg.quarkus.inertia.api.Inertia;
 import io.github.dg.quarkus.inertia.api.InertiaRedirect;
+import io.github.dg.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.dg.quarkus.inertia.cache.CachedPropStore;
 import io.github.dg.quarkus.inertia.config.InertiaConfig;
 import io.github.dg.quarkus.inertia.model.AlwaysProp;
@@ -94,10 +95,24 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Uni<Object> render(ProvidesInertiaProperties provider) {
+        return render((String) null, provider);
+    }
+
+    @Override
     public Uni<Object> render(String component, Map<String, Object> props) {
         runSharedContributors();
         return pageBuilder.build(component, props)
             .chain(responseProcessor::process);
+    }
+
+    @Override
+    public Uni<Object> render(String component, ProvidesInertiaProperties provider) {
+        if (provider != null) {
+            var renderContext = pageBuilder.createRenderContext(component);
+            return render(component, provider.toInertiaProperties(renderContext));
+        }
+        return render(component, Map.of());
     }
 
     @Override
@@ -151,10 +166,24 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Response renderSync(ProvidesInertiaProperties provider) {
+        return renderSync((String) null, provider);
+    }
+
+    @Override
     public Response renderSync(String component, Map<String, Object> props) {
         runSharedContributors();
         var page = pageBuilder.buildSync(component, props);
         return responseProcessor.processSync(page);
+    }
+
+    @Override
+    public Response renderSync(String component, ProvidesInertiaProperties provider) {
+        if (provider != null) {
+            var renderContext = pageBuilder.createRenderContext(component);
+            return renderSync(component, provider.toInertiaProperties(renderContext));
+        }
+        return renderSync(component, Map.of());
     }
 
     @Override
@@ -386,6 +415,11 @@ public class InertiaImpl implements Inertia {
     @Override
     public void share(Map<String, Object> values) {
         sharedData.setAll(values);
+    }
+
+    @Override
+    public void share(ProvidesInertiaProperties provider) {
+        sharedData.addSharedProvider(provider);
     }
 
     @Override

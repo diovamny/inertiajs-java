@@ -1,4 +1,4 @@
-﻿# Shared Data and Props Guide — Inertia.js Java Adapters
+# Shared Data and Props Guide — Inertia.js Java Adapters
 
 This guide covers how to share data globally across all Inertia responses, and the various prop evaluation strategies available (lazy, always, once, deferred, merge, deep-merge, prepend, optional).
 
@@ -206,3 +206,88 @@ Partial reloads allow the frontend to refresh only specific props. The adapter h
 | `X-Inertia-Reset` | Forces a full reset of specified props |
 
 The adapters fully support all of the above headers out of the box.
+
+---
+
+## ProvidesInertiaProperties (DTOs, Records & Entities)
+
+Inertia 3.x supports DTOs, records, and entity classes that self-determine which properties they contribute to an Inertia response through the `ProvidesInertiaProperties` interface and `RenderContext`.
+
+### Interface Definition
+
+```java
+@FunctionalInterface
+public interface ProvidesInertiaProperties {
+    Map<String, Object> toInertiaProperties(RenderContext context);
+}
+```
+
+The `RenderContext` record provides metadata about the ongoing render operation:
+- `component()`: Target frontend component name (e.g. `"Users/Profile"`).
+- `url()`: Request URI.
+- `isPartial()`: Whether the request is a partial reload.
+- `partialData()`: Set of explicitly requested props in a partial reload.
+- `partialExcept()`: Set of explicitly excluded props in a partial reload.
+- `isPropRequested(String prop)`: Helper method returning whether a prop should be evaluated.
+
+### Example DTO Implementation
+
+```java
+public record UserDto(Long id, String name, String email, String role) implements ProvidesInertiaProperties {
+
+    @Override
+    public Map<String, Object> toInertiaProperties(RenderContext context) {
+        Map<String, Object> props = new HashMap<>();
+        props.put("id", id);
+        props.put("name", name);
+        props.put("email", email);
+
+        // Compute expensive/sensitive properties only when requested or on full render
+        if (context.isPropRequested("permissions")) {
+            props.put("permissions", List.of("VIEW_DASHBOARD", "EDIT_PROFILE"));
+        }
+
+        return props;
+    }
+}
+```
+
+### Usage Patterns
+
+#### 1. Direct Page Render
+Pass the DTO directly as page props:
+```java
+// Spring Boot
+return inertia.render("Users/Profile", userDto);
+
+// Quarkus
+return inertia.render("Users/Profile", userDto);     // Reactive Uni<Object>
+return inertia.renderSync("Users/Profile", userDto); // Synchronous Response
+```
+
+#### 2. Convention Component Render
+Auto-resolve component name:
+```java
+// Spring Boot
+return inertia.render(userDto);
+
+// Quarkus
+return inertia.render(userDto);
+return inertia.renderSync(userDto);
+```
+
+#### 3. Nested within Props Map
+DTOs implementing `ProvidesInertiaProperties` nested at any depth inside page maps are resolved recursively before rendering:
+```java
+return inertia.render("Dashboard", Map.of(
+    "user", currentUserDto,
+    "stats", statsDto
+));
+```
+
+#### 4. Shared DTOs
+Share a DTO globally across all rendered pages:
+```java
+// Spring Boot or Quarkus
+inertia.share(globalConfigDto);
+```

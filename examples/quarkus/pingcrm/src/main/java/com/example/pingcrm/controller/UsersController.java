@@ -7,7 +7,6 @@ import jakarta.inject.Inject;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -87,9 +86,7 @@ public class UsersController {
             return emailTaken();
         }
         var photoPath = savePhoto(form);
-        if (photoPath == null && form.photo != null) {
-            return invalidImage();
-        }
+
         users.create(auth.accountId(), form.first_name, form.last_name, form.email,
             form.password, "true".equals(form.owner), photoPath);
         return inertia.redirect("/users").with("success", "User created.");
@@ -110,6 +107,17 @@ public class UsersController {
     @Path("{id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Blocking
+    public Uni<Object> updateViaPost(@PathParam("id") long id, @MultipartForm UserForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return update(id, form);
+    }
+
+    @PUT
+    @Path("{id}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Blocking
     public Uni<Object> update(@PathParam("id") long id, @MultipartForm UserForm form) {
         var user = findOwned(id);
         if (user == null) {
@@ -124,9 +132,7 @@ public class UsersController {
             return emailTaken();
         }
         var photoPath = savePhoto(form);
-        if (photoPath == null && form.photo != null) {
-            return invalidImage();
-        }
+
         users.update(user, form.first_name, form.last_name, form.email,
             form.password, "true".equals(form.owner), photoPath);
         return inertia.back().with("success", "User updated.");

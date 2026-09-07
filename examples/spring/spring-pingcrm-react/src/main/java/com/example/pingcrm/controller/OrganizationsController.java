@@ -70,8 +70,20 @@ public class OrganizationsController {
         return inertia.render("Organizations/Edit", Map.of("organization", organization));
     }
 
+    @PostMapping(value = "/{id}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Object updateViaPost(@PathVariable long id, @ModelAttribute OrganizationForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return doUpdate(id, form);
+    }
+
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Object update(@PathVariable long id, @RequestBody OrganizationForm form) {
+        return doUpdate(id, form);
+    }
+
+    private Object doUpdate(long id, OrganizationForm form) {
         var accountId = auth.currentUser().map(u -> u.accountId).orElse(0L);
         var organization = organizations.findById(id);
         if (organization == null || !organization.accountId.equals(accountId)) {

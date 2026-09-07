@@ -137,6 +137,8 @@
             <id>native</id>
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
+                <quarkus.native.container-build>true</quarkus.native.container-build>
+                <quarkus.native.enable-reports>true</quarkus.native.enable-reports>
             </properties>
         </profile>
     </profiles>

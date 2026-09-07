@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.web.context.annotation.RequestScope;
 
+import io.github.dg.spring.inertia.api.ProvidesInertiaProperties;
+import io.github.dg.spring.inertia.api.RenderContext;
 import io.github.dg.spring.inertia.config.InertiaProperties;
 import io.github.dg.spring.inertia.internal.InertiaRequestContext;
 import io.github.dg.spring.inertia.internal.LazyProp;
@@ -111,8 +113,14 @@ public class PageObjectBuilder {
 
         var flash = resolveFlashData(merged);
 
+        var partial = partialReloadProcessor.isPartialReload(component);
+        var partialData = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA));
+        var partialExcept = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT));
+        var renderContext = new RenderContext(component, url, partial, partialData, partialExcept);
+
         injectValidationErrors(merged, alwaysIncludeErrors);
-        injectSharedProps(merged);
+        injectSharedProps(merged, renderContext);
+        merged = resolvePropertyProviders(merged, renderContext);
         applyOnceProps(merged);
         applyAlwaysProps(merged);
 
@@ -124,7 +132,6 @@ public class PageObjectBuilder {
         var deepMergeProps = pruneReset(stringList(CONTEXT_DEEP_MERGE_PROPS), resetKeys);
         var matchPropsOn = pruneReset(stringList(CONTEXT_MATCH_PROPS_ON), resetKeys);
 
-        var partial = partialReloadProcessor.isPartialReload(component);
         if (partial) {
             if (partialReloadProcessor.isPartialReset()) {
                 mergePropProcessor.reset();
@@ -248,10 +255,49 @@ public class PageObjectBuilder {
         return flashData.isEmpty() ? null : flashData;
     }
 
-    private void injectSharedProps(Map<String, Object> merged) {
+    private void injectSharedProps(Map<String, Object> merged, RenderContext renderContext) {
+        for (var provider : sharedDataRegistry.sharedProviders()) {
+            try {
+                var provided = provider.toInertiaProperties(renderContext);
+                if (provided != null) {
+                    for (var entry : provided.entrySet()) {
+                        merged.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
         for (var entry : sharedDataRegistry.sharedProps().entrySet()) {
             merged.putIfAbsent(entry.getKey(), entry.getValue());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> resolvePropertyProviders(Map<String, Object> props, RenderContext renderContext) {
+        if (props == null || props.isEmpty()) {
+            return props != null ? props : new LinkedHashMap<>();
+        }
+        var result = new LinkedHashMap<String, Object>();
+        for (var entry : props.entrySet()) {
+            var value = entry.getValue();
+            if (value instanceof ProvidesInertiaProperties provider) {
+                try {
+                    var provided = provider.toInertiaProperties(renderContext);
+                    if (provided != null) {
+                        result.put(entry.getKey(), resolvePropertyProviders(new LinkedHashMap<>(provided), renderContext));
+                    } else {
+                        result.put(entry.getKey(), null);
+                    }
+                } catch (Exception e) {
+                    result.put(entry.getKey(), null);
+                }
+            } else if (value instanceof Map<?, ?> nestedMap) {
+                result.put(entry.getKey(), resolvePropertyProviders((Map<String, Object>) nestedMap, renderContext));
+            } else {
+                result.put(entry.getKey(), value);
+            }
+        }
+        return result;
     }
 
     private void applyOnceProps(Map<String, Object> merged) {

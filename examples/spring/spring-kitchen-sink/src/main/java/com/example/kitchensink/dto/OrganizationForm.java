@@ -8,4 +8,6 @@ public class OrganizationForm {
     @NotBlank(message = "required")
     @Size(max = 255, message = "max")
     public String name;
+
+    public String _method;
 }

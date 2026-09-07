@@ -13,6 +13,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 
 import io.smallrye.mutiny.Uni;
+import io.github.dg.quarkus.inertia.api.ProvidesInertiaProperties;
 
 /**
  * Application-scoped accumulator for everything the current page carries
@@ -86,6 +87,7 @@ public class SharedDataRegistry {
     private final List<String> deepMergePropKeys = new java.util.ArrayList<>();
     private final List<String> matchPropKeys = new java.util.ArrayList<>();
     private final Set<String> sharedKeys = new LinkedHashSet<>();
+    private final List<ProvidesInertiaProperties> sharedProviders = new java.util.ArrayList<>();
     private final Map<String, ScrollSpec> scrollProps = new HashMap<>();
     private final Map<String, Object> meta = new HashMap<>();
     private final List<String> rescuedProps = new java.util.ArrayList<>();
@@ -149,7 +151,7 @@ public class SharedDataRegistry {
 
     public boolean isEmpty() {
         var current = getCurrent();
-        return current.data.isEmpty() && current.flashData.isEmpty();
+        return current.data.isEmpty() && current.flashData.isEmpty() && current.sharedProviders.isEmpty();
     }
 
     public void clear() {
@@ -164,10 +166,21 @@ public class SharedDataRegistry {
         current.deepMergePropKeys.clear();
         current.matchPropKeys.clear();
         current.sharedKeys.clear();
+        current.sharedProviders.clear();
         current.scrollProps.clear();
         current.meta.clear();
         current.rescuedProps.clear();
         current.actuallyRescuedProps.clear();
+    }
+
+    public void addSharedProvider(ProvidesInertiaProperties provider) {
+        if (provider != null) {
+            getCurrent().sharedProviders.add(provider);
+        }
+    }
+
+    public List<ProvidesInertiaProperties> getSharedProviders() {
+        return List.copyOf(getCurrent().sharedProviders);
     }
 
     public void addDeferredPropGroup(String group, List<String> keys) {

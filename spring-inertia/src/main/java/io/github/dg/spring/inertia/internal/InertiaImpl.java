@@ -12,6 +12,8 @@ import org.springframework.web.context.annotation.RequestScope;
 import io.github.dg.spring.inertia.api.Inertia;
 import io.github.dg.spring.inertia.api.InertiaRedirect;
 import io.github.dg.spring.inertia.api.InertiaResponse;
+import io.github.dg.spring.inertia.api.ProvidesInertiaProperties;
+import io.github.dg.spring.inertia.api.RenderContext;
 import io.github.dg.spring.inertia.cache.CachedPropStore;
 import io.github.dg.spring.inertia.config.InertiaProperties;
 import io.github.dg.spring.inertia.model.AlwaysProp;
@@ -87,6 +89,32 @@ public class InertiaImpl implements Inertia {
     @Override
     public Object render(String component, Map<String, Object> props) {
         return responseProcessor.process(component, props);
+    }
+
+    @Override
+    public Object render(ProvidesInertiaProperties provider) {
+        return render((String) null, provider);
+    }
+
+    @Override
+    public Object render(String component, ProvidesInertiaProperties provider) {
+        return render(component, provider != null ? provider.toInertiaProperties(createRenderContext(component)) : Map.of());
+    }
+
+    @Override
+    public Object render(String component, ProvidesInertiaProperties provider, Map<String, Object> meta) {
+        if (meta != null) {
+            InertiaRequestContext.set(PageObjectBuilder.CONTEXT_META, meta);
+        }
+        return render(component, provider);
+    }
+
+    private RenderContext createRenderContext(String component) {
+        String url = InertiaRequestContext.uri();
+        boolean partial = partialReloadProcessor.isPartialReload(component);
+        var partialData = new java.util.LinkedHashSet<>(partialReloadProcessor.partialData());
+        var partialExcept = new java.util.LinkedHashSet<>(partialReloadProcessor.partialExcept());
+        return new RenderContext(component, url, partial, partialData, partialExcept);
     }
 
     @Override
@@ -168,6 +196,12 @@ public class InertiaImpl implements Inertia {
     public Object share(Map<String, Object> values) {
         sharedDataRegistry.setSharedProps(values);
         return values;
+    }
+
+    @Override
+    public Object share(ProvidesInertiaProperties provider) {
+        sharedDataRegistry.addSharedProvider(provider);
+        return provider;
     }
 
     @Override

@@ -6,8 +6,10 @@ import java.util.Map;
 import jakarta.inject.Inject;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -111,6 +113,18 @@ public class OrganizationsController {
             "contacts", payload));
     }
 
+    @POST
+    @Path("{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    @Blocking
+    public Uni<Object> updateViaPost(@PathParam("id") long id, OrganizationForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return update(id, form);
+    }
+
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -127,6 +141,19 @@ public class OrganizationsController {
         organization.updatedAt = java.time.Instant.now();
         organizationRepository.getEntityManager().merge(organization);
         return inertia.back().with("message", "Organization updated.");
+    }
+
+    @DELETE
+    @Path("{id}")
+    @Transactional
+    @Blocking
+    public Uni<Object> destroy(@PathParam("id") long id) {
+        var organization = find(id);
+        if (organization == null) {
+            return inertia.redirect("/organizations").with("message", "Organization not found.");
+        }
+        organizationRepository.getEntityManager().remove(organization);
+        return inertia.redirect("/organizations").with("message", "Organization deleted.");
     }
 
     private Organization find(long id) {

@@ -94,6 +94,14 @@ public class UsersController {
     }
 
     @PostMapping(value = "/users/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Object updateViaPost(@PathVariable long id, @ModelAttribute UserForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method())) {
+            return destroy(id);
+        }
+        return update(id, form);
+    }
+
+    @PutMapping(value = "/users/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Object update(@PathVariable long id, @ModelAttribute UserForm form) {
         var user = findOwned(id);
         if (user == null) {
@@ -166,7 +174,8 @@ public class UsersController {
             FormValidator.blankToNull(form.email()),
             FormValidator.blankToNull(form.password()),
             form.owner(),
-            form.photo());
+            form.photo(),
+            form._method());
     }
 
     private String savePhoto(UserForm form) {

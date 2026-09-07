@@ -19,4 +19,6 @@ public class OrganizationForm {
     public String country;
 
     public String postal_code;
+
+    public String _method;
 }

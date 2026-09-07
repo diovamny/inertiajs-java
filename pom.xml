@@ -49,6 +49,14 @@
         <quarkus.version>3.38.0</quarkus.version>
         <spring-boot.version>4.1.0</spring-boot.version>
         <central-publishing.version>0.7.0</central-publishing.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <pitest.version>1.16.3</pitest.version>
+        <maven.checkstyle.plugin.version>3.6.0</maven.checkstyle.plugin.version>
+        <spotbugs.version>4.8.6.8</spotbugs.version>
+        <dependency-check.version>12.1.0</dependency-check.version>
+        <skipDependencyCheck>true</skipDependencyCheck>
+        <skipStaticAnalysis>true</skipStaticAnalysis>
+        <skipMutationAnalysis>true</skipMutationAnalysis>
     </properties>
 
     <dependencyManagement>
@@ -97,11 +105,160 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.11.2</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.pitest</groupId>
+                    <artifactId>pitest-maven</artifactId>
+                    <version>${pitest.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven.checkstyle.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
 
     <profiles>
+        <profile>
+            <id>quality-gates</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>1.2.1</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <skip>${skipMutationAnalysis}</skip>
+                            <targetClasses>
+                                <param>io.github.dg.spring.inertia.*</param>
+                                <param>io.github.dg.quarkus.inertia.*</param>
+                            </targetClasses>
+                            <targetTests>
+                                <param>io.github.dg.*Test</param>
+                            </targetTests>
+                            <excludedTestClasses>
+                                <param>io.github.dg.*QuarkusTest</param>
+                                <param>io.github.dg.quarkus.inertia.reactive.ReactiveRouteInertiaTest</param>
+                            </excludedTestClasses>
+                            <mutationThreshold>5</mutationThreshold>
+                            <coverageThreshold>20</coverageThreshold>
+                            <failWhenNoMutationsFound>false</failWhenNoMutationsFound>
+                            <threads>2</threads>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pitest</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>mutationCoverage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <configuration>
+                            <skip>${skipStaticAnalysis}</skip>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <failOnViolation>false</failOnViolation>
+                            <failsOnError>false</failsOnError>
+                            <consoleOutput>true</consoleOutput>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>checkstyle</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>${skipStaticAnalysis}</skip>
+                            <effort>Max</effort>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>spotbugs</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <configuration>
+                            <skip>${skipDependencyCheck}</skip>
+                            <failBuildOnCVSS>8</failBuildOnCVSS>
+                            <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+                            <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
+                            <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+                            <skipProvidedScope>true</skipProvidedScope>
+                            <skipTestScope>true</skipTestScope>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>owasp-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+             </build>
+        </profile>
         <profile>
             <id>examples</id>
             <modules>

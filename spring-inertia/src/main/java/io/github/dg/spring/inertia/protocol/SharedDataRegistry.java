@@ -1,9 +1,13 @@
 package io.github.dg.spring.inertia.protocol;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.web.context.annotation.RequestScope;
 
+import io.github.dg.spring.inertia.api.ProvidesInertiaProperties;
 import io.github.dg.spring.inertia.model.AlwaysProp;
 
 /**
@@ -18,6 +22,7 @@ import io.github.dg.spring.inertia.model.AlwaysProp;
 public class SharedDataRegistry {
 
     private final Map<String, Object> sharedProps = new LinkedHashMap<>();
+    private final List<ProvidesInertiaProperties> sharedProviders = new ArrayList<>();
     private final Map<String, AlwaysProp<?>> alwaysProps = new LinkedHashMap<>();
 
     /**
@@ -63,11 +68,32 @@ public class SharedDataRegistry {
     }
 
     /**
-     * Flush all standard shared props for the current request.
+     * Register a dynamic property provider for this request.
+     *
+     * @param provider the property provider
+     */
+    public void addSharedProvider(ProvidesInertiaProperties provider) {
+        if (provider != null) {
+            sharedProviders.add(provider);
+        }
+    }
+
+    /**
+     * All dynamic property providers registered for this request.
+     *
+     * @return the list of providers
+     */
+    public List<ProvidesInertiaProperties> sharedProviders() {
+        return Collections.unmodifiableList(sharedProviders);
+    }
+
+    /**
+     * Flush all standard shared props and providers for the current request.
      * "Always" props are preserved.
      */
     public void flushShared() {
         sharedProps.clear();
+        sharedProviders.clear();
     }
 
     /**

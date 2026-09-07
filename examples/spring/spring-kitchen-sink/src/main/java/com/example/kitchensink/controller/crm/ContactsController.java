@@ -9,6 +9,7 @@ import jakarta.validation.Validator;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -140,8 +141,20 @@ public class ContactsController {
         return inertia.render("Contacts/Edit", props);
     }
 
+    @PostMapping(value = "/contacts/{id}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Object updateViaPost(@PathVariable("id") long id, @ModelAttribute ContactForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return doUpdate(id, form);
+    }
+
     @PutMapping(value = "/contacts/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Object update(@PathVariable("id") long id, @RequestBody ContactForm form) {
+        return doUpdate(id, form);
+    }
+
+    private Object doUpdate(long id, ContactForm form) {
         var contact = find(id);
         if (contact == null) {
             return inertia.redirect("/contacts").with("message", "Contact not found.");

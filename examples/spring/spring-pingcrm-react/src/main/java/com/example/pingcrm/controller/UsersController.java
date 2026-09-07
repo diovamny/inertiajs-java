@@ -71,7 +71,19 @@ public class UsersController {
     }
 
     @PostMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Object updateViaPost(@PathVariable long id, @ModelAttribute UserForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return doUpdate(id, form);
+    }
+
+    @PutMapping("/{id}")
     public Object update(@PathVariable long id, @ModelAttribute UserForm form) {
+        return doUpdate(id, form);
+    }
+
+    private Object doUpdate(@PathVariable long id, @ModelAttribute UserForm form) {
         var accountId = auth.currentUser().map(u -> u.accountId).orElse(0L);
         var user = users.findById(id);
         if (user == null || !user.accountId.equals(accountId)) {

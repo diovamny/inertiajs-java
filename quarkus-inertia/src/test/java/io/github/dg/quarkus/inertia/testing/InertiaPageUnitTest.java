@@ -174,4 +174,69 @@ class InertiaPageUnitTest {
         assertThatThrownBy(() -> InertiaPage.fromJson("not json"))
             .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void shouldAssertPropCountAndMissingAndMap() {
+        var page = InertiaPage.fromJson(PAGE);
+
+        page.assertPropExists("persons")
+            .assertMissing("unknownKey")
+            .assertPropCount("persons", 1);
+
+        assertThatThrownBy(() -> page.assertPropCount("persons", 5))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> page.assertMissing("total"))
+            .isInstanceOf(AssertionError.class);
+
+        var pageWithMap = InertiaPage.fromJson("""
+            {
+              "component": "MapPage",
+              "props": {
+                "settings": {"theme": "dark", "level": 42}
+              },
+              "url": "/map",
+              "version": "1.0"
+            }
+            """);
+
+        pageWithMap.assertPropMap("settings", map -> {
+            assertThat(map).containsEntry("theme", "dark");
+            assertThat(map).containsEntry("level", 42);
+        });
+    }
+
+    @Test
+    void shouldSupportActiveReloadWithCustomExecutor() {
+        var initial = InertiaPage.fromJson(PAGE);
+
+        InertiaReloadExecutor mockExecutor = (url, comp, ver, only, except) -> {
+            return InertiaPage.fromJson("""
+                {
+                  "component": "Persons/Index",
+                  "props": {
+                    "analytics": [100, 200]
+                  },
+                  "url": "/persons",
+                  "version": "1.0.0"
+                }
+                """);
+        };
+
+        var withExec = initial.withExecutor(mockExecutor);
+
+        var reloaded = withExec.loadDeferredProps("default", page -> {
+            page.assertComponent("Persons/Index")
+                .assertPropCount("analytics", 2);
+        });
+
+        assertThat(reloaded).isNotNull();
+        assertThat(reloaded.prop("analytics")).isNotNull();
+
+        var reloadedOnly = withExec.reloadOnly("analytics");
+        assertThat(reloadedOnly.hasProp("analytics")).isTrue();
+
+        var reloadedExcept = withExec.reloadExcept("missing");
+        assertThat(reloadedExcept.hasProp("analytics")).isTrue();
+    }
+
 }

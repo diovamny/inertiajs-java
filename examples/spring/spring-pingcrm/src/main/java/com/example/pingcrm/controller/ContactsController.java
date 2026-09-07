@@ -8,6 +8,7 @@ import jakarta.validation.Validator;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -86,8 +87,20 @@ public class ContactsController {
             "organizations", organizations.options(auth.accountId())));
     }
 
+    @PostMapping(value = "/contacts/{id}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Object updateViaPost(@PathVariable long id, @ModelAttribute ContactForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return doUpdate(id, form);
+    }
+
     @PutMapping(value = "/contacts/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Object update(@PathVariable long id, @RequestBody ContactForm form) {
+        return doUpdate(id, form);
+    }
+
+    private Object doUpdate(@PathVariable long id, ContactForm form) {
         var contact = findOwned(id);
         if (contact == null) {
             return notFound();

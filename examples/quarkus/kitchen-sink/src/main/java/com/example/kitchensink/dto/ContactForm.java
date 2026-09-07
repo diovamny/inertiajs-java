@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 
 public class ContactForm {
 
+    public String _method;
+
     @NotBlank(message = "required")
     @Size(max = 255, message = "max")
     public String first_name;

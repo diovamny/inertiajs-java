@@ -55,6 +55,35 @@ public interface Inertia {
     Object render(String component, Map<String, Object> props);
 
     /**
+     * Render an Inertia page auto-resolving the component name by convention,
+     * resolving properties from a {@link ProvidesInertiaProperties} instance.
+     *
+     * @param provider the property provider
+     * @return the response
+     */
+    Object render(ProvidesInertiaProperties provider);
+
+    /**
+     * Render an Inertia page resolving properties from a {@link ProvidesInertiaProperties} instance.
+     *
+     * @param component the frontend component name
+     * @param provider  the property provider
+     * @return the response
+     */
+    Object render(String component, ProvidesInertiaProperties provider);
+
+    /**
+     * Render an Inertia page resolving properties from a {@link ProvidesInertiaProperties} instance
+     * with extra metadata.
+     *
+     * @param component the frontend component name
+     * @param provider  the property provider
+     * @param meta      extra page metadata
+     * @return the response
+     */
+    Object render(String component, ProvidesInertiaProperties provider, Map<String, Object> meta);
+
+    /**
      * Render an Inertia page with additional metadata.
      *
      * @param component the frontend component name
@@ -174,6 +203,14 @@ public interface Inertia {
      * @return the values map
      */
     Object share(Map<String, Object> values);
+
+    /**
+     * Set a shared prop provider: resolved dynamically during rendering into the page props.
+     *
+     * @param provider the property provider
+     * @return the provider instance
+     */
+    Object share(ProvidesInertiaProperties provider);
 
     /**
      * Read a shared prop.

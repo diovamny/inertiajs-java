@@ -1,5 +1,23 @@
 package com.example.pingcrm.controller;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+import jakarta.inject.Inject;
+import jakarta.validation.Validator;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.resteasy.reactive.MultipartForm;
+
 import com.example.pingcrm.dto.FormValidator;
 import com.example.pingcrm.dto.UserForm;
 import com.example.pingcrm.entity.User;
@@ -9,16 +27,6 @@ import com.example.pingcrm.service.UserService;
 import io.github.dg.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
-import jakarta.inject.Inject;
-import jakarta.validation.Validator;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.resteasy.reactive.MultipartForm;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @Path("/users")
 
@@ -50,8 +58,8 @@ public class UsersController {
     @GET
     @Blocking
     public Uni<Object> index(@QueryParam("search") String search,
-            @QueryParam("role") String role,
-            @QueryParam("trashed") String trashed) {
+                             @QueryParam("role") String role,
+                             @QueryParam("trashed") String trashed) {
         var list = users.list(auth.accountId(), search, role, trashed);
         var filters = new LinkedHashMap<String, Object>();
         filters.put("search", search);
@@ -78,11 +86,9 @@ public class UsersController {
             return emailTaken();
         }
         var photoPath = savePhoto(form);
-        if (photoPath == null && form.photo != null) {
-            return invalidImage();
-        }
-        users.create(auth.accountId(), form.first_name, form.last_name, form.email, form.password,
-            "true".equals(form.owner), photoPath);
+
+        users.create(auth.accountId(), form.first_name, form.last_name, form.email,
+            form.password, "true".equals(form.owner), photoPath);
         return inertia.redirect("/users").with("success", "User created.");
     }
 
@@ -97,7 +103,7 @@ public class UsersController {
         return inertia.render("Users/Edit", Map.of("user", user));
     }
 
-    @POST
+    @PUT
     @Path("{id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Blocking
@@ -115,9 +121,7 @@ public class UsersController {
             return emailTaken();
         }
         var photoPath = savePhoto(form);
-        if (photoPath == null && form.photo != null) {
-            return invalidImage();
-        }
+
         users.update(user, form.first_name, form.last_name, form.email,
             form.password, "true".equals(form.owner), photoPath);
         return inertia.back().with("success", "User updated.");

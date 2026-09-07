@@ -6,8 +6,11 @@ import java.util.Map;
 
 import jakarta.validation.Validator;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -104,8 +107,20 @@ public class OrganizationsController {
             "contacts", payload));
     }
 
+    @PostMapping(value = "/organizations/{id}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Object updateViaPost(@PathVariable("id") long id, @ModelAttribute OrganizationForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return doUpdate(id, form);
+    }
+
     @PutMapping(value = "/organizations/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Object update(@PathVariable("id") long id, @RequestBody OrganizationForm form) {
+        return doUpdate(id, form);
+    }
+
+    private Object doUpdate(long id, OrganizationForm form) {
         var organization = find(id);
         if (organization == null) {
             return inertia.redirect("/organizations").with("message", "Organization not found.");
@@ -116,6 +131,16 @@ public class OrganizationsController {
         organization.updatedAt = java.time.Instant.now();
         organizationRepository.save(organization);
         return inertia.back().with("message", "Organization updated.");
+    }
+
+    @DeleteMapping("/organizations/{id}")
+    public Object destroy(@PathVariable("id") long id) {
+        var organization = find(id);
+        if (organization == null) {
+            return inertia.redirect("/organizations").with("message", "Organization not found.");
+        }
+        organizationRepository.delete(organization);
+        return inertia.redirect("/organizations").with("message", "Organization deleted.");
     }
 
     private Organization find(long id) {

@@ -98,6 +98,17 @@ public class ContactsController {
             "organizations", organizations.options(auth.accountId())));
     }
 
+    @POST
+    @Path("{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> updateViaPost(@PathParam("id") long id, ContactForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return update(id, form);
+    }
+
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
