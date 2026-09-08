@@ -139,6 +139,65 @@ with the page object on the first visit, the JSON page object on Inertia
 visits, a `303` + flash message on `redirect()`, and a `409` re-visit when the
 asset version mismatches — all handled by the adapter from these same methods.
 
+```java
+// Quarkus — same four methods WITHOUT @Router: plain JAX-RS style with
+// @Path. Pick whichever style fits your app; the adapter supports both.
+// Requires the quarkus-rest extension on the classpath.
+package com.example.crm;
+
+import java.util.Map;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.MediaType;
+import io.github.dg.quarkus.inertia.api.Inertia;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
+
+@Path("/contacts")          // <-- base route, like `resources :contacts`
+@Blocking
+public class ContactsController {
+
+    @Inject Inertia inertia;
+    @Inject ContactRepository contacts;
+
+    @GET                     // GET /contacts  →  page "Contacts/Index"
+    @Blocking
+    public Uni<Object> index() {
+        return inertia.render("Contacts/Index",
+            Map.of("contacts", contacts.listAll()));
+    }
+
+    @GET                     // GET /contacts/create  →  page "Contacts/Create"
+    @Path("create")
+    @Blocking
+    public Uni<Object> create() {
+        return inertia.render("Contacts/Create",
+            Map.of("organizations", organizations.listAll()));
+    }
+
+    @POST                    // POST /contacts  →  validate, then 303 redirect
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> store(ContactForm form) {
+        var contact = contacts.create(form);
+        return inertia.redirect("/contacts/" + contact.id)
+            .with("message", "Contact created.");
+    }
+
+    @GET                     // GET /contacts/{id}/edit  →  page "Contacts/Edit"
+    @Path("{id}/edit")
+    @Blocking
+    public Uni<Object> edit(@PathParam("id") long id) {
+        return inertia.render("Contacts/Edit",
+            Map.of("contact", contacts.findById(id)));
+    }
+}
+```
+
 ```vue
 <!-- Vue 3 using the routes: webui/src/pages/Contacts/Index.vue -->
 <script setup lang="ts">
@@ -223,6 +282,37 @@ sessions and validation on the server.
     <groupId>io.github.dg.spring.inertia</groupId>
     <artifactId>spring-inertia</artifactId>
     <version>0.0.1</version>
+</dependency>
+```
+
+```xml
+<dependency>
+    <groupId>io.github.dg.quarkus.inertia</groupId>
+    <artifactId>quarkus-inertia</artifactId>
+    <version>0.0.1</version>
+</dependency>
+```
+
+Quarkus also needs one transport extension, matching the controller style you
+choose:
+
+```xml
+<!-- JAX-RS style (@Path): RESTEasy Reactive -->
+<dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-rest</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-rest-jackson</artifactId>
+</dependency>
+```
+
+```xml
+<!-- @Router style (@RouteBase/@Route): Reactive Routes -->
+<dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-reactive-routes</artifactId>
 </dependency>
 ```
 
