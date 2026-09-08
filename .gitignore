@@ -36,6 +36,7 @@ Thumbs.db
 
 # Local tooling
 .opencode/
+opencode.json
 
 # Internal design notes (kept on disk, not published)
 docs/adr/

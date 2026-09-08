@@ -2,14 +2,12 @@
 
 ## Where to ask
 
-- **Usage questions and ideas:** [GitHub Discussions](https://github.com/OWNER/inertiajs-java/discussions)
+- **Usage questions and ideas:** [GitHub Discussions](https://github.com/diovamny/inertiajs-java/discussions)
   (choose the Q&A or Ideas category).
-- **Bugs and feature requests:** [GitHub Issues](https://github.com/OWNER/inertiajs-java/issues)
+- **Bugs and feature requests:** [GitHub Issues](https://github.com/diovamny/inertiajs-java/issues)
   using the templates.
 - **Security vulnerabilities:** email only — see [SECURITY.md](SECURITY.md).
   Never post them in issues, discussions, or pull requests.
-
-<!-- TODO(publication): replace OWNER with the real GitHub org/user. -->
 
 ## Before asking
 

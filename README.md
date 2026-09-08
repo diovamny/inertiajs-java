@@ -2,7 +2,7 @@
 
 Single-page Vue and React apps powered by Spring Boot and Quarkus controllers. No API required.
 
-[![CI](https://github.com/OWNER/inertiajs-java/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/inertiajs-java/actions/workflows/ci.yml)
+[![CI](https://github.com/diovamny/inertiajs-java/actions/workflows/ci.yml/badge.svg)](https://github.com/diovamny/inertiajs-java/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Java 21](https://img.shields.io/badge/java-21-blue)](https://adoptium.net/)
 <!-- TODO(publication): add Maven Central version badge after the first release. -->
@@ -309,6 +309,10 @@ sessions and validation on the server.
 
 **Spring Boot 4.1** (`io.github.dg.spring.inertia:spring-inertia`) and
 **Quarkus 3.38** (`io.github.dg.quarkus.inertia:quarkus-inertia`) require Java 21+:
+
+> **Pre-release note:** `0.0.1` is not on Maven Central yet. Until the first
+> release, build from source once (`git clone` + `mvn -DskipTests install`)
+> and the coordinates below resolve from your local repository.
 
 ```xml
 <dependency>

@@ -6,8 +6,8 @@
   <packaging>pom</packaging>
   <name>Inertia.js Java Ecosystem</name>
   <description>Server-side Inertia.js v3 adapters for Spring Boot 4.1 and Quarkus</description>
-  <!-- TODO(publication): replace OWNER with the real GitHub org/user once the repo URL is final -->
-  <url>https://github.com/OWNER/inertiajs-java</url>
+  <!-- Repository: https://github.com/diovamny/inertiajs-java -->
+  <url>https://github.com/diovamny/inertiajs-java</url>
     <licenses>
         <license>
             <name>MIT License</name>
@@ -24,9 +24,9 @@
     </developer>
   </developers>
   <scm>
-    <connection>scm:git:git://github.com/OWNER/inertiajs-java.git</connection>
-    <developerConnection>scm:git:ssh://github.com:OWNER/inertiajs-java.git</developerConnection>
-    <url>https://github.com/OWNER/inertiajs-java</url>
+    <connection>scm:git:git://github.com/diovamny/inertiajs-java.git</connection>
+    <developerConnection>scm:git:ssh://github.com:diovamny/inertiajs-java.git</developerConnection>
+    <url>https://github.com/diovamny/inertiajs-java</url>
     <tag>HEAD</tag>
   </scm>
     <modules>
