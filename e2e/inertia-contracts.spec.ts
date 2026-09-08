@@ -83,9 +83,14 @@ test.describe('Inertia v3 contracts (/login)', () => {
     page.on('console', (message) => {
       if (message.type() === 'error') errors.push(message.text());
     });
-    await page.goto('/login');
-    await expect(page.locator('#email')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    // Fail fast with diagnostics if the server does not serve the shell.
+    const response = await page.goto('/login');
+    expect(response?.status(), 'GET /login must return 200 HTML').toBe(200);
+    await expect(page.locator('#app')).toBeAttached();
+    // Generous timeout: cold CI runners need seconds to parse the bundle
+    // and mount the app on first paint.
+    await expect(page.locator('#email')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible({ timeout: 15000 });
     await expect(page).toHaveTitle(/Log in/);
     expect(errors).toEqual([]);
   });
