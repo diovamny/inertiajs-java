@@ -100,9 +100,9 @@ class FeatureMetadataIntegrationTest {
             throw new AssertionError("Expected contacts value to be delivered in props, was " + page.path("props.contacts"));
         }
         var scrollProps = page.path("scrollProps.contacts");
-if (!scrollProps.isObject()
-                || !"cursor".equals(scrollProps.path("pageName").asText())
-                || !"abc".equals(scrollProps.path("nextPage").asText())
+        if (!scrollProps.isObject()
+                || !"cursor".equals(scrollProps.path("pageName").asString())
+                || !"abc".equals(scrollProps.path("nextPage").asString())
                 || scrollProps.path("currentPage").asInt() != 1
                 || scrollProps.path("reset").asBoolean(false)) {
             throw new AssertionError("Unexpected scrollProps: " + scrollProps);
@@ -118,7 +118,7 @@ if (!scrollProps.isObject()
 @Test
     void oncePropWithCustomKeyTracksSharedHistory() throws Exception {
         var first = page("/once-custom", Map.of());
-        if (!"v".equals(first.path("props.aliased").asText())) {
+        if (!"v".equals(first.path("props.aliased").asString())) {
             throw new AssertionError("Expected aliased once prop delivered on first visit");
         }
         if (!first.path("onceProps").has("shared-key")) {
@@ -155,7 +155,7 @@ if (!scrollProps.isObject()
         var out = new java.util.ArrayList<String>();
         for (var item : node) {
             if (item.isValueNode()) {
-                out.add(item.asText());
+                out.add(item.asString());
             }
         }
         return out;

@@ -35,7 +35,7 @@ class ValidationIntegrationTest {
                 .header("X-Inertia-Precognition", "true")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"\"}"))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isUnprocessableContent())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.errors.name").exists());
     }
@@ -78,7 +78,7 @@ class ValidationIntegrationTest {
                 .header("Precognition-Validate-Only", "name")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"\"}"))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isUnprocessableContent())
             .andExpect(header().string("Precognition", "true"))
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.errors.name").exists());
@@ -91,7 +91,7 @@ class ValidationIntegrationTest {
                 .header("Precognition-Validate-Only", "name")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"\",\"email\":\"not-an-email\"}"))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isUnprocessableContent())
             .andExpect(header().string("Precognition", "true"))
             .andExpect(jsonPath("$.errors.name").exists())
             .andExpect(jsonPath("$.errors.email").doesNotExist());

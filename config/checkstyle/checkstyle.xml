@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Project Checkstyle ruleset for inertiajs-java.
+
+  Policy: enforce only checks this codebase already satisfies (or that were
+  fixed when the gate was introduced). The default Sun ruleset was never the
+  project style (80-col limit, final parameters, Javadoc on everything) and an
+  always-red gate is worse than a strict, tailored one. Deliberately NOT
+  enforced here: LineLength, FinalParameters, Javadoc*, DesignForExtension,
+  HiddenField, MagicNumber, NeedBraces, OperatorWrap, ParameterNumber.
+  Revisit when the codebase is ready; any addition must start green.
+-->
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <module name="NewlineAtEndOfFile"/>
+  <module name="FileTabCharacter"/>
+  <module name="UniqueProperties"/>
+
+  <module name="TreeWalker">
+    <module name="AvoidStarImport"/>
+    <module name="UnusedImports"/>
+    <module name="RedundantImport"/>
+    <module name="MissingSwitchDefault"/>
+    <module name="FinalClass"/>
+    <module name="NoWhitespaceAfter"/>
+  </module>
+</module>

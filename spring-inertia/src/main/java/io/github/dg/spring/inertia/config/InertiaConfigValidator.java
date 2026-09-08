@@ -7,7 +7,7 @@ package io.github.dg.spring.inertia.config;
  */
 public class InertiaConfigValidator {
 
-    private static final String[] STRATEGIES = { "sha256", "vite-manifest", "custom" };
+    private static final String[] STRATEGIES = {"sha256", "vite-manifest", "custom"};
 
     public InertiaConfigValidator(InertiaProperties properties) {
         validateVersionStrategy(properties.getVersionStrategy());

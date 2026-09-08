@@ -8,6 +8,7 @@ import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class RedirectProcessorUnitTest {
         flashStore = mock(FlashStore.class);
         when(httpRequest.getHeader("X-Inertia")).thenReturn(null);
         when(httpRequest.method()).thenReturn(HttpMethod.GET);
-        when(httpRequest.host()).thenReturn("localhost:8080");
+        when(httpRequest.authority()).thenReturn(HostAndPort.create("localhost", 8080));
         when(httpRequest.scheme()).thenReturn("http");
 
         routingContext = mock(RoutingContext.class);

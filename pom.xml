@@ -106,11 +106,15 @@
           <artifactId>pitest-maven</artifactId>
           <version>${pitest.version}</version>
         </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>${maven.checkstyle.plugin.version}</version>
-        </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>${maven.checkstyle.plugin.version}</version>
+            <configuration>
+              <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
+              <consoleOutput>true</consoleOutput>
+            </configuration>
+          </plugin>
         <plugin>
           <groupId>com.github.spotbugs</groupId>
           <artifactId>spotbugs-maven-plugin</artifactId>
@@ -221,8 +225,8 @@
             <configuration>
               <skip>${skipStaticAnalysis}</skip>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
-              <failOnViolation>false</failOnViolation>
-              <failsOnError>false</failsOnError>
+              <failOnViolation>true</failOnViolation>
+              <failsOnError>true</failsOnError>
               <consoleOutput>true</consoleOutput>
             </configuration>
             <executions>

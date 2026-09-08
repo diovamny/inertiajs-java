@@ -15,23 +15,22 @@ import io.github.dg.spring.inertia.model.ScrollProp;
  * Registers the reflection metadata needed by the Jackson serializer when
  * the application is compiled to a GraalVM native image.
  *
- * <p>All model types are records: besides invocation they require
- * introspection categories, otherwise GraalVM reports
- * {@code Record components not available for record class ...} at runtime.</p>
+ * <p>All model types are records. Spring Framework 7 adds method
+ * introspection (including record components) by default to every reflected
+ * type, so only access and invocation categories are declared; the retired
+ * {@code INTROSPECT_*} constants must not be used.</p>
  */
-public class InertiaRuntimeHints implements RuntimeHintsRegistrar {
+public final class InertiaRuntimeHints implements RuntimeHintsRegistrar {
 
     @Override
-    public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+    public void registerHints(final RuntimeHints hints, final ClassLoader classLoader) {
         var categories = new MemberCategory[] {
-            MemberCategory.PUBLIC_FIELDS,
-            MemberCategory.DECLARED_FIELDS,
+            MemberCategory.ACCESS_PUBLIC_FIELDS,
+            MemberCategory.ACCESS_DECLARED_FIELDS,
             MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS,
             MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
             MemberCategory.INVOKE_PUBLIC_METHODS,
-            MemberCategory.INVOKE_DECLARED_METHODS,
-            MemberCategory.INTROSPECT_PUBLIC_METHODS,
-            MemberCategory.INTROSPECT_DECLARED_METHODS
+            MemberCategory.INVOKE_DECLARED_METHODS
         };
         for (var type : new Class<?>[] {
             PageObject.class, AlwaysProp.class, DeferredProp.class,

@@ -19,8 +19,6 @@ import io.github.dg.quarkus.inertia.model.PageObject;
 import io.github.dg.quarkus.inertia.qute.QuteSerializer;
 import io.github.dg.quarkus.inertia.util.SafeJsonEncoder;
 
-import io.vertx.core.Vertx;
-
 /**
  * Renders the full HTML document for non-Inertia requests by injecting the
  * serialized page object into the root template.

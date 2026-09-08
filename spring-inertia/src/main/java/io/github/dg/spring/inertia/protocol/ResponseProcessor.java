@@ -123,7 +123,7 @@ public class ResponseProcessor {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Inertia", "true");
         headers.set("Vary", "X-Inertia, Precognition");
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).headers(headers)
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).headers(headers)
             .body(jsonProvider.toJson(Map.of("errors", errors != null ? errors : Map.of())));
     }
 
