@@ -103,6 +103,17 @@ public class UsersController {
         return inertia.render("Users/Edit", Map.of("user", user));
     }
 
+    @POST
+    @Path("{id}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Blocking
+    public Uni<Object> updateViaPost(@PathParam("id") long id, @MultipartForm UserForm form) {
+        if ("DELETE".equalsIgnoreCase(form._method)) {
+            return destroy(id);
+        }
+        return update(id, form);
+    }
+
     @PUT
     @Path("{id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)

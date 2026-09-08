@@ -67,7 +67,7 @@ class PingCrmTest {
         given().when().get("/login")
             .then().statusCode(200)
             .and().contentType(ContentType.HTML)
-            .and().body(containsString("Auth/Login"));
+            .and().body(containsString("Auth\\/Login"));
     }
 
     @Test

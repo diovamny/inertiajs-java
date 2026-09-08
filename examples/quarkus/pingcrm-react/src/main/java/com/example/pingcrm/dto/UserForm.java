@@ -26,4 +26,7 @@ public class UserForm {
     @RestForm("photo")
     @PartType(MediaType.APPLICATION_OCTET_STREAM)
     public FileUpload photo;
+
+    @RestForm("_method")
+    public String _method;
 }
