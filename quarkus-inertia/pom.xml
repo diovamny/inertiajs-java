@@ -20,7 +20,7 @@
     <description>Reactive Inertia.js v3 adapter for Quarkus</description>
 
     <properties>
-        <surefire.version>3.5.2</surefire.version>
+        <surefire.version>3.6.0</surefire.version>
     </properties>
 
     <dependencies>
