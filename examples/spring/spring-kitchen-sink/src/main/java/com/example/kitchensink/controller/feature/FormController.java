@@ -56,7 +56,7 @@ public class FormController {
 
     @GetMapping("/features/forms/use-form")
     public Object useForm() {
-        return inertia.render("Features/Forms/UseForm", null);
+        return inertia.render("Features/Forms/UseForm");
     }
 
     @PostMapping(value = "/features/forms/use-form", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -67,7 +67,7 @@ public class FormController {
 
     @GetMapping("/features/forms/form-component")
     public Object formComponent() {
-        return inertia.render("Features/Forms/FormComponent", null);
+        return inertia.render("Features/Forms/FormComponent");
     }
 
     @PostMapping(value = "/features/forms/form-component", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -78,7 +78,7 @@ public class FormController {
 
     @GetMapping("/features/forms/file-uploads")
     public Object fileUploads() {
-        return inertia.render("Features/Forms/FileUploads", null);
+        return inertia.render("Features/Forms/FileUploads");
     }
 
     @PostMapping(value = "/features/forms/file-uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -96,7 +96,7 @@ public class FormController {
 
     @GetMapping("/features/forms/validation")
     public Object validation() {
-        return inertia.render("Features/Forms/Validation", null);
+        return inertia.render("Features/Forms/Validation");
     }
 
     @PostMapping(value = "/features/forms/validation", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -118,7 +118,7 @@ public class FormController {
 
     @GetMapping("/features/forms/precognition")
     public Object precognition() {
-        return inertia.render("Features/Forms/Precognition", null);
+        return inertia.render("Features/Forms/Precognition");
     }
 
     @PostMapping(value = "/features/forms/precognition", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -203,12 +203,12 @@ public class FormController {
 
     @GetMapping("/features/forms/use-form-context")
     public Object useFormContext() {
-        return inertia.render("Features/Forms/UseFormContext", null);
+        return inertia.render("Features/Forms/UseFormContext");
     }
 
     @GetMapping("/features/forms/dotted-keys")
     public Object dottedKeys() {
-        return inertia.render("Features/Forms/DottedKeys", null);
+        return inertia.render("Features/Forms/DottedKeys");
     }
 
     @PostMapping(value = "/features/forms/dotted-keys", consumes = MediaType.APPLICATION_JSON_VALUE)

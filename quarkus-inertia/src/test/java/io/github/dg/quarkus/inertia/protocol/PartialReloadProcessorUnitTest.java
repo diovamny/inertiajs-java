@@ -171,6 +171,23 @@ class PartialReloadProcessorUnitTest {
     }
 
     @Test
+    void shouldKeepExplicitNullPropsOnPartialReload() {
+        // Null is a real prop value, not an omission signal: an explicitly
+        // requested null prop must be present in the partial response.
+        var props = new java.util.LinkedHashMap<String, Object>();
+        props.put("status", null);
+        props.put("count", 2);
+        props.put("sidebar", "x");
+        var page = new PageObject("Users", props, "/users", "v1");
+        var context = new PartialReloadContext("Users", Set.of("status", "count"), Set.of(), Set.of());
+        var result = processor.apply(page, context);
+        assertThat(result.props()).containsKey("status");
+        assertThat(result.props().get("status")).isNull();
+        assertThat(result.props().get("count")).isEqualTo(2);
+        assertThat(result.props()).doesNotContainKey("sidebar");
+    }
+
+    @Test
     void shouldNotKeepSharedPropsWhenExcepted() {
         var page = new PageObject("Users", Map.of("name", "John", "auth", Map.of("user", Map.of("id", 1))), "/users", "v1");
         var context = new PartialReloadContext("Users", Set.of(), Set.of("auth"), Set.of());

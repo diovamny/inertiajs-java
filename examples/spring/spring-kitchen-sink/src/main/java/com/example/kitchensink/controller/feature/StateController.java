@@ -17,12 +17,12 @@ public class StateController {
 
     @GetMapping("/features/state/remember")
     public Object remember() {
-        return inertia.render("Features/State/Remember", null);
+        return inertia.render("Features/State/Remember");
     }
 
     @GetMapping("/features/state/flash-data")
     public Object flashData() {
-        return inertia.render("Features/State/FlashData", null);
+        return inertia.render("Features/State/FlashData");
     }
 
     @PostMapping("/features/state/flash-data")
@@ -48,6 +48,6 @@ public class StateController {
 
     @GetMapping("/features/state/shared-props")
     public Object sharedProps() {
-        return inertia.render("Features/State/SharedProps", null);
+        return inertia.render("Features/State/SharedProps");
     }
 }

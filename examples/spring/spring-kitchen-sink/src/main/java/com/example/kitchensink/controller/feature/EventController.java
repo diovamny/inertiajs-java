@@ -18,7 +18,7 @@ public class EventController {
 
     @GetMapping("/features/events/global-events")
     public Object globalEvents() {
-        return inertia.render("Features/Events/GlobalEvents", null);
+        return inertia.render("Features/Events/GlobalEvents");
     }
 
     @PostMapping("/features/events/global-events/action")
@@ -29,7 +29,7 @@ public class EventController {
 
     @GetMapping("/features/events/once-events")
     public Object onceEvents() {
-        return inertia.render("Features/Events/OnceEvents", null);
+        return inertia.render("Features/Events/OnceEvents");
     }
 
     @PostMapping("/features/events/once-events")
@@ -40,7 +40,7 @@ public class EventController {
 
     @GetMapping("/features/events/visit-callbacks")
     public Object visitCallbacks() {
-        return inertia.render("Features/Events/VisitCallbacks", null);
+        return inertia.render("Features/Events/VisitCallbacks");
     }
 
     @PostMapping("/features/events/visit-callbacks/action")
@@ -51,18 +51,18 @@ public class EventController {
 
     @GetMapping("/features/events/progress")
     public Object progress() {
-        return inertia.render("Features/Events/Progress", null);
+        return inertia.render("Features/Events/Progress");
     }
 
     @GetMapping("/features/events/progress/slow")
     public Object progressSlow() {
         Demo.sleepSeconds(2);
-        return inertia.render("Features/Events/Progress", null);
+        return inertia.render("Features/Events/Progress");
     }
 
     @GetMapping("/features/events/location-event")
     public Object locationEvent() {
-        return inertia.render("Features/Events/LocationEvent", null);
+        return inertia.render("Features/Events/LocationEvent");
     }
 
     @GetMapping("/features/events/location-event/deploy")

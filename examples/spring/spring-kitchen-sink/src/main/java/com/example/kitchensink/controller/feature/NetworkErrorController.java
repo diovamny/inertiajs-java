@@ -18,7 +18,7 @@ public class NetworkErrorController {
 
     @GetMapping("/features/errors/http-exceptions")
     public Object httpExceptions() {
-        return inertia.render("Features/Errors/HttpExceptions", null);
+        return inertia.render("Features/Errors/HttpExceptions");
     }
 
     @GetMapping("/features/errors/http-exceptions/403")
@@ -63,6 +63,6 @@ public class NetworkErrorController {
 
     @GetMapping("/features/errors/network-errors")
     public Object networkErrors() {
-        return inertia.render("Features/Errors/NetworkErrors", null);
+        return inertia.render("Features/Errors/NetworkErrors");
     }
 }

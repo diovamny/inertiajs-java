@@ -15,21 +15,21 @@ public class PrefetchingController {
 
     @org.springframework.web.bind.annotation.GetMapping("/features/prefetching/link-prefetch")
     public Object linkPrefetch() {
-        return inertia.render("Features/Prefetching/LinkPrefetch", null);
+        return inertia.render("Features/Prefetching/LinkPrefetch");
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/features/prefetching/stale-while-revalidate")
     public Object staleWhileRevalidate() {
-        return inertia.render("Features/Prefetching/StaleWhileRevalidate", null);
+        return inertia.render("Features/Prefetching/StaleWhileRevalidate");
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/features/prefetching/manual-prefetch")
     public Object manualPrefetch() {
-        return inertia.render("Features/Prefetching/ManualPrefetch", null);
+        return inertia.render("Features/Prefetching/ManualPrefetch");
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/features/prefetching/cache-management")
     public Object cacheManagement() {
-        return inertia.render("Features/Prefetching/CacheManagement", null);
+        return inertia.render("Features/Prefetching/CacheManagement");
     }
 }

@@ -74,6 +74,22 @@ class PartialReloadProcessorTest {
     }
 
     @Test
+    void partialDataKeepsExplicitNullProps() {
+        // Null is a real prop value, not an omission signal: an explicitly
+        // requested null prop must be present in the partial response.
+        partial("Users", "status,count", null, null);
+        var props = new java.util.LinkedHashMap<String, Object>();
+        props.put("status", null);
+        props.put("count", 2);
+        props.put("sidebar", "x");
+        var filtered = processor.filterProps(props, Map.of());
+        assertTrue(filtered.containsKey("status"));
+        assertEquals(null, filtered.get("status"));
+        assertEquals(2, filtered.get("count"));
+        assertFalse(filtered.containsKey("sidebar"));
+    }
+
+    @Test
     void exceptNestedLeafOnly() {
         partial("Users", null, "auth.user.email", null);
         var props = Map.<String, Object>of(

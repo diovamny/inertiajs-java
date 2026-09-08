@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const matrixPath = path.join(root, 'docs', 'conformance-matrix.md');
+const matrixPath = path.join(root, 'docs', 'protocol-compatibility.md');
 const text = fs.readFileSync(matrixPath, 'utf8');
 
 const testNames = [...text.matchAll(/\|\s*\d+\s*\|.*?\|.*?\|.*?\|.*?\|.*?\|\s*([^|]+?)\s*\|/g)]

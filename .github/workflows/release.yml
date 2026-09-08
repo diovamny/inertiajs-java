@@ -27,6 +27,14 @@ jobs:
       - name: Run full test suite
         run: mvn clean test -T 1C
 
+      - name: OWASP Dependency Check
+        # Releases must not skip dependency vulnerability scanning. Runs only
+        # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
+        if: ${{ secrets.NVD_API_KEY != '' }}
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: mvn verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
+
       - name: Build, sign and publish to Sonatype Central Portal
         run: mvn clean deploy -Prelease -DskipTests
 

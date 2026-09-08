@@ -1,155 +1,100 @@
-﻿# Inertia.js v3 for Java
+﻿# Inertia.js Java Adapters
 
-Server-side Inertia.js v3 adapters for the Java ecosystem, with GraalVM Native support.
+Single-page Vue and React apps powered by Spring Boot and Quarkus controllers. No API required.
 
-| Artefacto | Framework | JAR |
-|---|---|---|
-| Quarkus | Quarkus 3.38.x (reactive) | quarkus-inertia-0.0.1.jar |
-| Spring | Spring Boot 4.1.x (Spring MVC) | spring-inertia-0.0.1.jar |
+[![CI](https://github.com/OWNER/inertiajs-java/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/inertiajs-java/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Java 21](https://img.shields.io/badge/java-21-blue)](https://adoptium.net/)
+<!-- TODO(publication): add Maven Central version badge after the first release. -->
 
----
+Visit [inertiajs.com](https://inertiajs.com/) to learn the protocol. This is a community
+project and is not officially maintained by the Inertia.js team.
 
-## Protocol Parity vs. Official Adapters
+## Your controllers. Your routes. Modern components.
 
-This project targets **protocol parity with Inertia v3** and keeps its status evidence-based. The goal is to match the documented protocol and framework integration points without claiming full parity until the matrix, E2E suite, and quality gates are green.
+Pass data from Java directly to Vue or React as **props** — no REST endpoints, no
+client-side fetching:
 
-| Feature | Laravel | Rails | Spring | Quarkus |
-|---------|:-------:|:-----:|:------:|:-------:|
-| Page object | YES | YES | YES | YES |
-| Partial reloads | YES | YES | YES | YES |
-| Version mismatch 409 | YES | YES | YES | YES |
-| 303 redirects | YES | YES | YES | YES |
-| Shared data | YES | YES | YES | YES |
-| InertiaSharedDataContributor SPI | YES | YES | YES | YES |
-| Always props | YES | YES | YES | YES |
-| Deferred / lazy props | YES | YES | YES | YES |
-| Once props | YES | YES | YES | YES |
-| Merge / deep-merge / prepend props | YES | YES | YES | YES |
-| Optional props | YES | YES | YES | YES |
-| matchPropsOn / scrollProps | YES | YES | YES | YES |
-| Rescued props | YES | YES | YES | YES |
-| encryptHistory / clearHistory | YES | YES | YES | YES |
-| preserveFragment | YES | YES | YES | YES |
-| Validation errors + error bags | YES | YES | YES | YES |
-| Precognition (422) | YES | YES | YES | YES |
-| CSRF protection | YES | YES | YES | YES |
-| Flash data | YES | YES | YES | YES |
-| SSR (Node.js sidecar) | YES | YES | YES | YES |
-| viewData (root template injection) | YES | YES | YES | YES |
-| Convention component resolution | YES | YES | YES | YES |
-| Prefetching | YES | YES | YES | YES |
-| Infinite scroll | YES | YES | YES | YES |
-| GraalVM Native Image | N/A | N/A | YES | YES |
-| Testing DSL (InertiaPage) | YES | YES | YES | YES |
+```java
+// Spring Boot
+@GetMapping("/")
+public Object index() {
+    return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+}
+```
 
-**Current evidence:** the project currently has 359 Java tests across Spring and Quarkus and they pass locally in the standard Maven test run. This is a strong baseline, but it does not replace browser E2E validation or official client coverage.
+```java
+// Quarkus (reactive)
+@GET
+public Uni<Object> index() {
+    return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+}
+```
 
----
+```vue
+<!-- webui/src/pages/Dashboard.vue -->
+<script setup lang="ts">defineProps<{ contacts: Contact[] }>()</script>
+<template><ul><li v-for="c in contacts" :key="c.id">{{ c.name }}</li></ul></template>
+```
 
-## Requirements
+## Get started
 
-- Java 21+
-- Maven 3.9+
-- Node.js 22+ (demos only)
+**Spring Boot 4.1** (`io.github.dg.spring.inertia:spring-inertia`) and
+**Quarkus 3.38** (`io.github.dg.quarkus.inertia:quarkus-inertia`) require Java 21+:
 
----
-
-## Quickstart Spring Boot
-
-`xml
+```xml
 <dependency>
     <groupId>io.github.dg.spring.inertia</groupId>
     <artifactId>spring-inertia</artifactId>
     <version>0.0.1</version>
 </dependency>
-`
+```
 
-application.properties:
+```properties
+inertia.root-template=index.html
+```
 
-`properties
-inertia.version-custom=1.0.0
-inertia.ssr-enabled=false
-inertia.csrf-enabled=true
-inertia.convention-routing-enabled=true
-inertia.convention-routing-prefix=Pages/
-`
+Or start from a working app with one command — **starter kits** with Vue 3 or
+React 19, TypeScript, Vite, tests and an optional native `Dockerfile`:
 
-Controller:
+| Starter | Command |
+|---|---|
+| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.dg -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.1 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
+| Spring Boot + React 19 | Same with `-DarchetypeArtifactId=inertia-spring-react-archetype` |
+| Quarkus + Vue 3 | Same with `-DarchetypeArtifactId=inertia-quarkus-vue-archetype` |
+| Quarkus + React 19 | Same with `-DarchetypeArtifactId=inertia-quarkus-react-archetype` |
 
-`java
-@GetMapping("/")
-public Object index() {
-    inertia.viewData("title", "Dashboard | My App");
-    return inertia.render("Dashboard", Map.of("stats", Map.of("contacts", 24)));
-}
-`
+Full walkthroughs: [Spring](docs/getting-started-spring.md) and
+[Quarkus](docs/getting-started-quarkus.md).
 
-Global Shared Data SPI:
+## Built for real Java apps
 
-`java
-@Component
-public class AppSharedData implements InertiaSharedDataContributor {
-    @Override
-    public void contribute(Inertia inertia) {
-        inertia.share("auth", Map.of("user", currentUser()));
-    }
-}
-`
+| | |
+|---|---|
+| **Forms that work** | Validation errors flow to your components automatically. |
+| **Testing DSL** | `InertiaPage` assertions for MockMvc and REST-assured. |
+| **Partial reloads, deferred/once/merge props** | The full Inertia v3 prop model on both adapters. |
+| **Shared data SPI** | Current user, flash and errors on every page. |
+| **SSR + fallback** | Optional Node.js sidecar, graceful client-only fallback. |
+| **GraalVM Native** | Both adapters ship native hints; starters include a native `Dockerfile`. |
 
----
+Compatibility is evidence-based: see [protocol compatibility](docs/protocol-compatibility.md),
+linked row-by-row to contract tests that CI verifies on every push.
 
-## Quickstart Quarkus
+## Contribute and run tests
 
-`xml
-<dependency>
-    <groupId>io.github.dg.quarkus.inertia</groupId>
-    <artifactId>quarkus-inertia</artifactId>
-    <version>0.0.1</version>
-</dependency>
-`
+```bash
+mvn clean test            # adapters: Spring + Quarkus suites
+mvn clean test -Pexamples # demo applications
+```
 
-application.properties:
+Bug reports and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md)
+and follow the [Code of Conduct](CODE_OF_CONDUCT.md). **Do not report security
+vulnerabilities in public issues** — see [SECURITY.md](.github/SECURITY.md).
 
-`properties
-quarkus.inertia.root-template=index.html
-quarkus.inertia.version-custom=1.0.0
-quarkus.inertia.convention-routing-enabled=true
-quarkus.inertia.convention-routing-prefix=Pages/
-`
+## Credits
 
-Resource:
-
-`java
-@GET
-public Response index() {
-    inertia.viewData("title", "Dashboard | My App");
-    return inertia.render("Pages/Home", Map.of("users", List.of()));
-}
-`
-
----
-
-## Documentation
-
-| Guide | Description |
-|-------|-------------|
-| docs/testing-guide.md | MockMvc (Spring) and REST-assured (Quarkus) with InertiaPage DSL |
-| docs/shared-data-and-props.md | InertiaSharedDataContributor SPI, all prop strategies |
-| docs/viewdata-guide.md | Root template data injection, placeholder substitution |
-| docs/ssr-setup.md | Node.js sidecar SSR setup, config, fallback |
-| docs/conformance-matrix.md | Full protocol compliance test matrix |
-
----
-
-## Build
-
-`powershell
-mvn clean test                        # 359 tests total
-mvn clean test -pl spring-inertia     # 112 tests
-mvn clean test -pl quarkus-inertia    # 247 tests
-mvn clean package -Prelease -DskipTests
-`
-
-## License
-
-Apache License 2.0 - see LICENSE.
+Community project for the Java ecosystem. Released under the [MIT License](LICENSE).
+Inertia.js is created by Jonathan Reinink and contributors; Java, Spring, Quarkus,
+Vue.js and React trademarks belong to their respective owners (see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) where applicable).

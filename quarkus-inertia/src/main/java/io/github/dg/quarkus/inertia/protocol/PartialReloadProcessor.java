@@ -70,12 +70,15 @@ public class PartialReloadProcessor {
             if (!nestedOnly.isEmpty() || !nestedExcept.isEmpty()) {
                 kept = filterNode(value, nestedOnly, nestedExcept, key);
             }
-            if (kept != null) {
-                filteredProps.put(key, kept);
-            }
+            // A selected prop keeps its value even when it is null: null is
+            // a real prop value, not an omission signal (lazy/optional use
+            // dedicated marker types resolved upstream).
+            filteredProps.put(key, kept);
         }
 
-        var result = page.withProps(Map.copyOf(filteredProps));
+        // Map.copyOf forbids null values, but null is a legitimate prop value
+        // that must survive partial reloads, so copy defensively instead.
+        var result = page.withProps(java.util.Collections.unmodifiableMap(new LinkedHashMap<>(filteredProps)));
 
         if (context.hasReset()) {
             result = stripResetKeys(result, context.reset());
@@ -129,9 +132,7 @@ public class PartialReloadProcessor {
             var kept = (!childOnly.isEmpty() || !childExcept.isEmpty()) && childValue instanceof Map
                 ? filterNode(childValue, childOnly, childExcept, path + "." + childKey)
                 : childValue;
-            if (kept != null) {
-                result.put(childKey, kept);
-            }
+            result.put(childKey, kept);
         }
         return result.isEmpty() ? null : result;
     }

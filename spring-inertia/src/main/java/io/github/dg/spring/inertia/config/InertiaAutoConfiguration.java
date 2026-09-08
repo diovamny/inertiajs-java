@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.web.context.WebApplicationContext;
@@ -25,6 +26,7 @@ import io.github.dg.spring.inertia.mvc.InertiaCsrfFilter;
 import io.github.dg.spring.inertia.mvc.InertiaFilter;
 import io.github.dg.spring.inertia.mvc.InertiaInterceptor;
 import io.github.dg.spring.inertia.mvc.InertiaReturnValueHandler;
+import io.github.dg.spring.inertia.nativex.InertiaRuntimeHints;
 import io.github.dg.spring.inertia.protocol.InertiaHeaderExtractor;
 import io.github.dg.spring.inertia.protocol.MergePropProcessor;
 import io.github.dg.spring.inertia.protocol.OncePropRegistry;
@@ -55,6 +57,7 @@ import io.github.dg.spring.inertia.version.VersionProvider;
  */
 @AutoConfiguration(after = JacksonAutoConfiguration.class)
 @EnableConfigurationProperties(InertiaProperties.class)
+@ImportRuntimeHints(InertiaRuntimeHints.class)
 public class InertiaAutoConfiguration {
 
     @Bean

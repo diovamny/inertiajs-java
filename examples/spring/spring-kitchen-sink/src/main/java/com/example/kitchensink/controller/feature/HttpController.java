@@ -22,7 +22,7 @@ public class HttpController {
 
     @GetMapping("/features/http/use-http")
     public Object useHttp() {
-        return inertia.render("Features/Http/UseHttp", null);
+        return inertia.render("Features/Http/UseHttp");
     }
 
     @PostMapping(value = "/features/http/use-http/api", consumes = MediaType.APPLICATION_JSON_VALUE)

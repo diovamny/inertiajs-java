@@ -1,0 +1,11 @@
+target/
+node_modules/
+src/main/webui/node_modules/
+src/main/webui/dist/
+dist-ssr/
+.mvite/
+*.log
+.DS_Store
+.idea/
+.vscode/
+data/

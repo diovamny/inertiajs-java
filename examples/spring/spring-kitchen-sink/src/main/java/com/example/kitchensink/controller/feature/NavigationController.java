@@ -58,7 +58,7 @@ public class NavigationController {
 
     @RequestMapping("/features/navigation/view-transitions")
     public Object viewTransitions() {
-        return inertia.render("Features/Navigation/ViewTransitions", null);
+        return inertia.render("Features/Navigation/ViewTransitions");
     }
 
     @RequestMapping(path = "/features/navigation/history-management",

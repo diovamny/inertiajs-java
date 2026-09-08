@@ -1,26 +1,25 @@
 # Contributing to Inertia.js Java
 
-¡Gracias por tu interés en contribuir! This project is a community effort
+Thank you for your interest in contributing! This project is a community effort
 to bring Inertia.js v3 to the Java ecosystem (Spring Boot 4.x and Quarkus).
+Please write issues, pull requests and changelog entries in English.
 
 ## Code of Conduct
 
-Be respectful and constructive. Harassment or discrimination of any kind
-is not tolerated.
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). By participating
+you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 
 ## How to contribute
 
 1. **Fork** the repository and create a branch from `main`:
    `git checkout -b feat/my-change`
-2. Make your changes following the project conventions.
-3. Run the full verification suite before pushing:
-   ```powershell
+2. Make your changes following the conventions below.
+3. Run the verification suite before pushing:
+   ```bash
    mvn clean test -T 1C
-   mvn clean test -pl examples/spring/spring-pingcrm -Pexamples
-   mvn clean test -pl examples/spring/spring-kitchen-sink -Pexamples
+   node scripts/check-conformance-matrix.mjs
    ```
-4. Open a Pull Request describing the motivation and the changes.
-   Reference related issues when applicable.
+4. Open a Pull Request using the template. Reference related issues.
 
 ## Project layout
 
@@ -28,33 +27,36 @@ is not tolerated.
 |---|---|
 | `quarkus-inertia/` | Inertia.js v3 adapter for Quarkus 3.38.x (Mutiny / Vert.x / Qute / JAX-RS) |
 | `spring-inertia/` | Inertia.js v3 adapter for Spring Boot 4.1.x (Spring MVC / AOT / GraalVM) |
-| `examples/` | Demos: Quarkus (`examples/quarkus`: demo-app, kitchen-sink, pingcrm, pingcrm-react) and Spring Boot (`examples/spring`: spring-pingcrm, spring-kitchen-sink) |
-| `implementation_plan.md` | Approved master plan with architecture decisions |
+| `archetypes/` | Maven archetypes: Spring/Quarkus × Vue 3/React 19 starter kits |
+| `examples/` | Demo apps (kitchen-sink protocol testbeds, PingCRM ports) |
+| `e2e/` | Playwright browser contract suite (shared Spring/Quarkus cases) |
+| `docs/` | User guides; `docs/protocol-compatibility.md` is CI-verified |
 
 ## Conventions
 
-- Java 21+, UTF-8 sources, no tabs (4 spaces).
-- Keep the public API surface minimal and aligned between both adapters.
-- All new behavior must be covered by unit and/or MockMvc/Quarkus
-  integration tests.
-- Javadoc on public API members; no comments inside method bodies unless
-  strictly needed.
-- Artifact coordinates:
-  `io.github.dg.quarkus.inertia:quarkus-inertia` and
+- Java 21+, UTF-8 sources, 4 spaces, no tabs.
+- Keep the public API surface minimal and **aligned between both adapters**:
+  every protocol behavior needs the same contract test on each side.
+- New behavior must be covered by unit and/or MockMvc/Quarkus integration tests.
+- Javadoc on public API members.
+- Artifact coordinates: `io.github.dg.quarkus.inertia:quarkus-inertia` and
   `io.github.dg.spring.inertia:spring-inertia` (version `0.0.1`).
 
 ## Versioning and releases
 
-Releases follow [Semantic Versioning](https://semver.org/). The `release`
-Maven profile signs artifacts (GPG) and publishes to Maven Central via the
-Sonatype Central Portal:
+Releases follow [Semantic Versioning](https://semver.org/): `0.x` while the API
+evolves, `1.0.0` for a stable API with a green contractual suite. The `release`
+Maven profile signs artifacts (GPG) and publishes to Maven Central:
 
-```powershell
-mvn clean package -Prelease -DskipTests
+```bash
+mvn clean deploy -Prelease -DskipTests
 ```
+
+Document user-facing changes in `CHANGELOG.md` (Keep a Changelog, English).
 
 ## Reporting issues
 
-Use the issue templates: `bug_report.md` (with reproduction steps) and
-`feature_request.md`. Include the adapter version, Java version and, for
-native builds, the GraalVM version.
+Use the issue templates (`bug_report.md` with reproduction steps,
+`feature_request.md`). Include the adapter version and the Java version.
+**Never report security vulnerabilities in public issues** — see
+[.github/SECURITY.md](.github/SECURITY.md).

@@ -102,9 +102,10 @@ public class PartialReloadProcessor {
                 if (!nestedOnly.isEmpty() || !nestedExcept.isEmpty()) {
                     kept = filterNode(value, nestedOnly, nestedExcept, key);
                 }
-                if (kept != null) {
-                    result.put(key, kept);
-                }
+                // A selected prop keeps its value even when it is null: null is
+                // a real prop value, not an omission signal (lazy/optional use
+                // dedicated marker types resolved upstream).
+                result.put(key, kept);
             }
         } else {
             result.putAll(props);
@@ -145,9 +146,7 @@ public class PartialReloadProcessor {
             var kept = (!childOnly.isEmpty() || !childExcept.isEmpty()) && childValue instanceof Map
                 ? filterNode(childValue, childOnly, childExcept, path + "." + childKey)
                 : childValue;
-            if (kept != null) {
-                result.put(childKey, kept);
-            }
+            result.put(childKey, kept);
         }
         return result.isEmpty() ? null : result;
     }

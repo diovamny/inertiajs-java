@@ -1,0 +1,9 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; }
+.welcome { max-width: 720px; margin: 8vh auto; padding: 2rem; text-align: center; }
+.welcome img.logo { height: 72px; }
+.welcome a { color: #7b5cff; }
+.welcome a:focus-visible { outline: 3px solid #7b5cff; outline-offset: 2px; }
+.powered { margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; align-items: center; }
+.powered img { height: 32px; }

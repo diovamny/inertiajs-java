@@ -16,26 +16,26 @@ public class LayoutController {
 
     @GetMapping("/features/layouts/persistent-layouts")
     public Object persistentLayouts() {
-        return inertia.render("Features/Layouts/PersistentLayouts", null);
+        return inertia.render("Features/Layouts/PersistentLayouts");
     }
 
     @GetMapping("/features/layouts/persistent-layouts/page-2")
     public Object persistentLayoutsPageTwo() {
-        return inertia.render("Features/Layouts/PersistentLayoutsPageTwo", null);
+        return inertia.render("Features/Layouts/PersistentLayoutsPageTwo");
     }
 
     @GetMapping("/features/layouts/nested-layouts")
     public Object nestedLayouts() {
-        return inertia.render("Features/Layouts/NestedLayouts", null);
+        return inertia.render("Features/Layouts/NestedLayouts");
     }
 
     @GetMapping("/features/layouts/head")
     public Object head() {
-        return inertia.render("Features/Layouts/Head", null);
+        return inertia.render("Features/Layouts/Head");
     }
 
     @GetMapping("/features/layouts/layout-props")
     public Object layoutProps() {
-        return inertia.render("Features/Layouts/LayoutProps", null);
+        return inertia.render("Features/Layouts/LayoutProps");
     }
 }

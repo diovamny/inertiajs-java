@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0 https://maven.apache.org/xsd/archetype-descriptor-1.1.0.xsd"
+                      name="inertia-spring-vue-archetype">
+    <requiredProperties>
+        <requiredProperty key="appName">
+            <defaultValue>Hello Inertia</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="inertiaAdapterVersion">
+            <defaultValue>0.0.1</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="javaVersion">
+            <defaultValue>21</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="frameworkVersion">
+            <defaultValue>4.1.0</defaultValue>
+        </requiredProperty>
+    </requiredProperties>
+    <fileSets>
+        <fileSet filtered="true" packaged="false" encoding="UTF-8">
+            <directory></directory>
+            <includes>
+                <include>pom.xml</include>
+                <include>README.md</include>
+                <include>THIRD_PARTY_NOTICES.md</include>
+                <include>Dockerfile</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" packaged="false" encoding="UTF-8">
+            <directory>src/main/webui</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="false" packaged="false" encoding="UTF-8">
+            <directory></directory>
+            <includes>
+                <include>.gitignore</include>
+                <include>.dockerignore</include>
+                <include>mvnw</include>
+                <include>mvnw.cmd</include>
+                <include>.mvn/**</include>
+                <include>src/main/resources/templates/**</include>
+                <include>src/main/resources/static/brand/**</include>
+                <include>.github/workflows/ci.yml</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" packaged="false" encoding="UTF-8">
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" packaged="false" encoding="UTF-8">
+            <directory>src/test/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" packaged="false" encoding="UTF-8">
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>application.properties</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</archetype-descriptor>
