@@ -92,6 +92,14 @@ test.describe('Inertia v3 contracts (/login)', () => {
     const appChildren = await page.locator('#app').evaluate((el) => el.childElementCount);
     const bodySnippet = (await page.content()).slice(0, 300).replace(/\s+/g, ' ');
     console.log(`[e2e-diag] url=${page.url()} #app-children=${appChildren} body-start=${bodySnippet}`);
+    // Decisive checks: is the bundle served, does it throw on load, which browser?
+    const assetStatus = await page.request.get('/assets/app.js').then(
+      (r) => r.status(),
+      (e) => `fetch-error:${String(e).slice(0, 80)}`,
+    );
+    console.log(`[e2e-diag] asset-appjs=${assetStatus} ua=${await page.evaluate(() => navigator.userAgent)}`);
+    await page.waitForTimeout(2000);
+    console.log(`[e2e-diag] console-errors-so-far=${JSON.stringify(errors)} #app-children-after=${await page.locator('#app').evaluate((el) => el.childElementCount)}`);
     // Generous timeout: cold CI runners need seconds to parse the bundle
     // and mount the app on first paint.
     await expect(page.locator('#email')).toBeVisible({ timeout: 30000 });
