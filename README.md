@@ -91,7 +91,6 @@ import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
 import io.quarkus.vertx.web.Route.HttpMethod;
 import io.quarkus.vertx.web.Body;
-import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 
@@ -122,7 +121,6 @@ public class ContactsRouter {
     }
 
     @Route(path = "/:id/edit", methods = HttpMethod.GET) // GET /contacts/:id/edit
-    @Blocking
     public Uni<Object> edit(RoutingContext rc) {
         long id = Long.parseLong(rc.pathParam("id"));
         return inertia.render("Contacts/Edit",
@@ -130,6 +128,11 @@ public class ContactsRouter {
     }
 }
 ```
+
+> **Note:** these routes run on the event loop without `@Blocking`. Only add
+> `@Blocking` to a method if your database access is not reactive (classic JPA,
+> JDBC, Panache blocking); with a reactive client (Hibernate Reactive,
+> MongoDB reactive, REST calls) leave it off.
 
 Every route returns `Uni<Object>` (Quarkus) or `Object` (Spring): an HTML shell
 with the page object on the first visit, the JSON page object on Inertia
