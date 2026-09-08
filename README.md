@@ -25,96 +25,185 @@ Spring MVC annotations or Quarkus reactive resources instead of `routes.rb`:
 | `GET /contacts/{id}/edit` | `ContactsController#edit` | `ContactsController#edit` | `Contacts/Edit` |
 
 ```java
-// Spring Boot — works with Vue and React alike (the server is client-agnostic)
-@RestController
-public class DashboardController {
-
-    private final Inertia inertia;
-
-    @GetMapping("/dashboard")
-    public Object index() {
-        return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
-    }
-}
-```
-
-```java
-// Quarkus — reactive resource. The @Path annotations ARE the router
-// (the equivalent of Rails' config/routes.rb): each route renders a page,
-// redirects, or answers an Inertia visit — no separate API layer.
+// Spring Boot — same four methods (the server is client-agnostic: this one
+// controller serves the Vue and the React pages below)
 package com.example.crm;
 
 import java.util.Map;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.MediaType;
-import io.github.dg.quarkus.inertia.api.Inertia;
-import io.smallrye.common.annotation.Blocking;
-import io.smallrye.mutiny.Uni;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import io.github.dg.spring.inertia.api.Inertia;
 
-@Path("/contacts")          // <-- base route, like `resources :contacts`
-@Blocking
+@RestController
 public class ContactsController {
 
-    @Inject Inertia inertia;
-    @Inject ContactRepository contacts;
+    private final Inertia inertia;
+    private final ContactRepository contacts;
 
-    @GET                     // GET /contacts  →  page "Contacts/Index"
-    @Blocking
-    public Uni<Object> index() {
+    public ContactsController(Inertia inertia, ContactRepository contacts) {
+        this.inertia = inertia;
+        this.contacts = contacts;
+    }
+
+    @GetMapping("/contacts")           // GET /contacts  →  "Contacts/Index"
+    public Object index() {
         return inertia.render("Contacts/Index",
-            Map.of("contacts", contacts.listAll()));
+            Map.of("contacts", contacts.findAll()));
     }
 
-    @GET                     // GET /contacts/create  →  page "Contacts/Create"
-    @Path("create")
-    @Blocking
-    public Uni<Object> create() {
+    @GetMapping("/contacts/create")    // GET /contacts/create  →  "Contacts/Create"
+    public Object create() {
         return inertia.render("Contacts/Create",
-            Map.of("organizations", organizations.listAll()));
+            Map.of("organizations", organizations.findAll()));
     }
 
-    @POST                    // POST /contacts  →  validate, then 303 redirect
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Blocking
-    public Uni<Object> store(ContactForm form) {
+    @PostMapping(value = "/contacts", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Object store(@RequestBody ContactForm form) {   // POST → 303 redirect
         var contact = contacts.create(form);
         return inertia.redirect("/contacts/" + contact.id)
             .with("message", "Contact created.");
     }
 
-    @GET                     // GET /contacts/{id}/edit  →  page "Contacts/Edit"
-    @Path("{id}/edit")
-    @Blocking
-    public Uni<Object> edit(@PathParam("id") long id) {
+    @GetMapping("/contacts/{id}/edit") // GET /contacts/{id}/edit  →  "Contacts/Edit"
+    public Object edit(@PathVariable long id) {
         return inertia.render("Contacts/Edit",
             Map.of("contact", contacts.findById(id)));
     }
 }
 ```
 
-Every route returns `Uni<Object>`: an HTML shell with the page object on the
-first visit, the JSON page object on Inertia visits, a `303` + flash message
-on `redirect()`, and a `409` re-visit when the asset version mismatches — all
-handled by the adapter from these same methods.
+```java
+// Quarkus — @Router style with Reactive Routes. @RouteBase + @Route ARE the
+// router (the equivalent of Rails' config/routes.rb): each route renders a
+// page, redirects, or answers an Inertia visit — no separate API layer.
+// Requires the quarkus-reactive-routes extension on the classpath.
+package com.example.crm;
+
+import java.util.Map;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.MediaType;
+import io.github.dg.quarkus.inertia.api.Inertia;
+import io.quarkus.vertx.web.Route;
+import io.quarkus.vertx.web.RouteBase;
+import io.quarkus.vertx.web.Route.HttpMethod;
+import io.quarkus.vertx.web.Body;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
+import io.vertx.ext.web.RoutingContext;
+
+@RouteBase(path = "/contacts")   // <-- base route, like `resources :contacts`
+public class ContactsRouter {
+
+    @Inject Inertia inertia;
+    @Inject ContactRepository contacts;
+
+    @Route(path = "", methods = HttpMethod.GET)   // GET /contacts → "Contacts/Index"
+    @Blocking
+    public Uni<Object> index() {
+        return inertia.render("Contacts/Index",
+            Map.of("contacts", contacts.listAll()));
+    }
+
+    @Route(path = "/create", methods = HttpMethod.GET) // GET /contacts/create
+    @Blocking
+    public Uni<Object> create() {
+        return inertia.render("Contacts/Create",
+            Map.of("organizations", organizations.listAll()));
+    }
+
+    @Route(path = "", methods = HttpMethod.POST,   // POST /contacts → 303
+            consumes = MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> store(@Body ContactForm form) {
+        var contact = contacts.create(form);
+        return inertia.redirect("/contacts/" + contact.id)
+            .with("message", "Contact created.");
+    }
+
+    @Route(path = "/:id/edit", methods = HttpMethod.GET) // GET /contacts/:id/edit
+    @Blocking
+    public Uni<Object> edit(RoutingContext rc) {
+        long id = Long.parseLong(rc.pathParam("id"));
+        return inertia.render("Contacts/Edit",
+            Map.of("contact", contacts.findById(id)));
+    }
+}
+```
+
+Every route returns `Uni<Object>` (Quarkus) or `Object` (Spring): an HTML shell
+with the page object on the first visit, the JSON page object on Inertia
+visits, a `303` + flash message on `redirect()`, and a `409` re-visit when the
+asset version mismatches — all handled by the adapter from these same methods.
 
 ```vue
-<!-- Vue 3: webui/src/pages/Dashboard.vue -->
-<script setup lang="ts">defineProps<{ contacts: Contact[] }>()</script>
+<!-- Vue 3 using the routes: webui/src/pages/Contacts/Index.vue -->
+<script setup lang="ts">
+import { Link } from '@inertiajs/vue3'
+defineProps<{ contacts: { id: number; name: string }[] }>()
+</script>
 <template>
-  <ul><li v-for="c in contacts" :key="c.id">{{ c.name }}</li></ul>
+  <Link href="/contacts/create">Create contact</Link>
+  <ul>
+    <li v-for="c in contacts" :key="c.id">
+      {{ c.name }}
+      <Link :href="`/contacts/${c.id}/edit`">Edit</Link>
+    </li>
+  </ul>
+</template>
+```
+
+```vue
+<!-- Vue 3 posting to the routes: webui/src/pages/Contacts/Create.vue -->
+<script setup lang="ts">
+import { Form } from '@inertiajs/vue3'
+import { ref } from 'vue'
+const name = ref('')
+</script>
+<template>
+  <Form action="/contacts" method="post" v-slot="{ errors, processing }">
+    <input v-model="name" name="name" placeholder="Name" />
+    <div v-if="errors.name">{{ errors.name }}</div>
+    <button type="submit" :disabled="processing">Save</button>
+  </Form>
 </template>
 ```
 
 ```tsx
-// React 19: webui/src/pages/Dashboard.tsx
-export default function Dashboard({ contacts }: { contacts: Contact[] }) {
+// React 19 using the routes: webui/src/pages/Contacts/Index.tsx
+import { Link } from '@inertiajs/react'
+
+export default function Index({ contacts }: { contacts: { id: number; name: string }[] }) {
   return (
-    <ul>{contacts.map((c) => <li key={c.id}>{c.name}</li>)}</ul>
+    <>
+      <Link href="/contacts/create">Create contact</Link>
+      <ul>
+        {contacts.map((c) => (
+          <li key={c.id}>
+            {c.name} <Link href={`/contacts/${c.id}/edit`}>Edit</Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+```
+
+```tsx
+// React 19 posting to the routes: webui/src/pages/Contacts/Create.tsx
+import { useForm } from '@inertiajs/react'
+
+export default function Create() {
+  const { data, setData, post, errors, processing } = useForm({ name: '' })
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); post('/contacts') }}>
+      <input value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="Name" />
+      {errors.name && <div>{errors.name}</div>}
+      <button type="submit" disabled={processing}>Save</button>
+    </form>
   )
 }
 ```
