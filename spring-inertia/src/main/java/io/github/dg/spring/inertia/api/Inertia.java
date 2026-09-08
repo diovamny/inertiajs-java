@@ -419,7 +419,7 @@ public interface Inertia {
     void setClearHistory(boolean clear);
 
     /**
-     * Enable camelCase-to-snake_case prop conversion for the current visit.
+     * Enable snake_case-to-camelCase prop conversion for the current visit.
      *
      * @param camelize {@code true} to convert the prop keys
      */

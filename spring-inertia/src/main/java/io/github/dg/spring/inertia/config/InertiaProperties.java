@@ -67,7 +67,7 @@ public class InertiaProperties {
     /** Whether the client must clear history on the next visit. */
     private boolean clearHistory = false;
 
-    /** Whether prop keys are converted from camelCase to snake_case. */
+    /** Whether prop keys are converted from snake_case to camelCase. */
     private boolean camelizeProps = false;
 
     /** Whether the XSRF-TOKEN cookie synchronization is active. */

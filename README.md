@@ -353,6 +353,9 @@ choose:
 inertia.root-template=index.html
 ```
 
+All 23 `inertia.*` settings with defaults and per-framework availability:
+[configuration reference](docs/configuration.md).
+
 Or start from a working app with one command — **starter kits** with Vue 3 or
 React 19, TypeScript, Vite, tests and an optional native `Dockerfile`:
 
