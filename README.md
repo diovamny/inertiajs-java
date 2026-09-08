@@ -202,17 +202,40 @@ public class ContactsController {
 <!-- Vue 3 using the routes: webui/src/pages/Contacts/Index.vue -->
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3'
-defineProps<{ contacts: { id: number; name: string }[] }>()
+
+interface Contact {
+  id: number
+  name: string
+}
+
+defineProps<{
+  contacts: Contact[]
+}>()
 </script>
+
 <template>
-  <Link href="/contacts/create">Create contact</Link>
-  <ul>
-    <li v-for="c in contacts" :key="c.id">
-      {{ c.name }}
-      <Link :href="`/contacts/${c.id}/edit`">Edit</Link>
-    </li>
-  </ul>
+  <main class="contacts">
+    <h1>Contacts</h1>
+    <Link href="/contacts/create" class="button">Create contact</Link>
+    <ul>
+      <li v-for="c in contacts" :key="c.id">
+        {{ c.name }}
+        <Link :href="`/contacts/${c.id}/edit`">Edit</Link>
+      </li>
+    </ul>
+  </main>
 </template>
+
+<style scoped>
+.contacts {
+  max-width: 640px;
+  margin: 2rem auto;
+}
+.button {
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+</style>
 ```
 
 ```vue
@@ -220,15 +243,31 @@ defineProps<{ contacts: { id: number; name: string }[] }>()
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3'
 import { ref } from 'vue'
-const name = ref('')
+
+const name = ref<string>('')
 </script>
+
 <template>
-  <Form action="/contacts" method="post" v-slot="{ errors, processing }">
-    <input v-model="name" name="name" placeholder="Name" />
-    <div v-if="errors.name">{{ errors.name }}</div>
-    <button type="submit" :disabled="processing">Save</button>
-  </Form>
+  <main class="contacts">
+    <h1>Create contact</h1>
+    <Form action="/contacts" method="post" v-slot="{ errors, processing }">
+      <label for="name">Name</label>
+      <input id="name" v-model="name" name="name" placeholder="Name" />
+      <div v-if="errors.name" class="error">{{ errors.name }}</div>
+      <button type="submit" :disabled="processing">Save</button>
+    </Form>
+  </main>
 </template>
+
+<style scoped>
+.contacts {
+  max-width: 640px;
+  margin: 2rem auto;
+}
+.error {
+  color: #c00;
+}
+</style>
 ```
 
 ```tsx
