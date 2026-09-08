@@ -87,6 +87,11 @@ test.describe('Inertia v3 contracts (/login)', () => {
     const response = await page.goto('/login');
     expect(response?.status(), 'GET /login must return 200 HTML').toBe(200);
     await expect(page.locator('#app')).toBeAttached();
+    // CI diagnostics: log what the browser actually received before asserting.
+    // These lines stay in the CI stdout and explain mount failures.
+    const appChildren = await page.locator('#app').evaluate((el) => el.childElementCount);
+    const bodySnippet = (await page.content()).slice(0, 300).replace(/\s+/g, ' ');
+    console.log(`[e2e-diag] url=${page.url()} #app-children=${appChildren} body-start=${bodySnippet}`);
     // Generous timeout: cold CI runners need seconds to parse the bundle
     // and mount the app on first paint.
     await expect(page.locator('#email')).toBeVisible({ timeout: 30000 });
