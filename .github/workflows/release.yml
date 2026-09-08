@@ -39,7 +39,7 @@ jobs:
         run: mvn clean deploy -Prelease -DskipTests
 
       - name: Attach release artifacts
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             quarkus-inertia/target/quarkus-inertia-*.jar
