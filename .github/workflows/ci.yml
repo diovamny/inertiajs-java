@@ -59,6 +59,11 @@ jobs:
           java-version: 21
           cache: maven
 
+      - name: Install adapters (unpublished snapshots for demos)
+        # spring-inertia/quarkus-inertia 0.0.1 are not on Maven Central yet,
+        # so demos cannot resolve them without a local install first.
+        run: mvn -B -q -DskipTests install -pl quarkus-inertia,spring-inertia
+
       - name: Spring demo smoke
         run: mvn clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-kitchen-sink -Pexamples
 
