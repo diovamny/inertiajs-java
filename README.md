@@ -12,30 +12,63 @@ project and is not officially maintained by the Inertia.js team.
 
 ## Your controllers. Your routes. Modern components.
 
-Pass data from Java directly to Vue or React as **props** — no REST endpoints, no
-client-side fetching:
+One router on the server, props to the page — like `inertia-rails`, but with
+Spring MVC annotations or Quarkus reactive resources instead of `routes.rb`:
+
+| URL | Spring Boot | Quarkus | Page |
+|---|---|---|---|
+| `GET /` | `WelcomeController#welcome` | `WelcomeController#welcome` | `Welcome` |
+| `GET /dashboard` | `DashboardController#index` | `DashboardController#index` | `Dashboard` |
 
 ```java
-// Spring Boot
-@GetMapping("/")
-public Object index() {
-    return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+// Spring Boot — works with Vue and React alike (the server is client-agnostic)
+@RestController
+public class DashboardController {
+
+    private final Inertia inertia;
+
+    @GetMapping("/dashboard")
+    public Object index() {
+        return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+    }
 }
 ```
 
 ```java
-// Quarkus (reactive)
-@GET
-public Uni<Object> index() {
-    return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+// Quarkus — reactive: return Uni<Object>, same render API
+@Path("/dashboard")
+public class DashboardController {
+
+    @Inject Inertia inertia;
+
+    @GET
+    public Uni<Object> index() {
+        return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+    }
 }
 ```
 
 ```vue
-<!-- webui/src/pages/Dashboard.vue -->
+<!-- Vue 3: webui/src/pages/Dashboard.vue -->
 <script setup lang="ts">defineProps<{ contacts: Contact[] }>()</script>
-<template><ul><li v-for="c in contacts" :key="c.id">{{ c.name }}</li></ul></template>
+<template>
+  <ul><li v-for="c in contacts" :key="c.id">{{ c.name }}</li></ul>
+</template>
 ```
+
+```tsx
+// React 19: webui/src/pages/Dashboard.tsx
+export default function Dashboard({ contacts }: { contacts: Contact[] }) {
+  return (
+    <ul>{contacts.map((c) => <li key={c.id}>{c.name}</li>)}</ul>
+  )
+}
+```
+
+That's the whole loop on either stack: the route renders props, the component
+renders them. Links and form submits become XHR visits, so navigation feels
+instant — while you keep writing plain Spring MVC or Quarkus resources,
+sessions and validation on the server.
 
 ## Get started
 
