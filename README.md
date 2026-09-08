@@ -154,18 +154,15 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 import io.github.dg.quarkus.inertia.api.Inertia;
-import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 
 @Path("/contacts")          // <-- base route, like `resources :contacts`
-@Blocking
 public class ContactsController {
 
     @Inject Inertia inertia;
     @Inject ContactRepository contacts;
 
     @GET                     // GET /contacts  →  page "Contacts/Index"
-    @Blocking
     public Uni<Object> index() {
         return inertia.render("Contacts/Index",
             Map.of("contacts", contacts.listAll()));
@@ -173,7 +170,6 @@ public class ContactsController {
 
     @GET                     // GET /contacts/create  →  page "Contacts/Create"
     @Path("create")
-    @Blocking
     public Uni<Object> create() {
         return inertia.render("Contacts/Create",
             Map.of("organizations", organizations.listAll()));
@@ -181,7 +177,6 @@ public class ContactsController {
 
     @POST                    // POST /contacts  →  validate, then 303 redirect
     @Consumes(MediaType.APPLICATION_JSON)
-    @Blocking
     public Uni<Object> store(ContactForm form) {
         var contact = contacts.create(form);
         return inertia.redirect("/contacts/" + contact.id)
@@ -190,7 +185,6 @@ public class ContactsController {
 
     @GET                     // GET /contacts/{id}/edit  →  page "Contacts/Edit"
     @Path("{id}/edit")
-    @Blocking
     public Uni<Object> edit(@PathParam("id") long id) {
         return inertia.render("Contacts/Edit",
             Map.of("contact", contacts.findById(id)));
