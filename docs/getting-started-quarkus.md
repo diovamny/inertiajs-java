@@ -61,6 +61,75 @@ Add a Qute root template at `src/main/resources/templates/index.html` (see the
 starter kit for a copy-paste template), a Vite frontend resolving the
 `Welcome` page, then `npm run build` + `mvn package`.
 
+## Full CRUD example — ContactsController
+
+The same four methods serve Vue and React alike. (Prefer `@RouteBase` /
+`@Route` reactive routes? See the `@Router` variant in the main [README](../README.md).)
+
+```java
+package com.example.crm;
+
+import java.util.Map;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.MediaType;
+import io.github.dg.quarkus.inertia.api.Inertia;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
+
+@Path("/contacts")
+@Blocking
+public class ContactsController {
+
+    @Inject Inertia inertia;
+    @Inject ContactRepository contacts;
+
+    @GET
+    @Blocking
+    public Uni<Object> index() {
+        // GET /contacts  →  page "Contacts/Index"
+        return inertia.render("Contacts/Index",
+            Map.of("contacts", contacts.listAll()));
+    }
+
+    @GET
+    @Path("create")
+    @Blocking
+    public Uni<Object> create() {
+        // GET /contacts/create  →  page "Contacts/Create"
+        return inertia.render("Contacts/Create",
+            Map.of("organizations", organizations.listAll()));
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> store(ContactForm form) {
+        // POST /contacts  →  validate, then 303 redirect with flash data
+        var contact = contacts.create(form);
+        return inertia.redirect("/contacts/" + contact.id)
+            .with("message", "Contact created.");
+    }
+
+    @GET
+    @Path("{id}/edit")
+    @Blocking
+    public Uni<Object> edit(@PathParam("id") long id) {
+        // GET /contacts/{id}/edit  →  page "Contacts/Edit"
+        return inertia.render("Contacts/Edit",
+            Map.of("contact", contacts.findById(id)));
+    }
+}
+```
+
+> **Note:** `@Blocking` is shown because classic repository access blocks. If
+> your database client is reactive (Hibernate Reactive, MongoDB reactive),
+> drop `@Blocking` and stay on the event loop.
+
 ## Test it
 
 ```java

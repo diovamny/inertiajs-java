@@ -64,6 +64,171 @@ Add a root template at `src/main/resources/templates/index.html` (see the
 starter kit for a copy-paste template), a Vite frontend resolving the
 `Welcome` page, then `npm run build` + `mvn package`.
 
+## Full CRUD example — ContactsController
+
+The same four methods serve Vue and React alike.
+
+```java
+package com.example.crm;
+
+import java.util.Map;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import io.github.dg.spring.inertia.api.Inertia;
+
+@RestController
+public class ContactsController {
+
+    private final Inertia inertia;
+    private final ContactRepository contacts;
+
+    public ContactsController(Inertia inertia, ContactRepository contacts) {
+        this.inertia = inertia;
+        this.contacts = contacts;
+    }
+
+    @GetMapping("/contacts")
+    public Object index() {
+        // GET /contacts  →  page "Contacts/Index"
+        return inertia.render("Contacts/Index",
+            Map.of("contacts", contacts.findAll()));
+    }
+
+    @GetMapping("/contacts/create")
+    public Object create() {
+        // GET /contacts/create  →  page "Contacts/Create"
+        return inertia.render("Contacts/Create",
+            Map.of("organizations", organizations.findAll()));
+    }
+
+    @PostMapping(value = "/contacts", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Object store(@RequestBody ContactForm form) {
+        // POST /contacts  →  validate, then 303 redirect with flash data
+        var contact = contacts.create(form);
+        return inertia.redirect("/contacts/" + contact.id)
+            .with("message", "Contact created.");
+    }
+
+    @GetMapping("/contacts/{id}/edit")
+    public Object edit(@PathVariable long id) {
+        // GET /contacts/{id}/edit  →  page "Contacts/Edit"
+        return inertia.render("Contacts/Edit",
+            Map.of("contact", contacts.findById(id)));
+    }
+}
+```
+
+## Vue.js pages
+
+```vue
+<!-- webui/src/pages/Contacts/Index.vue -->
+<script setup lang="ts">
+import { Link } from '@inertiajs/vue3'
+
+interface Contact {
+  id: number
+  name: string
+}
+
+defineProps<{
+  contacts: Contact[]
+}>()
+</script>
+
+<template>
+  <main>
+    <h1>Contacts</h1>
+    <Link href="/contacts/create">Create contact</Link>
+    <ul>
+      <li v-for="c in contacts" :key="c.id">
+        {{ c.name }}
+        <Link :href="`/contacts/${c.id}/edit`">Edit</Link>
+      </li>
+    </ul>
+  </main>
+</template>
+```
+
+```vue
+<!-- webui/src/pages/Contacts/Create.vue -->
+<script setup lang="ts">
+import { Form } from '@inertiajs/vue3'
+import { ref } from 'vue'
+
+const name = ref<string>('')
+</script>
+
+<template>
+  <main>
+    <h1>Create contact</h1>
+    <Form action="/contacts" method="post" v-slot="{ errors, processing }">
+      <label for="name">Name</label>
+      <input id="name" v-model="name" name="name" placeholder="Name" />
+      <div v-if="errors.name">{{ errors.name }}</div>
+      <button type="submit" :disabled="processing">Save</button>
+    </Form>
+  </main>
+</template>
+```
+
+## React.js pages
+
+```tsx
+// webui/src/pages/Contacts/Index.tsx
+import { Link } from '@inertiajs/react'
+
+interface Contact {
+  id: number
+  name: string
+}
+
+export default function Index({ contacts }: { contacts: Contact[] }) {
+  return (
+    <main>
+      <h1>Contacts</h1>
+      <Link href="/contacts/create">Create contact</Link>
+      <ul>
+        {contacts.map((c) => (
+          <li key={c.id}>
+            {c.name} <Link href={`/contacts/${c.id}/edit`}>Edit</Link>
+          </li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+```
+
+```tsx
+// webui/src/pages/Contacts/Create.tsx
+import { useForm } from '@inertiajs/react'
+
+export default function Create() {
+  const { data, setData, post, errors, processing } = useForm({ name: '' })
+
+  return (
+    <main>
+      <h1>Create contact</h1>
+      <form onSubmit={(e) => { e.preventDefault(); post('/contacts') }}>
+        <label htmlFor="name">Name</label>
+        <input
+          id="name"
+          value={data.name}
+          onChange={(e) => setData('name', e.target.value)}
+          placeholder="Name"
+        />
+        {errors.name && <div>{errors.name}</div>}
+        <button type="submit" disabled={processing}>Save</button>
+      </form>
+    </main>
+  )
+}
+```
+
 ## Test it
 
 ```java
