@@ -14,7 +14,7 @@
             <defaultValue>21</defaultValue>
         </requiredProperty>
         <requiredProperty key="frameworkVersion">
-            <defaultValue>3.38.0</defaultValue>
+            <defaultValue>3.39.2</defaultValue>
         </requiredProperty>
     </requiredProperties>
     <fileSets>

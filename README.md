@@ -1,4 +1,4 @@
-﻿# Inertia.js Java Adapters
+# Inertia.js Java Adapters
 
 Single-page Vue and React apps powered by Spring Boot and Quarkus controllers. No API required.
 
@@ -308,7 +308,7 @@ sessions and validation on the server.
 ## Get started
 
 **Spring Boot 4.1** (`io.github.dg.spring.inertia:spring-inertia`) and
-**Quarkus 3.38** (`io.github.dg.quarkus.inertia:quarkus-inertia`) require Java 21+:
+**Quarkus 3.39** (`io.github.dg.quarkus.inertia:quarkus-inertia`) require Java 21+:
 
 > **Pre-release note:** `0.0.1` is not on Maven Central yet. Until the first
 > release, build from source once (`git clone` + `mvn -DskipTests install`)

@@ -78,9 +78,9 @@ jobs:
           - archetype: inertia-spring-react-archetype
             framework-version: 4.1.0
           - archetype: inertia-quarkus-vue-archetype
-            framework-version: 3.38.0
+            framework-version: 3.39.2
           - archetype: inertia-quarkus-react-archetype
-            framework-version: 3.38.0
+            framework-version: 3.39.2
     steps:
       - uses: actions/checkout@v4
 

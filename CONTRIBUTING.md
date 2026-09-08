@@ -25,7 +25,7 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 
 | Path | Purpose |
 |---|---|
-| `quarkus-inertia/` | Inertia.js v3 adapter for Quarkus 3.38.x (Mutiny / Vert.x / Qute / JAX-RS) |
+| `quarkus-inertia/` | Inertia.js v3 adapter for Quarkus 3.39.x (Mutiny / Vert.x / Qute / JAX-RS) |
 | `spring-inertia/` | Inertia.js v3 adapter for Spring Boot 4.1.x (Spring MVC / AOT / GraalVM) |
 | `archetypes/` | Maven archetypes: Spring/Quarkus × Vue 3/React 19 starter kits |
 | `examples/` | Demo apps (kitchen-sink protocol testbeds, PingCRM ports) |

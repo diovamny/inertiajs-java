@@ -5,7 +5,7 @@ only when CI evidence exists; see [protocol compatibility](docs/protocol-compati
 
 ## Now (0.x)
 
-- Keep Spring Boot 4.1 / Quarkus 3.38 / Java 21 baseline green: unit suites,
+- Keep Spring Boot 4.1 / Quarkus 3.39 / Java 21 baseline green: unit suites,
   kitchen-sink demos, Playwright contracts, archetype generation.
 - Publish `0.0.1` to Maven Central (namespace `io.github.dg`) with signed
   artifacts and `META-INF/LICENSE`.

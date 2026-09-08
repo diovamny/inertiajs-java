@@ -1,6 +1,6 @@
 # Getting Started — Quarkus
 
-Minimal path from zero to your first Inertia v3 page with Quarkus 3.38 (reactive).
+Minimal path from zero to your first Inertia v3 page with Quarkus 3.39 (reactive).
 Requires JDK 21+, Maven 3.9+ and Node.js 22+.
 
 ## Option A — starter kit (recommended)
