@@ -102,14 +102,12 @@ public class ContactsRouter {
     @Inject ContactRepository contacts;
 
     @Route(path = "", methods = HttpMethod.GET)   // GET /contacts → "Contacts/Index"
-    @Blocking
     public Uni<Object> index() {
         return inertia.render("Contacts/Index",
             Map.of("contacts", contacts.listAll()));
     }
 
     @Route(path = "/create", methods = HttpMethod.GET) // GET /contacts/create
-    @Blocking
     public Uni<Object> create() {
         return inertia.render("Contacts/Create",
             Map.of("organizations", organizations.listAll()));
@@ -117,7 +115,6 @@ public class ContactsRouter {
 
     @Route(path = "", methods = HttpMethod.POST,   // POST /contacts → 303
             consumes = MediaType.APPLICATION_JSON)
-    @Blocking
     public Uni<Object> store(@Body ContactForm form) {
         var contact = contacts.create(form);
         return inertia.redirect("/contacts/" + contact.id)
