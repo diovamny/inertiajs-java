@@ -19,6 +19,10 @@ Spring MVC annotations or Quarkus reactive resources instead of `routes.rb`:
 |---|---|---|---|
 | `GET /` | `WelcomeController#welcome` | `WelcomeController#welcome` | `Welcome` |
 | `GET /dashboard` | `DashboardController#index` | `DashboardController#index` | `Dashboard` |
+| `GET /contacts` | `ContactsController#index` | `ContactsController#index` | `Contacts/Index` |
+| `GET /contacts/create` | `ContactsController#create` | `ContactsController#create` | `Contacts/Create` |
+| `POST /contacts` | `ContactsController#store` → `303` | `ContactsController#store` → `303` | (redirect) |
+| `GET /contacts/{id}/edit` | `ContactsController#edit` | `ContactsController#edit` | `Contacts/Edit` |
 
 ```java
 // Spring Boot — works with Vue and React alike (the server is client-agnostic)
@@ -35,18 +39,68 @@ public class DashboardController {
 ```
 
 ```java
-// Quarkus — reactive: return Uni<Object>, same render API
-@Path("/dashboard")
-public class DashboardController {
+// Quarkus — reactive resource. The @Path annotations ARE the router
+// (the equivalent of Rails' config/routes.rb): each route renders a page,
+// redirects, or answers an Inertia visit — no separate API layer.
+package com.example.crm;
+
+import java.util.Map;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.MediaType;
+import io.github.dg.quarkus.inertia.api.Inertia;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
+
+@Path("/contacts")          // <-- base route, like `resources :contacts`
+@Blocking
+public class ContactsController {
 
     @Inject Inertia inertia;
+    @Inject ContactRepository contacts;
 
-    @GET
+    @GET                     // GET /contacts  →  page "Contacts/Index"
+    @Blocking
     public Uni<Object> index() {
-        return inertia.render("Dashboard", Map.of("contacts", contacts.list()));
+        return inertia.render("Contacts/Index",
+            Map.of("contacts", contacts.listAll()));
+    }
+
+    @GET                     // GET /contacts/create  →  page "Contacts/Create"
+    @Path("create")
+    @Blocking
+    public Uni<Object> create() {
+        return inertia.render("Contacts/Create",
+            Map.of("organizations", organizations.listAll()));
+    }
+
+    @POST                    // POST /contacts  →  validate, then 303 redirect
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Blocking
+    public Uni<Object> store(ContactForm form) {
+        var contact = contacts.create(form);
+        return inertia.redirect("/contacts/" + contact.id)
+            .with("message", "Contact created.");
+    }
+
+    @GET                     // GET /contacts/{id}/edit  →  page "Contacts/Edit"
+    @Path("{id}/edit")
+    @Blocking
+    public Uni<Object> edit(@PathParam("id") long id) {
+        return inertia.render("Contacts/Edit",
+            Map.of("contact", contacts.findById(id)));
     }
 }
 ```
+
+Every route returns `Uni<Object>`: an HTML shell with the page object on the
+first visit, the JSON page object on Inertia visits, a `303` + flash message
+on `redirect()`, and a `409` re-visit when the asset version mismatches — all
+handled by the adapter from these same methods.
 
 ```vue
 <!-- Vue 3: webui/src/pages/Dashboard.vue -->
