@@ -4,9 +4,9 @@
 **Scope:** Spring Boot Inertia.js v3 Adapter & Quarkus Inertia.js v3 Adapter
 **Reference:** [Inertia v3 Protocol](https://inertiajs.com/docs/v3/core-concepts/the-protocol)
 
-Status semantics: ✅ means an executable test exists and is green in the current suite; `PENDING` means the requirement is known but not yet backed by a real test; `N/A` means not applicable.
+Status semantics: ✅ means an executable test exists and is green in the current suite; ❌ means the requirement is known but not yet backed by a real test; `N/A` means not applicable.
 
-Important: this file is now evidence-based. Rows that cite non-existent test classes are removed or marked as `PENDING`. Claims of 100% compatibility are deliberately avoided until the E2E matrix and quality gates are green.
+Important: this file is now evidence-based. Rows that cite non-existent test classes are removed or marked as ❌. Claims of 100% compatibility are deliberately avoided until the E2E matrix and quality gates are green.
 
 | # | Category | Requirement | Source | Spring | Quarkus | Test | Notes |
 |---|----------|-------------|--------|--------|---------|------|-------|
