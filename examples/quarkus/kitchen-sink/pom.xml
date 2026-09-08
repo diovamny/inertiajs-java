@@ -159,7 +159,9 @@
                         <goals>
                             <goal>npm</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <!-- Must run before process-resources: vite writes into
+                             src/main/resources, which is copied to target next. -->
+                        <phase>generate-resources</phase>
                         <configuration>
                             <arguments>run build</arguments>
                         </configuration>
