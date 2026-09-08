@@ -382,7 +382,13 @@ Full walkthroughs: [Spring](docs/getting-started-spring.md) and
 
 Compatibility is evidence-based: see [protocol compatibility](docs/protocol-compatibility.md),
 linked row-by-row to contract tests that CI verifies on every push.
-Full guide list: [docs/](docs/README.md).
+
+## Documentation
+
+- **Start:** [Spring Boot](docs/getting-started-spring.md) · [Quarkus](docs/getting-started-quarkus.md)
+- **Reference:** [Configuration](docs/configuration.md) (all 23 `inertia.*` settings) · [Protocol compatibility](docs/protocol-compatibility.md) · [Migration](docs/migration.md)
+- **Features:** [Shared data and props](docs/shared-data-and-props.md) · [View data](docs/viewdata-guide.md) · [Testing](docs/testing-guide.md) · [SSR setup](docs/ssr-setup.md) · [Native image](docs/native-image.md)
+- **Design decisions:** [ADR-001](docs/adr/001-native-builder-jdk-25.md) · [ADR-002](docs/adr/002-partial-null-props.md)
 
 ## Contribute and run tests
 
