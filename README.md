@@ -382,6 +382,7 @@ Full walkthroughs: [Spring](docs/getting-started-spring.md) and
 
 Compatibility is evidence-based: see [protocol compatibility](docs/protocol-compatibility.md),
 linked row-by-row to contract tests that CI verifies on every push.
+Full guide list: [docs/](docs/README.md).
 
 ## Contribute and run tests
 
