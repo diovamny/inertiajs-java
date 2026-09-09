@@ -1,6 +1,6 @@
 package io.github.dg.quarkus.inertia.config;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

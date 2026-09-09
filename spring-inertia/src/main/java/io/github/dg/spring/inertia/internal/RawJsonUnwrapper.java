@@ -88,10 +88,10 @@ public final class RawJsonUnwrapper {
             node.forEach(item -> list.add(fromNode(item)));
             return list;
         }
-        if (node.isTextual()) return node.textValue();
+        if (node.isString()) return node.stringValue();
         if (node.isBoolean()) return node.booleanValue();
         if (node.isIntegralNumber()) return node.longValue();
         if (node.isFloatingPointNumber()) return node.doubleValue();
-        return node.asText();
+        return node.asString();
     }
 }

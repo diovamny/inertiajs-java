@@ -1,7 +1,6 @@
 package io.github.dg.quarkus.inertia.internal;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;

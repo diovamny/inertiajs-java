@@ -13,6 +13,7 @@ dist/
 **/resources/META-INF/resources/assets/
 **/resources/META-INF/resources/.vite/
 **/resources/static/assets/
+**/resources/static/.vite/
 **/resources/.vite/
 
 # App runtime data (H2 file DBs, uploads)

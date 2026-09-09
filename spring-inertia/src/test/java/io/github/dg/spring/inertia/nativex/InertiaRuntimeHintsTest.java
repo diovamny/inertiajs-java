@@ -15,14 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Guards the GraalVM reflection metadata: every model record must be
- * registered with invocation <em>and</em> introspection categories,
- * otherwise Jackson fails in native images with
- * {@code Record components not available for record class ...}.
+ * registered with access and invocation categories. Spring Framework 7 adds
+ * method introspection (including record components) by default, so the
+ * retired {@code INTROSPECT_*} constants must not be used.
  */
 class InertiaRuntimeHintsTest {
 
     @Test
-    void allModelRecordsAreRegisteredWithIntrospection() {
+    void allModelRecordsAreRegisteredWithoutRetiredCategories() {
         var hints = new RuntimeHints();
         new InertiaRuntimeHints().registerHints(hints, getClass().getClassLoader());
 
@@ -35,8 +35,8 @@ class InertiaRuntimeHintsTest {
             var categories = hint.getMemberCategories();
             assertTrue(categories.contains(MemberCategory.INVOKE_DECLARED_METHODS),
                 type.getName() + " must allow declared method invocation");
-            assertTrue(categories.contains(MemberCategory.INTROSPECT_DECLARED_METHODS),
-                type.getName() + " must allow declared method introspection (records)");
+            assertTrue(categories.contains(MemberCategory.ACCESS_DECLARED_FIELDS),
+                type.getName() + " must allow declared field access");
         }
     }
 }

@@ -138,7 +138,7 @@ class KitchenSinkSpringTest {
                 .contentType(APPLICATION_JSON)
                 .content("{\"username\":\"a\",\"email\":\"not-an-email\"}")
                 .session(session))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isUnprocessableContent())
             .andExpect(header().string("Precognition", "true"))
             .andExpect(header().string("Vary", Matchers.containsString("Precognition")))
             .andExpect(jsonPath("$.errors.username").exists())
@@ -154,7 +154,7 @@ class KitchenSinkSpringTest {
                 .contentType(APPLICATION_JSON)
                 .content("{\"password\":\"secret123\",\"password_confirmation\":\"different\"}")
                 .session(session))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isUnprocessableContent())
             .andExpect(jsonPath("$.errors.password_confirmation")
                 .value("The password confirmation does not match."));
     }
@@ -348,7 +348,7 @@ class KitchenSinkSpringTest {
                 .contentType(APPLICATION_JSON)
                 .content("{\"name\":\"\",\"email\":\"not-an-email\",\"bio\":\"\",\"role\":\"developer\"}")
                 .session(session))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isUnprocessableContent())
             .andExpect(header().string("Precognition", "true"))
             .andExpect(jsonPath("$.errors.name").exists())
             .andExpect(jsonPath("$.errors.email").doesNotExist())

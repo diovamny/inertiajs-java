@@ -2,7 +2,6 @@ package io.github.dg.spring.inertia.testing;
 
 import java.util.Map;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 
@@ -18,7 +17,7 @@ import org.springframework.test.web.servlet.ResultMatcher;
  *     .andExpect(inertia().hasDeferredProps("metrics"));
  * }</pre>
  */
-public class InertiaResultMatchers {
+public final class InertiaResultMatchers {
 
     private InertiaResultMatchers() {
     }

@@ -83,9 +83,27 @@ test.describe('Inertia v3 contracts (/login)', () => {
     page.on('console', (message) => {
       if (message.type() === 'error') errors.push(message.text());
     });
-    await page.goto('/login');
-    await expect(page.locator('#email')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    // Fail fast with diagnostics if the server does not serve the shell.
+    const response = await page.goto('/login');
+    expect(response?.status(), 'GET /login must return 200 HTML').toBe(200);
+    await expect(page.locator('#app')).toBeAttached();
+    // CI diagnostics: log what the browser actually received before asserting.
+    // These lines stay in the CI stdout and explain mount failures.
+    const appChildren = await page.locator('#app').evaluate((el) => el.childElementCount);
+    const bodySnippet = (await page.content()).slice(0, 300).replace(/\s+/g, ' ');
+    console.log(`[e2e-diag] url=${page.url()} #app-children=${appChildren} body-start=${bodySnippet}`);
+    // Decisive checks: is the bundle served, does it throw on load, which browser?
+    const assetStatus = await page.request.get('/assets/app.js').then(
+      (r) => r.status(),
+      (e) => `fetch-error:${String(e).slice(0, 80)}`,
+    );
+    console.log(`[e2e-diag] asset-appjs=${assetStatus} ua=${await page.evaluate(() => navigator.userAgent)}`);
+    await page.waitForTimeout(2000);
+    console.log(`[e2e-diag] console-errors-so-far=${JSON.stringify(errors)} #app-children-after=${await page.locator('#app').evaluate((el) => el.childElementCount)}`);
+    // Generous timeout: cold CI runners need seconds to parse the bundle
+    // and mount the app on first paint.
+    await expect(page.locator('#email')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible({ timeout: 15000 });
     await expect(page).toHaveTitle(/Log in/);
     expect(errors).toEqual([]);
   });
