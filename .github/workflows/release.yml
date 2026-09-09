@@ -49,6 +49,11 @@ jobs:
         run: mvn verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
 
       - name: Build, sign and publish to Sonatype Central Portal
+        # maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE directly from the
+        # environment, bypassing the settings.xml decryption path that fails
+        # without settings-security.xml on fresh runners.
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn clean deploy -Prelease -DskipTests
 
       - name: Attach release artifacts
