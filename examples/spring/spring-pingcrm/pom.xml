@@ -35,7 +35,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.dg.spring.inertia</groupId>
+            <groupId>io.github.diovamny.spring.inertia</groupId>
             <artifactId>spring-inertia</artifactId>
             <version>${inertia.version}</version>
         </dependency>

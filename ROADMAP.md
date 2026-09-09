@@ -7,7 +7,7 @@ only when CI evidence exists; see [protocol compatibility](docs/protocol-compati
 
 - Keep Spring Boot 4.1 / Quarkus 3.39 / Java 21 baseline green: unit suites,
   kitchen-sink demos, Playwright contracts, archetype generation.
-- Publish `0.0.1` to Maven Central (namespace `io.github.dg`) with signed
+- Publish `0.0.1` to Maven Central (namespace `io.github.diovamny`) with signed
   artifacts and `META-INF/LICENSE`.
 - Harden quality gates gradually: project-specific Checkstyle ruleset with
   zero violations, SpotBugs clean, incremental coverage/mutation thresholds.

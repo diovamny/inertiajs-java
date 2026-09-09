@@ -23,7 +23,7 @@ import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.UserRepository;
 import com.example.pingcrm.service.AuthService;
 import com.example.pingcrm.service.UserService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class UsersController {

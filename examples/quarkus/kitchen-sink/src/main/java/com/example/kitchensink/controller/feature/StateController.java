@@ -8,7 +8,7 @@ import jakarta.ws.rs.Path;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 
 @Path("/features/state")
 public class StateController {

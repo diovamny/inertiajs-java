@@ -1,6 +1,6 @@
 package ${package};
 
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;

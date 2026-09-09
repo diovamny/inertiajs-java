@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import io.quarkus.test.junit.QuarkusTest;
 
-import io.github.dg.quarkus.inertia.api.Inertia;
-import io.github.dg.quarkus.inertia.testing.InertiaPage;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.testing.InertiaPage;
 
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;

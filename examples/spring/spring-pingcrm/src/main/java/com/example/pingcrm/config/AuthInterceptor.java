@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.pingcrm.service.AuthService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 /**
  * Guards every route except public ones (login, logout, assets, images).

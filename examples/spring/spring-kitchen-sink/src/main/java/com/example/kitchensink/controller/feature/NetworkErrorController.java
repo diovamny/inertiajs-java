@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class NetworkErrorController {

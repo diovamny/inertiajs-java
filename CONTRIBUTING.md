@@ -39,8 +39,8 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
   every protocol behavior needs the same contract test on each side.
 - New behavior must be covered by unit and/or MockMvc/Quarkus integration tests.
 - Javadoc on public API members.
-- Artifact coordinates: `io.github.dg.quarkus.inertia:quarkus-inertia` and
-  `io.github.dg.spring.inertia:spring-inertia` (version `0.0.1`).
+- Artifact coordinates: `io.github.diovamny.quarkus.inertia:quarkus-inertia` and
+  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.1`).
 
 ## Versioning and releases
 

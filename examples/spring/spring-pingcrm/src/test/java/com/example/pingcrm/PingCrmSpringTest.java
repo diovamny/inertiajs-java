@@ -32,7 +32,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import io.github.dg.spring.inertia.testing.InertiaPage;
+import io.github.diovamny.spring.inertia.testing.InertiaPage;
 
 @SpringBootTest
 @AutoConfigureMockMvc

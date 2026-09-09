@@ -8,7 +8,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 /**
  * Maps form validation failures to a redirect back with the errors flashed,

@@ -15,7 +15,7 @@ import com.example.pingcrm.dto.FormValidator;
 import com.example.pingcrm.dto.LoginForm;
 import com.example.pingcrm.repository.UserRepository;
 import com.example.pingcrm.service.AuthService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class AuthController {

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.dg</groupId>
+        <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-archetypes</artifactId>
         <version>0.0.1</version>
         <relativePath>../pom.xml</relativePath>

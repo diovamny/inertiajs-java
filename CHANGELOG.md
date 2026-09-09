@@ -4,7 +4,7 @@
 
 ### Nuevo: adaptador Spring Boot (`spring-inertia`)
 
-- **`io.github.dg.spring.inertia:spring-inertia:0.0.1`**: adaptador Inertia.js v3
+- **`io.github.diovamny.spring.inertia:spring-inertia:0.0.1`**: adaptador Inertia.js v3
   para Spring Boot 4.1.x / Spring Framework 7 (síncrono, Spring MVC, AOT y
   GraalVM Native con `RuntimeHintsRegistrar`).
 - API en paridad con el adaptador Quarkus: `Inertia` (render/redirect/back/
@@ -17,7 +17,7 @@
   CSRF con cookie `XSRF-TOKEN`, ETag lazy, SSR vía `SsrClient`, version mismatch
   409, merge props server-side en partial reloads, testing helpers
   (`InertiaPage`, `InertiaResultMatchers`).
-- Paquete Quarkus renombrado a `io.github.dg.quarkus.inertia.*` (sin cambios
+- Paquete Quarkus renombrado a `io.github.diovamny.quarkus.inertia.*` (sin cambios
   funcionales).
 - **Nuevo demo**: `examples/spring/spring-pingcrm` (Spring Boot 4.1 + Vue 3) —
   port completo de PingCRM (organizaciones, contactos, usuarios con foto,

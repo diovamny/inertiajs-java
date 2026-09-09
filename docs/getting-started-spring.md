@@ -9,7 +9,7 @@ Generate a runnable app (Vue 3 or React 19, TypeScript, Vite, tests):
 
 ```bash
 mvn -B archetype:generate \
-  -DarchetypeGroupId=io.github.dg \
+  -DarchetypeGroupId=io.github.diovamny \
   -DarchetypeArtifactId=inertia-spring-vue-archetype \
   -DarchetypeVersion=0.0.1 \
   -DgroupId=com.example \
@@ -32,7 +32,7 @@ Open `http://localhost:8080/`.
 
 ```xml
 <dependency>
-    <groupId>io.github.dg.spring.inertia</groupId>
+    <groupId>io.github.diovamny.spring.inertia</groupId>
     <artifactId>spring-inertia</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -78,7 +78,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class ContactsController {

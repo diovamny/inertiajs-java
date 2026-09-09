@@ -9,7 +9,7 @@ Generate a runnable app (Vue 3 or React 19, TypeScript, Vite, tests):
 
 ```bash
 mvn -B archetype:generate \
-  -DarchetypeGroupId=io.github.dg \
+  -DarchetypeGroupId=io.github.diovamny \
   -DarchetypeArtifactId=inertia-quarkus-vue-archetype \
   -DarchetypeVersion=0.0.1 \
   -DgroupId=com.example \
@@ -32,7 +32,7 @@ Open `http://localhost:8080/`.
 
 ```xml
 <dependency>
-    <groupId>io.github.dg.quarkus.inertia</groupId>
+    <groupId>io.github.diovamny.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -77,7 +77,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 

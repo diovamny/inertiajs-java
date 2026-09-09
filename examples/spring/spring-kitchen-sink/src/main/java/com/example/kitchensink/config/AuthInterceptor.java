@@ -14,9 +14,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.example.kitchensink.service.AuthService;
-import io.github.dg.spring.inertia.api.Inertia;
-import io.github.dg.spring.inertia.model.PageObject;
-import io.github.dg.spring.inertia.version.VersionProvider;
+import io.github.diovamny.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.model.PageObject;
+import io.github.diovamny.spring.inertia.version.VersionProvider;
 
 /**
  * Guards every route except public ones (login, logout, assets).

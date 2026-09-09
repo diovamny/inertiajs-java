@@ -17,7 +17,7 @@ import com.example.pingcrm.entity.Account;
 import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.AccountRepository;
 import com.example.pingcrm.repository.UserRepository;
-import io.github.dg.quarkus.inertia.protocol.RequestRoutingContext;
+import io.github.diovamny.quarkus.inertia.protocol.RequestRoutingContext;
 
 /**
  * Session-based authentication for the demo. The Vert.x session cookie keeps

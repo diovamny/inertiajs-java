@@ -13,7 +13,7 @@ import io.smallrye.mutiny.Uni;
 
 import com.example.demo.entity.Person;
 import com.example.demo.service.PersonService;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 
 @Path("/persons")
 public class PersonResource {
