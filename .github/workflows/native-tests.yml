@@ -18,10 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up GraalVM JDK 21
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          distribution: graalvm
+          distribution: temurin
           java-version: 21
           cache: maven
 
@@ -49,11 +49,15 @@ jobs:
           -DframeworkVersion=3.39.2
         working-directory: /tmp
 
-      - name: Build native binary
+      - name: Build native binary (Mandrel jdk-25 container build)
+        # Quarkus 3.39 requires GraalVM/Mandrel 25; the container builder keeps
+        # the runner JDK free of that requirement (setup-java only ships 23.1).
         working-directory: /tmp/native-quarkus
         run: |
           chmod +x mvnw
-          ./mvnw -B -DskipTests package -Pnative
+          ./mvnw -B -DskipTests package -Pnative \
+            -Dquarkus.native.container-build=true \
+            -Dquarkus.native.builder-image=quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25
 
       - name: Start native binary
         working-directory: /tmp/native-quarkus/target
@@ -69,7 +73,7 @@ jobs:
             fi
             sleep 5
           done
-          curl -sf http://localhost:8080/ | grep -q '"component":"Welcome"'
+          curl -sf http://localhost:8080/ | grep -q 'id="app"'
           curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
           echo "Native Quarkus starter serves HTML and Inertia JSON"
 
@@ -95,10 +99,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up GraalVM JDK 21
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          distribution: graalvm
+          distribution: temurin
           java-version: 21
           cache: maven
 
@@ -106,6 +110,15 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+
+      - name: Install Mandrel 25 (native-image toolchain)
+        # setup-java's graalvm distribution lags (23.1); Spring Boot 4.1 needs
+        # a current builder, so Mandrel is fetched explicitly and used only
+        # for the native package step below.
+        run: |
+          curl -sL -o /tmp/mandrel.tgz https://github.com/graalvm/mandrel/releases/download/mandrel-25.0.4.1-Final/mandrel-java25-linux-amd64-25.0.4.1-Final.tar.gz
+          mkdir -p /tmp/mandrel && tar -xzf /tmp/mandrel.tgz -C /tmp/mandrel
+          /tmp/mandrel/mandrel-java25-25.0.4.1-Final/bin/native-image --version
 
       - name: Install adapters and archetypes
         run: mvn -B -q -DskipTests clean install -P archetypes
@@ -128,6 +141,9 @@ jobs:
 
       - name: Build native binary
         working-directory: /tmp/native-spring
+        env:
+          GRAALVM_HOME: /tmp/mandrel/mandrel-java25-25.0.4.1-Final
+          JAVA_HOME: /tmp/mandrel/mandrel-java25-25.0.4.1-Final
         run: |
           chmod +x mvnw
           ./mvnw -B -DskipTests package -Pnative
@@ -146,7 +162,7 @@ jobs:
             fi
             sleep 5
           done
-          curl -sf http://localhost:8080/ | grep -q '"component":"Welcome"'
+          curl -sf http://localhost:8080/ | grep -q 'id="app"'
           curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
           echo "Native Spring starter serves HTML and Inertia JSON"
 
