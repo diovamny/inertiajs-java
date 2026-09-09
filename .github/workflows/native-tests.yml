@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload native logs
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: quarkus-native-evidence
           path: native-quarkus.log
@@ -176,7 +176,7 @@ jobs:
 
       - name: Upload native logs
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: spring-native-evidence
           path: native-spring.log
