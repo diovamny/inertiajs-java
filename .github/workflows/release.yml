@@ -30,7 +30,9 @@ jobs:
       - name: OWASP Dependency Check
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
-        if: ${{ secrets.NVD_API_KEY != '' }}
+        # NOTE: the secrets context is not allowed in `if:`, so the secret is
+        # mapped to env first and the condition reads env instead.
+        if: ${{ env.NVD_API_KEY != '' }}
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
