@@ -1,5 +1,9 @@
 name: Native Image Tests
 
+# Builds REAL native binaries from the generated starters and smoke-tests
+# them over HTTP. Compiling the adapter libraries alone proves nothing
+# (a library has no main entry point), so each job generates a starter,
+# compiles it with a GraalVM JDK, boots the binary and curls it.
 on:
   push:
     branches: [ main ]
@@ -9,44 +13,155 @@ on:
 
 jobs:
   quarkus-native:
-    name: Quarkus native build
+    name: Quarkus starter native build + HTTP smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 21
+      - name: Set up GraalVM JDK 21
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          distribution: graalvm
           java-version: 21
           cache: maven
 
-      - name: Build Quarkus native image
-        run: mvn clean package -pl quarkus-inertia -Pnative -Dquarkus.native.container-build=true
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
 
-      - name: Smoke-test the native binary
+      - name: Install adapters and archetypes
+        run: mvn -B -q -DskipTests clean install -P archetypes
+
+      - name: Generate Quarkus starter
+        run: >
+          mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          -DarchetypeCatalog=local
+          -DarchetypeGroupId=io.github.dg
+          -DarchetypeArtifactId=inertia-quarkus-vue-archetype
+          -DarchetypeVersion=0.0.1
+          -DgroupId=com.acme
+          -DartifactId=native-quarkus
+          -Dpackage=com.acme.nq
+          -DappName="Native Quarkus"
+          -DinertiaAdapterVersion=0.0.1
+          -DjavaVersion=21
+          -DframeworkVersion=3.39.2
+        working-directory: /tmp
+
+      - name: Build native binary
+        working-directory: /tmp/native-quarkus
         run: |
-          ls quarkus-inertia/target
-          test -f quarkus-inertia/target/*-runner || exit 1
+          chmod +x mvnw
+          ./mvnw -B -DskipTests package -Pnative
+
+      - name: Start native binary
+        working-directory: /tmp/native-quarkus/target
+        run: |
+          nohup ./native-quarkus-1.0-SNAPSHOT-runner > "$GITHUB_WORKSPACE/native-quarkus.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/native-quarkus.pid"
+
+      - name: HTTP smoke test (HTML + Inertia JSON)
+        run: |
+          for i in $(seq 1 36); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              break
+            fi
+            sleep 5
+          done
+          curl -sf http://localhost:8080/ | grep -q '"component":"Welcome"'
+          curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
+          echo "Native Quarkus starter serves HTML and Inertia JSON"
+
+      - name: Stop native binary
+        if: always()
+        run: |
+          if [ -f native-quarkus.pid ]; then
+            kill "$(cat native-quarkus.pid)" || true
+            rm -f native-quarkus.pid
+          fi
+
+      - name: Upload native logs
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: quarkus-native-evidence
+          path: native-quarkus.log
+          if-no-files-found: ignore
 
   spring-native:
-    name: Spring Boot native build
+    name: Spring starter native build + HTTP smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 21
+      - name: Set up GraalVM JDK 21
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          distribution: graalvm
           java-version: 21
           cache: maven
 
-      - name: Build Spring native image
-        run: mvn clean package -pl spring-inertia -Pnative
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
 
-      - name: Smoke-test the native image artifacts
+      - name: Install adapters and archetypes
+        run: mvn -B -q -DskipTests clean install -P archetypes
+
+      - name: Generate Spring starter
+        run: >
+          mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          -DarchetypeCatalog=local
+          -DarchetypeArtifactId=inertia-spring-vue-archetype
+          -DarchetypeGroupId=io.github.dg
+          -DarchetypeVersion=0.0.1
+          -DgroupId=com.acme
+          -DartifactId=native-spring
+          -Dpackage=com.acme.ns
+          -DappName="Native Spring"
+          -DinertiaAdapterVersion=0.0.1
+          -DjavaVersion=21
+          -DframeworkVersion=4.1.0
+        working-directory: /tmp
+
+      - name: Build native binary
+        working-directory: /tmp/native-spring
         run: |
-          ls spring-inertia/target
-          test -f spring-inertia/target/*.so || true
-          test -d spring-inertia/target/native || true
+          chmod +x mvnw
+          ./mvnw -B -DskipTests package -Pnative
+
+      - name: Start native binary
+        working-directory: /tmp/native-spring
+        run: |
+          nohup ./target/native-spring > "$GITHUB_WORKSPACE/native-spring.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/native-spring.pid"
+
+      - name: HTTP smoke test (HTML + Inertia JSON)
+        run: |
+          for i in $(seq 1 36); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              break
+            fi
+            sleep 5
+          done
+          curl -sf http://localhost:8080/ | grep -q '"component":"Welcome"'
+          curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
+          echo "Native Spring starter serves HTML and Inertia JSON"
+
+      - name: Stop native binary
+        if: always()
+        run: |
+          if [ -f native-spring.pid ]; then
+            kill "$(cat native-spring.pid)" || true
+            rm -f native-spring.pid
+          fi
+
+      - name: Upload native logs
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: spring-native-evidence
+          path: native-spring.log
+          if-no-files-found: ignore
