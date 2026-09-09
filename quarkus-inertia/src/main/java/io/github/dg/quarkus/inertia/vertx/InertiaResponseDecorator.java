@@ -225,7 +225,7 @@ public class InertiaResponseDecorator {
             if (!redirectUri.isAbsolute()) return false;
             var request = rc.request();
             return !request.scheme().equals(redirectUri.getScheme())
-                || !Objects.equals(request.host(), redirectUri.getAuthority());
+                || !Objects.equals(request.authority().toString(), redirectUri.getAuthority());
         } catch (Exception e) {
             return true;
         }

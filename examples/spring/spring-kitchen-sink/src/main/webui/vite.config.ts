@@ -51,7 +51,9 @@ export default defineConfig(({ command }) => ({
     build: {
         minify: false,
         outDir: path.resolve(root, '../../main/resources/static'),
-        emptyOutDir: true,
+        // Never empty: favicon.svg is committed inside the outDir and all
+        // output names are unhashed, so wiping would only delete good files.
+        emptyOutDir: false,
         manifest: '.vite/manifest.json',
         rollupOptions: {
             input: path.resolve(root, 'resources/js/app.ts'),

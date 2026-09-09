@@ -53,7 +53,7 @@ public class PrecognitionHandler {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Precognition", "true");
             headers.set("Vary", "Precognition");
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).headers(headers)
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).headers(headers)
                 .body(jsonProvider.toJson(Map.of("errors", filtered)));
         }
 

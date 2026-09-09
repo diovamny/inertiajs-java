@@ -357,7 +357,7 @@ public class RedirectProcessor {
             var request = resolveRequest();
             if (request == null) return true;
             var requestScheme = request.scheme();
-            var requestAuthority = request.host();
+            var requestAuthority = request.authority().toString();
             return !requestScheme.equals(redirectUri.getScheme())
                 || !java.util.Objects.equals(requestAuthority, redirectUri.getAuthority());
         } catch (Exception e) {

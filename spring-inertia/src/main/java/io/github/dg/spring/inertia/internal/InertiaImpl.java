@@ -284,6 +284,7 @@ public class InertiaImpl implements Inertia {
             case MERGE -> addList(PageObjectBuilder.CONTEXT_MERGE_PROPS, key);
             case PREPEND -> addList(PageObjectBuilder.CONTEXT_PREPEND_PROPS, key);
             case DEEP_MERGE -> addList(PageObjectBuilder.CONTEXT_DEEP_MERGE_PROPS, key);
+            default -> throw new IllegalArgumentException("Unknown merge rule: " + rule);
         }
         return value;
     }

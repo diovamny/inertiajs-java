@@ -10,10 +10,10 @@ jobs:
     name: Publish to Maven Central
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -30,7 +30,9 @@ jobs:
       - name: OWASP Dependency Check
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
-        if: ${{ secrets.NVD_API_KEY != '' }}
+        # NOTE: the secrets context is not allowed in `if:`, so the secret is
+        # mapped to env first and the condition reads env instead.
+        if: ${{ env.NVD_API_KEY != '' }}
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
@@ -39,7 +41,7 @@ jobs:
         run: mvn clean deploy -Prelease -DskipTests
 
       - name: Attach release artifacts
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             quarkus-inertia/target/quarkus-inertia-*.jar

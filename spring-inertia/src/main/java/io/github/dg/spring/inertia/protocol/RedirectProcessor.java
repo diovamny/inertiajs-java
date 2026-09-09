@@ -8,7 +8,6 @@ import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.dg.spring.inertia.api.InertiaRedirect;
 import io.github.dg.spring.inertia.internal.InertiaRequestContext;
-import io.github.dg.spring.inertia.internal.SpringFlashStore;
 import io.github.dg.spring.inertia.spi.FlashStore;
 
 /**

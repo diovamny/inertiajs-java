@@ -1,6 +1,6 @@
 package io.github.dg.quarkus.inertia.model;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import io.quarkus.runtime.annotations.RegisterForReflection;

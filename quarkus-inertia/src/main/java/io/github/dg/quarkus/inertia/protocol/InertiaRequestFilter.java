@@ -10,7 +10,6 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
-import io.github.dg.quarkus.inertia.protocol.TestSessionHolder;
 
 /**
  * Request filter that captures the Inertia request headers into the Vert.x

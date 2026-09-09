@@ -1,6 +1,5 @@
 package io.github.dg.spring.inertia.api;
 
-import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;

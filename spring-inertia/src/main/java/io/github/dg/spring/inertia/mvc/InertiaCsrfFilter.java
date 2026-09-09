@@ -6,11 +6,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.github.dg.spring.inertia.config.InertiaProperties;
-import io.github.dg.spring.inertia.internal.InertiaRequestContext;
 import io.github.dg.spring.inertia.security.InertiaCsrfService;
 
 /**

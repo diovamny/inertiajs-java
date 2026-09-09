@@ -1,12 +1,15 @@
 package io.github.dg.quarkus.inertia.api;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import jakarta.ws.rs.core.Response;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +31,7 @@ class InertiaRedirectUnitTest {
         httpRequest = mock(HttpServerRequest.class);
         when(httpRequest.getHeader("X-Inertia")).thenReturn("true");
         when(httpRequest.method()).thenReturn(HttpMethod.POST);
-        when(httpRequest.host()).thenReturn("localhost:8080");
+        when(httpRequest.authority()).thenReturn(HostAndPort.create("localhost", 8080));
         when(httpRequest.scheme()).thenReturn("http");
         when(httpRequest.getHeader("Referer")).thenReturn("/previous");
 

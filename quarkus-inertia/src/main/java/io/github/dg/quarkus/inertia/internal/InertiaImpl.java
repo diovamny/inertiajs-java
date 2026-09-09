@@ -14,7 +14,6 @@ import io.github.dg.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.dg.quarkus.inertia.cache.CachedPropStore;
 import io.github.dg.quarkus.inertia.config.InertiaConfig;
 import io.github.dg.quarkus.inertia.model.AlwaysProp;
-import io.github.dg.quarkus.inertia.model.PageObject;
 import io.github.dg.quarkus.inertia.model.RawJson;
 import io.github.dg.quarkus.inertia.protocol.PageObjectBuilder;
 import io.github.dg.quarkus.inertia.protocol.ResponseProcessor;
@@ -26,7 +25,6 @@ import io.github.dg.quarkus.inertia.spi.FlashStore;
 import io.github.dg.quarkus.inertia.spi.ErrorMapper;
 import io.github.dg.quarkus.inertia.version.VersionProvider;
 import io.github.dg.quarkus.inertia.vertx.ReactiveResponseWriter;
-import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.ws.rs.core.Response;
 

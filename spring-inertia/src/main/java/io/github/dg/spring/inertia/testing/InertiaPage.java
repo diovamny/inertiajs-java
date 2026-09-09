@@ -195,10 +195,10 @@ public final class InertiaPage {
             Boolean preserveFragment = node.has("preserveFragment") ? node.path("preserveFragment").asBoolean() : null;
 
             return new InertiaPage(
-                node.path("component").asText(null),
+                node.path("component").asString(null),
                 props,
-                node.path("url").asText(null),
-                node.has("version") && !node.path("version").isNull() ? node.path("version").asText() : null,
+                node.path("url").asString(null),
+                node.has("version") && !node.path("version").isNull() ? node.path("version").asString() : null,
                 flash,
                 deferredProps,
                 mergeProps,

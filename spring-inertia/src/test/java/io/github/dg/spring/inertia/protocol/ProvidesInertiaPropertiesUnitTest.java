@@ -15,8 +15,6 @@ import io.github.dg.spring.inertia.api.ProvidesInertiaProperties;
 import io.github.dg.spring.inertia.api.RenderContext;
 import io.github.dg.spring.inertia.config.InertiaProperties;
 import io.github.dg.spring.inertia.model.PageObject;
-import io.github.dg.spring.inertia.version.VersionProvider;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
