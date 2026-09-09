@@ -27,6 +27,17 @@ jobs:
       - name: Run full test suite
         run: mvn clean test -T 1C
 
+      - name: Verify GPG signing setup
+        # Fails fast with a clear message when GPG_PRIVATE_KEY/GPG_PASSPHRASE
+        # secrets are missing or mismatched, instead of failing mid-deploy.
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          gpg --list-secret-keys --keyid-format LONG
+          echo "gpg-probe" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$GPG_PASSPHRASE" --clearsign -o /dev/null
+          echo "GPG signing setup OK"
+
       - name: OWASP Dependency Check
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
