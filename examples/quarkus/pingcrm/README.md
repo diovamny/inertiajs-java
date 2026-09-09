@@ -2,7 +2,7 @@
 
 Réplica fiel del demo oficial [inertiajs/pingcrm](https://github.com/inertiajs/pingcrm)
 (Laravel + Vue 3) construida sobre **Quarkus 3.38** y la librería local
-**quarkus-inertia** (`io.github.dg.quarkus.inertia:quarkus-inertia:0.0.1`).
+**quarkus-inertia** (`io.github.diovamny.quarkus.inertia:quarkus-inertia:0.0.1`).
 
 ## Requisitos
 

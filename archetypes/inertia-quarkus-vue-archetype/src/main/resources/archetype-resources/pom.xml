@@ -36,7 +36,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.dg.quarkus.inertia</groupId>
+            <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia</artifactId>
             <version>${symbol_dollar}{inertia-adapter.version}</version>
         </dependency>

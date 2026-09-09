@@ -23,7 +23,7 @@ import com.example.pingcrm.entity.Organization;
 import com.example.pingcrm.repository.OrganizationRepository;
 import com.example.pingcrm.service.AuthService;
 import com.example.pingcrm.service.OrganizationService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 @RequestMapping("/organizations")

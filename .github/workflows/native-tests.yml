@@ -37,7 +37,7 @@ jobs:
         run: >
           mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
-          -DarchetypeGroupId=io.github.dg
+          -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=inertia-quarkus-vue-archetype
           -DarchetypeVersion=0.0.1
           -DgroupId=com.acme
@@ -128,7 +128,7 @@ jobs:
           mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeArtifactId=inertia-spring-vue-archetype
-          -DarchetypeGroupId=io.github.dg
+          -DarchetypeGroupId=io.github.diovamny
           -DarchetypeVersion=0.0.1
           -DgroupId=com.acme
           -DartifactId=native-spring

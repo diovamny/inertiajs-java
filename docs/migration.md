@@ -9,8 +9,8 @@
 
 ## Upgrading the adapters
 
-Artifacts are published to Maven Central as `io.github.dg.spring.inertia`
-and `io.github.dg.quarkus.inertia` (group `io.github.dg`). Bump the version
+Artifacts are published to Maven Central as `io.github.diovamny.spring.inertia`
+and `io.github.diovamny.quarkus.inertia` (group `io.github.diovamny`). Bump the version
 in your `pom.xml`; no code changes are needed for patch releases.
 
 ## Upgrading a starter

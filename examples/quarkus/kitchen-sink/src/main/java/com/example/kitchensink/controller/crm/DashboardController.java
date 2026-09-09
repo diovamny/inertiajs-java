@@ -13,7 +13,7 @@ import com.example.kitchensink.repository.NoteRepository;
 import com.example.kitchensink.repository.OrganizationRepository;
 import com.example.kitchensink.repository.UserRepository;
 import com.example.kitchensink.service.Resources;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 

@@ -30,8 +30,8 @@ The recommended way to contribute global shared data is via the `InertiaSharedDa
 #### Spring Boot
 
 ```java
-import io.github.dg.spring.inertia.spi.InertiaSharedDataContributor;
-import io.github.dg.spring.inertia.Inertia;
+import io.github.diovamny.spring.inertia.spi.InertiaSharedDataContributor;
+import io.github.diovamny.spring.inertia.Inertia;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -59,8 +59,8 @@ public class AuthSharedData implements InertiaSharedDataContributor {
 #### Quarkus
 
 ```java
-import io.github.dg.quarkus.inertia.spi.InertiaSharedDataContributor;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.spi.InertiaSharedDataContributor;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped

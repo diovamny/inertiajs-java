@@ -18,7 +18,7 @@ This guide explains how to write tests for Inertia.js responses in both the **Sp
 
 ```xml
 <dependency>
-    <groupId>io.github.dg</groupId>
+    <groupId>io.github.diovamny</groupId>
     <artifactId>spring-inertia</artifactId>
 </dependency>
 ```
@@ -36,7 +36,7 @@ class MyInertiaTest {
 `InertiaResultMatchers` provides a fluent DSL for asserting Inertia responses on `MockMvc` `ResultActions`.
 
 ```java
-import io.github.dg.spring.inertia.testing.InertiaResultMatchers;
+import io.github.diovamny.spring.inertia.testing.InertiaResultMatchers;
 
 result.andExpect(InertiaResultMatchers.inertia().component("Dashboard"))
       .andExpect(InertiaResultMatchers.inertia().hasProp("user.name", "Alice"))
@@ -69,7 +69,7 @@ result.andExpect(InertiaResultMatchers.inertia().component("Dashboard"))
 For richer assertions, parse the response into an `InertiaPage`:
 
 ```java
-import io.github.dg.spring.inertia.testing.InertiaPage;
+import io.github.diovamny.spring.inertia.testing.InertiaPage;
 
 InertiaPage page = InertiaPage.from(mvcResult);
 
@@ -154,7 +154,7 @@ class MyInertiaTest { }
 ### InertiaPage (Quarkus)
 
 ```java
-import io.github.dg.quarkus.inertia.testing.InertiaPage;
+import io.github.diovamny.quarkus.inertia.testing.InertiaPage;
 
 InertiaPage page = InertiaPage.from(
     given()

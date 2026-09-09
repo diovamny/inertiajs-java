@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.dg</groupId>
+        <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
         <version>0.0.1</version>
         <relativePath>../../pom.xml</relativePath>
@@ -72,7 +72,7 @@
 
         <!-- Inertia Spring -->
         <dependency>
-            <groupId>io.github.dg.spring.inertia</groupId>
+            <groupId>io.github.diovamny.spring.inertia</groupId>
             <artifactId>spring-inertia</artifactId>
             <version>${project.version}</version>
         </dependency>

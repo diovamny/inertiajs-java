@@ -13,7 +13,7 @@ import com.example.kitchensink.entity.Contact;
 import com.example.kitchensink.repository.ContactRepository;
 import com.example.kitchensink.service.AuthService;
 import com.example.kitchensink.service.CrmWriteService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class NotesController {

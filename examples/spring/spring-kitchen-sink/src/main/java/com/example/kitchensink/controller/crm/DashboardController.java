@@ -14,7 +14,7 @@ import com.example.kitchensink.repository.NoteRepository;
 import com.example.kitchensink.repository.OrganizationRepository;
 import com.example.kitchensink.repository.UserRepository;
 import com.example.kitchensink.service.Resources;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class DashboardController {

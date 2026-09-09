@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class ContactsController {
@@ -86,7 +86,7 @@ package com.example.crm;
 import java.util.Map;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
 import io.quarkus.vertx.web.Route.HttpMethod;
@@ -153,7 +153,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.smallrye.mutiny.Uni;
 
 @Path("/contacts")          // <-- base route, like `resources :contacts`
@@ -307,8 +307,8 @@ sessions and validation on the server.
 
 ## Get started
 
-**Spring Boot 4.1** (`io.github.dg.spring.inertia:spring-inertia`) and
-**Quarkus 3.39** (`io.github.dg.quarkus.inertia:quarkus-inertia`) require Java 21+:
+**Spring Boot 4.1** (`io.github.diovamny.spring.inertia:spring-inertia`) and
+**Quarkus 3.39** (`io.github.diovamny.quarkus.inertia:quarkus-inertia`) require Java 21+:
 
 > **Pre-release note:** `0.0.1` is not on Maven Central yet. Until the first
 > release, build from source once (`git clone` + `mvn -DskipTests install`)
@@ -316,7 +316,7 @@ sessions and validation on the server.
 
 ```xml
 <dependency>
-    <groupId>io.github.dg.spring.inertia</groupId>
+    <groupId>io.github.diovamny.spring.inertia</groupId>
     <artifactId>spring-inertia</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -324,7 +324,7 @@ sessions and validation on the server.
 
 ```xml
 <dependency>
-    <groupId>io.github.dg.quarkus.inertia</groupId>
+    <groupId>io.github.diovamny.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -365,7 +365,7 @@ React 19, TypeScript, Vite, tests and an optional native `Dockerfile`:
 
 | Starter | Command |
 |---|---|
-| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.dg -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.1 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
+| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.1 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
 | Spring Boot + React 19 | Same with `-DarchetypeArtifactId=inertia-spring-react-archetype` |
 | Quarkus + Vue 3 | Same with `-DarchetypeArtifactId=inertia-quarkus-vue-archetype` |
 | Quarkus + React 19 | Same with `-DarchetypeArtifactId=inertia-quarkus-react-archetype` |

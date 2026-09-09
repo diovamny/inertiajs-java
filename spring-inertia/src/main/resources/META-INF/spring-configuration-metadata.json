@@ -2,8 +2,8 @@
   "groups": [
     {
       "name": "inertia",
-      "type": "io.github.dg.spring.inertia.config.InertiaProperties",
-      "sourceType": "io.github.dg.spring.inertia.config.InertiaProperties"
+      "type": "io.github.diovamny.spring.inertia.config.InertiaProperties",
+      "sourceType": "io.github.diovamny.spring.inertia.config.InertiaProperties"
     }
   ],
   "properties": [

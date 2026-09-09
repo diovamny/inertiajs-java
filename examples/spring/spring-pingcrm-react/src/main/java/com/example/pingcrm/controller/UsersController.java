@@ -5,7 +5,7 @@ import com.example.pingcrm.dto.FormValidator;
 import com.example.pingcrm.entity.User;
 import com.example.pingcrm.service.AuthService;
 import com.example.pingcrm.service.UserService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 import jakarta.validation.Validator;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;

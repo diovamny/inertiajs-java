@@ -12,7 +12,7 @@ import io.smallrye.mutiny.Uni;
 
 import com.example.demo.entity.Employee;
 import com.example.demo.service.EmployeeService;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;

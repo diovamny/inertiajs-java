@@ -32,7 +32,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.dg.quarkus.inertia</groupId>
+            <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia</artifactId>
             <version>0.0.1</version>
         </dependency>

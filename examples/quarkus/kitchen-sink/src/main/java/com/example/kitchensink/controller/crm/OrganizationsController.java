@@ -24,7 +24,7 @@ import com.example.kitchensink.service.CrmQueryService;
 import com.example.kitchensink.service.CursorPagination;
 import com.example.kitchensink.service.LaravelPagination;
 import com.example.kitchensink.service.Resources;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import jakarta.transaction.Transactional;

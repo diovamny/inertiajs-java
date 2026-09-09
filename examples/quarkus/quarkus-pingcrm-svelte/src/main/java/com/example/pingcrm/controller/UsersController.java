@@ -22,7 +22,7 @@ import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.UserRepository;
 import com.example.pingcrm.service.AuthService;
 import com.example.pingcrm.service.UserService;
-import io.github.dg.quarkus.inertia.api.Inertia;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 

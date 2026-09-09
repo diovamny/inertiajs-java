@@ -16,7 +16,7 @@ import com.example.kitchensink.dto.FormValidator;
 import com.example.kitchensink.dto.LoginForm;
 import com.example.kitchensink.repository.UserRepository;
 import com.example.kitchensink.service.AuthService;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class AuthController {

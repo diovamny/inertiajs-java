@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.github.dg</groupId>
+  <groupId>io.github.diovamny</groupId>
   <artifactId>inertia-parent</artifactId>
   <version>0.0.1</version>
   <packaging>pom</packaging>
@@ -194,15 +194,15 @@
             <configuration>
               <skip>${skipMutationAnalysis}</skip>
               <targetClasses>
-                <param>io.github.dg.spring.inertia.*</param>
-                <param>io.github.dg.quarkus.inertia.*</param>
+                <param>io.github.diovamny.spring.inertia.*</param>
+                <param>io.github.diovamny.quarkus.inertia.*</param>
               </targetClasses>
               <targetTests>
-                <param>io.github.dg.*Test</param>
+                <param>io.github.diovamny.*Test</param>
               </targetTests>
               <excludedTestClasses>
-                <param>io.github.dg.*QuarkusTest</param>
-                <param>io.github.dg.quarkus.inertia.reactive.ReactiveRouteInertiaTest</param>
+                <param>io.github.diovamny.*QuarkusTest</param>
+                <param>io.github.diovamny.quarkus.inertia.reactive.ReactiveRouteInertiaTest</param>
               </excludedTestClasses>
               <mutationThreshold>5</mutationThreshold>
               <coverageThreshold>20</coverageThreshold>

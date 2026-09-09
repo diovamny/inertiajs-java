@@ -29,7 +29,7 @@ import com.example.kitchensink.service.CrmQueryService;
 import com.example.kitchensink.service.CrmWriteService;
 import com.example.kitchensink.service.CursorPagination;
 import com.example.kitchensink.service.Resources;
-import io.github.dg.spring.inertia.api.Inertia;
+import io.github.diovamny.spring.inertia.api.Inertia;
 
 @RestController
 public class ContactsController {
