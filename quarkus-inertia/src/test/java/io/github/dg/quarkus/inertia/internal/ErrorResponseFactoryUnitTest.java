@@ -1,6 +1,6 @@
 package io.github.dg.quarkus.inertia.internal;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 import java.util.Set;
@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import io.github.dg.quarkus.inertia.config.InertiaConfig;
 import io.github.dg.quarkus.inertia.spi.ErrorMapper;
-import io.github.dg.quarkus.inertia.version.VersionProvider;
 
 class ErrorResponseFactoryUnitTest {
 

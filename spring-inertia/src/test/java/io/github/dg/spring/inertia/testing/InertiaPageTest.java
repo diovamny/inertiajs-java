@@ -1,6 +1,5 @@
 package io.github.dg.spring.inertia.testing;
 
-import java.util.List;
 import java.util.Map;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;

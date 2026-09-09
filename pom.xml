@@ -245,6 +245,10 @@
             <configuration>
               <skip>${skipStaticAnalysis}</skip>
               <effort>Max</effort>
+              <!-- Report only High-severity bugs: Medium findings on this
+                   codebase are dominated by EI_EXPOSE_REP on CDI constructor
+                   injection (framework-managed immutables, false positives). -->
+              <threshold>High</threshold>
               <failOnError>false</failOnError>
             </configuration>
             <executions>

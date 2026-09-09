@@ -207,7 +207,7 @@ public class DefaultVersionProvider implements VersionProvider {
                 }
             }
             return found;
-        } catch (Exception e) {
+        } catch (java.io.IOException | java.net.URISyntaxException e) {
             return false;
         }
     }
@@ -223,7 +223,7 @@ public class DefaultVersionProvider implements VersionProvider {
                     return hash(buildTime.getBytes(StandardCharsets.UTF_8));
                 }
             }
-        } catch (Exception ignored) {
+        } catch (java.io.IOException ignored) {
         }
         // Ultimate fallback: class hash (stable per build)
         return hash(getClass().getName().getBytes(StandardCharsets.UTF_8));
