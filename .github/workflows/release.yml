@@ -99,6 +99,39 @@ jobs:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
 
+      - name: Write Maven Central server credentials
+        # actions/setup-java does not reliably leave a `central` server entry
+        # in ~/.m2/settings.xml, so write/merge it explicitly. Values come
+        # from env (never echoed); ElementTree escapes XML for us.
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET
+          import os
+          p = os.path.expanduser('~/.m2/settings.xml')
+          try:
+              t = ET.parse(p)
+              root = t.getroot()
+          except Exception:
+              root = ET.Element('settings')
+              t = ET.ElementTree(root)
+          servers = root.find('servers')
+          if servers is None:
+              servers = ET.SubElement(root, 'servers')
+          for s in list(servers.findall('server')):
+              if (s.findtext('id', '') or '').strip() == 'central':
+                  servers.remove(s)
+          srv = ET.SubElement(servers, 'server')
+          ET.SubElement(srv, 'id').text = 'central'
+          ET.SubElement(srv, 'username').text = os.environ['CENTRAL_USERNAME']
+          ET.SubElement(srv, 'password').text = os.environ['CENTRAL_PASSWORD']
+          os.makedirs(os.path.dirname(p), exist_ok=True)
+          t.write(p, xml_declaration=True, encoding='utf-8')
+          print('settings.xml now carries the central server entry')
+          EOF
+
       - name: Build, sign and publish to Sonatype Central Portal
         # maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE directly from the
         # environment, bypassing the settings.xml decryption path that fails
