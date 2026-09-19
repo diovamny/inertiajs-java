@@ -15,6 +15,9 @@ jobs:
   publish:
     name: Publish to Maven Central
     runs-on: ubuntu-latest
+    # Least privilege: the gh-release attach step needs to create releases.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
 
