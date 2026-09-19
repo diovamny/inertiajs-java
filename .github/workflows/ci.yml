@@ -146,7 +146,7 @@ jobs:
             module: examples/spring/spring-kitchen-sink
             base-url: http://localhost:8080
             health-url: http://localhost:8080/actuator/health
-            jar: spring-kitchen-sink-0.0.1.jar
+            jar: spring-kitchen-sink-*.jar
           - demo: quarkus
             module: examples/quarkus/kitchen-sink
             base-url: http://localhost:8081
@@ -177,7 +177,9 @@ jobs:
       - name: Start demo
         working-directory: ${{ matrix.module }}
         run: |
-          nohup java -jar "target/${{ matrix.jar }}" > "$GITHUB_WORKSPACE/e2e-app.log" 2>&1 &
+          JAR=$(ls target/${{ matrix.jar }} | grep -v '\.original$' | head -n 1)
+          echo "Starting $JAR"
+          nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/e2e-app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/e2e-app.pid"
 
       - name: Wait for health endpoint
