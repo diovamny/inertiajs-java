@@ -11,7 +11,7 @@ Generate a runnable app (Vue 3 or React 19, TypeScript, Vite, tests):
 mvn -B archetype:generate \
   -DarchetypeGroupId=io.github.diovamny \
   -DarchetypeArtifactId=inertia-quarkus-vue-archetype \
-  -DarchetypeVersion=0.0.1 \
+  -DarchetypeVersion=0.0.2 \
   -DgroupId=com.example \
   -DartifactId=hello-inertia \
   -Dpackage=com.example.hello
@@ -34,7 +34,7 @@ Open `http://localhost:8080/`.
 <dependency>
     <groupId>io.github.diovamny.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 

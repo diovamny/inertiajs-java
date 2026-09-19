@@ -39,12 +39,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=inertia-quarkus-vue-archetype
-          -DarchetypeVersion=0.0.1
+          -DarchetypeVersion=0.0.2
           -DgroupId=com.acme
           -DartifactId=native-quarkus
           -Dpackage=com.acme.nq
           -DappName="Native Quarkus"
-          -DinertiaAdapterVersion=0.0.1
+          -DinertiaAdapterVersion=0.0.2
           -DjavaVersion=21
           -DframeworkVersion=3.39.2
         working-directory: /tmp
@@ -129,12 +129,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeArtifactId=inertia-spring-vue-archetype
           -DarchetypeGroupId=io.github.diovamny
-          -DarchetypeVersion=0.0.1
+          -DarchetypeVersion=0.0.2
           -DgroupId=com.acme
           -DartifactId=native-spring
           -Dpackage=com.acme.ns
           -DappName="Native Spring"
-          -DinertiaAdapterVersion=0.0.1
+          -DinertiaAdapterVersion=0.0.2
           -DjavaVersion=21
           -DframeworkVersion=4.1.0
         working-directory: /tmp

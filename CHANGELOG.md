@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.0.2
+
+- GroupId and Java packages renamed `io.github.dg.*` → `io.github.diovamny.*`
+  (namespace owned by the publisher; required by Maven Central).
+- Quarkus upgraded 3.38.0 → 3.39.2 across modules, examples, archetypes and CI.
+- New Maven archetypes published: `inertia-spring-vue-archetype`,
+  `inertia-spring-react-archetype`, `inertia-quarkus-vue-archetype`,
+  `inertia-quarkus-react-archetype` (Vue 3 / React 19 starters with native `Dockerfile`).
+- Starter fixes backported where applicable: Quarkus statics served from
+  `META-INF/resources`, Vite `outDir`/`app.*` entry, `emptyOutDir: false`;
+  demo frontend builds bound to `generate-resources`.
+- Adapter fixes: partial reloads keep explicit null props; Spring native
+  `RuntimeHints` completed (`INTROSPECT` modernization, `ScrollProp`,
+  `@ImportRuntimeHints`); deprecated APIs migrated (JSpecify, Jackson 3,
+  Vert.x `authority()`, 422 naming).
+- CI: contract E2E suite, archetype matrix, starter native builds with HTTP
+  smoke, project Checkstyle gate at zero violations.
+
 ## Unreleased
 
 ### Nuevo: adaptador Spring Boot (`spring-inertia`)

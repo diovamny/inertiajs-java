@@ -59,10 +59,9 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Install adapters (unpublished snapshots for demos)
-        # spring-inertia/quarkus-inertia 0.0.1 are not on Maven Central yet,
-        # so demos cannot resolve them without a local install first (-am
-        # also installs the inertia-parent POM they inherit from).
+      - name: Install adapters (resolve locally, faster and hermetic)
+        # Installs the current reactor artifacts so demos resolve them
+        # without depending on Maven Central state.
         run: mvn -B -q -DskipTests install -pl quarkus-inertia,spring-inertia -am
 
       - name: Spring demo smoke
@@ -111,12 +110,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.1
+          -DarchetypeVersion=0.0.2
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.1
+          -DinertiaAdapterVersion=0.0.2
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp
