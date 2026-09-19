@@ -5,7 +5,8 @@ Single-page Vue and React apps powered by Spring Boot and Quarkus controllers. N
 [![CI](https://github.com/diovamny/inertiajs-java/actions/workflows/ci.yml/badge.svg)](https://github.com/diovamny/inertiajs-java/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Java 21](https://img.shields.io/badge/java-21-blue)](https://adoptium.net/)
-<!-- TODO(publication): add Maven Central version badge after the first release. -->
+[![Maven Central spring-inertia](https://img.shields.io/maven-central/v/io.github.diovamny.spring.inertia/spring-inertia)](https://central.sonatype.com/artifact/io.github.diovamny.spring.inertia/spring-inertia)
+[![Maven Central quarkus-inertia](https://img.shields.io/maven-central/v/io.github.diovamny.quarkus.inertia/quarkus-inertia)](https://central.sonatype.com/artifact/io.github.diovamny.quarkus.inertia/quarkus-inertia)
 
 Visit [inertiajs.com](https://inertiajs.com/) to learn the protocol. This is a community
 project and is not officially maintained by the Inertia.js team.
@@ -309,10 +310,6 @@ sessions and validation on the server.
 
 **Spring Boot 4.1** (`io.github.diovamny.spring.inertia:spring-inertia`) and
 **Quarkus 3.39** (`io.github.diovamny.quarkus.inertia:quarkus-inertia`) require Java 21+:
-
-> **Pre-release note:** `0.0.1` is not on Maven Central yet. Until the first
-> release, build from source once (`git clone` + `mvn -DskipTests install`)
-> and the coordinates below resolve from your local repository.
 
 ```xml
 <dependency>
