@@ -41,7 +41,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.version>3.39.2</quarkus.version>
     <spring-boot.version>4.1.0</spring-boot.version>
-    <central-publishing.version>0.7.0</central-publishing.version>
+        <central-publishing.version>0.11.0</central-publishing.version>
     <jacoco.version>0.8.12</jacoco.version>
     <pitest.version>1.16.3</pitest.version>
     <maven.checkstyle.plugin.version>3.6.0</maven.checkstyle.plugin.version>
