@@ -27,6 +27,26 @@ jobs:
       - name: Run full test suite
         run: mvn clean test -T 1C
 
+      - name: Check release secrets are set
+        # Fails fast with a clear message instead of a cryptic 401 at upload
+        # time. Compares nothing secret: only whether each value is non-empty.
+        env:
+          HAS_CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME != '' }}
+          HAS_CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD != '' }}
+          HAS_GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+          HAS_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE != '' }}
+        run: |
+          missing=""
+          [ "$HAS_CENTRAL_USERNAME" = "true" ] || missing="$missing CENTRAL_USERNAME"
+          [ "$HAS_CENTRAL_PASSWORD" = "true" ] || missing="$missing CENTRAL_PASSWORD"
+          [ "$HAS_GPG_PRIVATE_KEY" = "true" ] || missing="$missing GPG_PRIVATE_KEY"
+          [ "$HAS_GPG_PASSPHRASE" = "true" ] || missing="$missing GPG_PASSPHRASE"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing GitHub secrets:$missing"
+            exit 1
+          fi
+          echo "All release secrets are set"
+
       - name: Verify GPG signing setup
         # Fails fast with a clear message when GPG_PRIVATE_KEY/GPG_PASSPHRASE
         # secrets are missing or mismatched, instead of failing mid-deploy.
