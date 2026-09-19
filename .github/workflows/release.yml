@@ -33,6 +33,31 @@ jobs:
       - name: Run full test suite
         run: mvn clean test -T 1C
 
+      - name: Diagnose Central server wiring (lengths only, values stay masked)
+        # Prints whether the `central` server entry exists and the LENGTH of
+        # the username Maven will send. Catches truncated/empty credentials
+        # without ever printing secret values (GitHub masks them anyway).
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET
+          import os
+          p = os.path.expanduser('~/.m2/settings.xml')
+          try:
+              t = ET.parse(p)
+          except Exception as e:
+              print('DIAG settings.xml unreadable:', e)
+              raise SystemExit(0)
+          srv = t.getroot().find("./servers/server[id='central']")
+          if srv is None:
+              print('DIAG NO central server entry in settings.xml')
+          else:
+              u = srv.findtext('username', '')
+              pw = srv.findtext('password', '')
+              print('DIAG central server entry present')
+              print('DIAG username-len:', len(u))
+              print('DIAG password-empty:', str(not pw))
+          EOF
+
       - name: Check release secrets are set
         # Fails fast with a clear message instead of a cryptic 401 at upload
         # time. Compares nothing secret: only whether each value is non-empty.
