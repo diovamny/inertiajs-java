@@ -2,6 +2,12 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_mode:
+        description: "auto = upload and publish; draft = upload only, publish by hand in the portal"
+        type: choice
+        default: auto
+        options: [auto, draft]
   push:
     tags: [ 'v*' ]
 
@@ -74,7 +80,7 @@ jobs:
         # without settings-security.xml on fresh runners.
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn clean deploy -Prelease -DskipTests
+        run: mvn clean deploy -Prelease -DskipTests -Dcentral.autoPublish=${{ inputs.publish_mode == 'draft' && 'false' || 'true' }}
 
       - name: Attach release artifacts
         uses: softprops/action-gh-release@v3
