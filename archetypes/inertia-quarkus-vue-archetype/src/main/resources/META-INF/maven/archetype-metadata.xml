@@ -8,7 +8,7 @@
             <defaultValue>Hello Inertia</defaultValue>
         </requiredProperty>
         <requiredProperty key="inertiaAdapterVersion">
-            <defaultValue>0.0.1</defaultValue>
+            <defaultValue>0.0.2</defaultValue>
         </requiredProperty>
         <requiredProperty key="javaVersion">
             <defaultValue>21</defaultValue>

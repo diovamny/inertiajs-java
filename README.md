@@ -315,7 +315,7 @@ sessions and validation on the server.
 <dependency>
     <groupId>io.github.diovamny.spring.inertia</groupId>
     <artifactId>spring-inertia</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -323,7 +323,7 @@ sessions and validation on the server.
 <dependency>
     <groupId>io.github.diovamny.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -362,7 +362,7 @@ React 19, TypeScript, Vite, tests and an optional native `Dockerfile`:
 
 | Starter | Command |
 |---|---|
-| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.1 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
+| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.2 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
 | Spring Boot + React 19 | Same with `-DarchetypeArtifactId=inertia-spring-react-archetype` |
 | Quarkus + Vue 3 | Same with `-DarchetypeArtifactId=inertia-quarkus-vue-archetype` |
 | Quarkus + React 19 | Same with `-DarchetypeArtifactId=inertia-quarkus-react-archetype` |

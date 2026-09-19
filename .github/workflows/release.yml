@@ -135,10 +135,11 @@ jobs:
       - name: Build, sign and publish to Sonatype Central Portal
         # maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE directly from the
         # environment, bypassing the settings.xml decryption path that fails
-        # without settings-security.xml on fresh runners.
+        # without settings-security.xml on fresh runners. The `archetypes`
+        # profile adds the 4 starter archetypes to the release reactor.
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn clean deploy -Prelease -DskipTests -Dcentral.autoPublish=${{ inputs.publish_mode == 'draft' && 'false' || 'true' }}
+        run: mvn clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=${{ inputs.publish_mode == 'draft' && 'false' || 'true' }}
 
       - name: Attach release artifacts
         # GitHub Releases require a tag: only attach on tag pushes, not on
@@ -149,4 +150,8 @@ jobs:
           files: |
             quarkus-inertia/target/quarkus-inertia-*.jar
             spring-inertia/target/spring-inertia-*.jar
+            archetypes/inertia-spring-vue-archetype/target/inertia-spring-vue-archetype-*.jar
+            archetypes/inertia-spring-react-archetype/target/inertia-spring-react-archetype-*.jar
+            archetypes/inertia-quarkus-vue-archetype/target/inertia-quarkus-vue-archetype-*.jar
+            archetypes/inertia-quarkus-react-archetype/target/inertia-quarkus-react-archetype-*.jar
           generate_release_notes: true

@@ -40,7 +40,7 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 - New behavior must be covered by unit and/or MockMvc/Quarkus integration tests.
 - Javadoc on public API members.
 - Artifact coordinates: `io.github.diovamny.quarkus.inertia:quarkus-inertia` and
-  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.1`).
+  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.2`).
 
 ## Versioning and releases
 
