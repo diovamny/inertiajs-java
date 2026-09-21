@@ -11,7 +11,7 @@ import jakarta.ws.rs.ext.Provider;
 import io.vertx.ext.web.RoutingContext;
 
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 /**
  * Pre-controller CSRF hardening for Inertia visits in effective mode

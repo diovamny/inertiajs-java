@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-import io.github.diovamny.quarkus.inertia.model.AlwaysProp;
-import io.github.diovamny.quarkus.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.quarkus.inertia.protocol.PartialReloadProcessor.PartialReloadContext;
 
 class PartialReloadProcessorUnitTest {

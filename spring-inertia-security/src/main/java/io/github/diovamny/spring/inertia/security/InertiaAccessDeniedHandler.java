@@ -13,10 +13,9 @@ import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
 
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
-import io.github.diovamny.spring.inertia.model.PageObject;
-import io.github.diovamny.spring.inertia.security.InertiaSecurityModes;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 import io.github.diovamny.spring.inertia.version.VersionProvider;
 
 /**

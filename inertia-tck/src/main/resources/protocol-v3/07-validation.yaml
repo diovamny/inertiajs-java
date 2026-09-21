@@ -1,0 +1,27 @@
+# Validation errors: redirect back with the error bag flashed.
+- id: invalid-submit-redirects-back
+  description: Invalid input redirects back instead of rendering.
+  request:
+    method: POST
+    path: /tck/submit
+    headers:
+      X-Inertia: "true"
+      Referer: ${baseUri}/tck/form
+    contentType: application/json
+    body: '{"name":""}'
+  expect:
+    status: 303
+    locationEndsWith: /tck/form
+    withCsrfToken: true
+
+- id: invalid-submit-flashes-errors
+  description: The next visit carries the error bag (runs after invalid-submit-redirects-back).
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    json:
+      props.errors.name: required

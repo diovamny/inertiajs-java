@@ -125,6 +125,23 @@ public class TestController {
         return inertia.redirect("/flash").with("message", "Saved");
     }
 
+    @GetMapping("/concurrent-echo")
+    public Object concurrentEcho(
+            @RequestHeader(value = "X-Echo", defaultValue = "") String echo) {
+        return inertia.render("Echo", Map.of("a", "A-" + echo, "b", "B-" + echo));
+    }
+
+    @GetMapping("/render-flash")
+    public Object renderFlash() {
+        return ((io.github.diovamny.spring.inertia.api.InertiaRender) inertia.render("FlashPage", Map.of())).flash("message", "Chained");
+    }
+
+    @GetMapping("/headed")
+    public Object headed() {
+        inertia.head().title("Hi").meta("description", "d").canonical("https://example.com/h");
+        return inertia.render("HeadPage", Map.of());
+    }
+
     @PostMapping("/form")
     public Object form(@Valid @RequestBody UserForm form) {
         return inertia.redirect("/flash");

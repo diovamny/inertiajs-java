@@ -4,12 +4,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 
-import io.github.diovamny.spring.inertia.model.AlwaysProp;
-import io.github.diovamny.spring.inertia.model.DeferredProp;
-import io.github.diovamny.spring.inertia.model.OnceProp;
-import io.github.diovamny.spring.inertia.model.PageObject;
-import io.github.diovamny.spring.inertia.model.RawJson;
-import io.github.diovamny.spring.inertia.model.ScrollProp;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.DeferredProp;
+import io.github.diovamny.inertia.core.model.OnceProp;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.model.RawJson;
+import io.github.diovamny.inertia.core.model.ScrollProp;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

@@ -10,8 +10,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 import io.github.diovamny.spring.inertia.version.VersionProvider;
 
 /**

@@ -24,4 +24,11 @@ public class RootViewTestResource {
     public Uni<Object> defaulted() {
         return inertia.render("Home", java.util.Map.of());
     }
+
+    @Path("/nonce")
+    @GET
+    public Uni<Object> nonced() {
+        inertia.setRootView("nonce");
+        return inertia.render("Home", java.util.Map.of());
+    }
 }

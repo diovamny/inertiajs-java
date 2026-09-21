@@ -1,0 +1,84 @@
+# Redirect semantics: internal, state-changing, external, back.
+- id: internal-redirect-on-get-visit
+  description: A same-origin redirect on a GET Inertia visit stays a plain redirect.
+  request:
+    method: GET
+    path: /tck/redirect-me
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 302
+    location: /tck/page
+
+- id: state-changing-redirect-is-303
+  description: POST with a valid CSRF token redirects with 303 to the target.
+  request:
+    method: POST
+    path: /tck/submit
+    headers:
+      X-Inertia: "true"
+    contentType: application/json
+    body: '{"name":"Acme"}'
+  expect:
+    status: 303
+    location: /tck/page
+    withCsrfToken: true
+
+- id: put-redirect-normalized-to-303
+  description: A 302 after PUT becomes 303.
+  request:
+    method: PUT
+    path: /tck/put-me
+    headers:
+      X-Inertia: "true"
+    contentType: application/json
+    body: '{"name":"Acme"}'
+  expect:
+    status: 303
+    location: /tck/page
+    withCsrfToken: true
+
+- id: delete-redirect-normalized-to-303
+  description: A 302 after DELETE becomes 303.
+  request:
+    method: DELETE
+    path: /tck/delete-me
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 303
+    location: /tck/page
+    withCsrfToken: true
+
+- id: external-redirect-is-409-challenge
+  description: An external redirect on an Inertia visit becomes 409 + X-Inertia-Location.
+  request:
+    method: GET
+    path: /tck/external
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 409
+    xInertiaLocation: https://example.com
+
+- id: plain-external-redirect-is-302
+  description: The same external redirect stays 302 for plain visits.
+  request:
+    method: GET
+    path: /tck/external
+  expect:
+    status: 302
+    location: https://example.com
+
+- id: back-uses-referer
+  description: back() redirects to the same-origin referer.
+  request:
+    method: POST
+    path: /tck/back
+    headers:
+      X-Inertia: "true"
+      Referer: ${baseUri}/tck/page
+  expect:
+    status: 303
+    locationEndsWith: /tck/page
+    withCsrfToken: true

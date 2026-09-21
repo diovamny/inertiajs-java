@@ -18,7 +18,7 @@ import io.smallrye.mutiny.groups.UniOnTerminate;
 import io.smallrye.mutiny.groups.UniRepeat;
 import io.smallrye.mutiny.groups.UniSubscribe;
 
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 import jakarta.ws.rs.core.Response;
 
 /**
@@ -71,6 +71,21 @@ public class InertiaRedirect implements Uni<Object> {
      * Alias of {@link #with(Map)}.
      */
     public InertiaRedirect flash(Map<String, Object> values) {
+        return with(values);
+    }
+
+    /**
+     * Alias of {@link #with(String, Object)} (Laravel {@code ->with()} parity
+     * under the {@code withFlash} name).
+     */
+    public InertiaRedirect withFlash(String key, Object value) {
+        return with(key, value);
+    }
+
+    /**
+     * Alias of {@link #with(Map)}.
+     */
+    public InertiaRedirect withFlash(Map<String, Object> values) {
         return with(values);
     }
 

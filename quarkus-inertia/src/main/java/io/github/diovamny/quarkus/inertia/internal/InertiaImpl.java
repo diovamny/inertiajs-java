@@ -10,18 +10,19 @@ import io.smallrye.mutiny.Uni;
 
 import io.github.diovamny.quarkus.inertia.api.Inertia;
 import io.github.diovamny.quarkus.inertia.api.InertiaRedirect;
+import io.github.diovamny.quarkus.inertia.api.InertiaRender;
 import io.github.diovamny.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.quarkus.inertia.cache.CachedPropStore;
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.model.AlwaysProp;
-import io.github.diovamny.quarkus.inertia.model.RawJson;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.RawJson;
 import io.github.diovamny.quarkus.inertia.protocol.PageObjectBuilder;
 import io.github.diovamny.quarkus.inertia.protocol.ResponseProcessor;
 import io.github.diovamny.quarkus.inertia.protocol.SharedDataRegistry;
 import io.github.diovamny.quarkus.inertia.protocol.RedirectProcessor;
 import io.github.diovamny.quarkus.inertia.protocol.OncePropRegistry;
 import io.github.diovamny.quarkus.inertia.protocol.MergePropProcessor;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 import io.github.diovamny.quarkus.inertia.spi.ErrorMapper;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
 import io.github.diovamny.quarkus.inertia.vertx.ReactiveResponseWriter;
@@ -83,29 +84,33 @@ public class InertiaImpl implements Inertia {
     // ========================================================================
 
     @Override
-    public Uni<Object> render() {
+    public InertiaRender render() {
         return render((String) null, Map.of());
     }
 
     @Override
-    public Uni<Object> render(Map<String, Object> props) {
+    public InertiaRender render(Map<String, Object> props) {
         return render((String) null, props);
     }
 
     @Override
-    public Uni<Object> render(ProvidesInertiaProperties provider) {
+    public InertiaRender render(ProvidesInertiaProperties provider) {
         return render((String) null, provider);
     }
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.renderer.SsrCachePolicy ssrCachePolicy;
+
     @Override
-    public Uni<Object> render(String component, Map<String, Object> props) {
+    public InertiaRender render(String component, Map<String, Object> props) {
         runSharedContributors();
-        return pageBuilder.build(component, props)
-            .chain(responseProcessor::process);
+        return new io.github.diovamny.quarkus.inertia.api.InertiaRender(
+            pageBuilder.build(component, props).chain(responseProcessor::process),
+            flashStore, ssrCachePolicy);
     }
 
     @Override
-    public Uni<Object> render(String component, ProvidesInertiaProperties provider) {
+    public InertiaRender render(String component, ProvidesInertiaProperties provider) {
         if (provider != null) {
             var renderContext = pageBuilder.createRenderContext(component);
             return render(component, provider.toInertiaProperties(renderContext));
@@ -114,38 +119,38 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
-    public Uni<Object> render(String component) {
+    public InertiaRender render(String component) {
         return render(component, Map.of());
     }
 
     @Override
-    public Uni<Object> render(Enum<?> component) {
+    public InertiaRender render(Enum<?> component) {
         return render(component.name(), Map.of());
     }
 
     @Override
-    public Uni<Object> render(Enum<?> component, Map<String, Object> props) {
+    public InertiaRender render(Enum<?> component, Map<String, Object> props) {
         return render(component.name(), props);
     }
 
     @Override
-    public Uni<Object> render(String component, Map<String, Object> props, int status) {
+    public InertiaRender render(String component, Map<String, Object> props, int status) {
         storePageStatus(status);
         return render(component, props);
     }
 
     @Override
-    public Uni<Object> render(String component, int status) {
+    public InertiaRender render(String component, int status) {
         return render(component, Map.of(), status);
     }
 
     @Override
-    public Uni<Object> render(Enum<?> component, int status) {
+    public InertiaRender render(Enum<?> component, int status) {
         return render(component.name(), Map.of(), status);
     }
 
     @Override
-    public Uni<Object> render(Enum<?> component, Map<String, Object> props, int status) {
+    public InertiaRender render(Enum<?> component, Map<String, Object> props, int status) {
         return render(component.name(), props, status);
     }
 
@@ -273,6 +278,26 @@ public class InertiaImpl implements Inertia {
     @Override
     public InertiaRedirect redirect(String url, boolean fullPage) {
         return new InertiaRedirect(redirectProcessor.process(url, fullPage), flashStore);
+    }
+
+    @Override
+    public InertiaRender render(io.github.diovamny.inertia.core.result.InertiaPageResult result) {
+        if (!result.meta().isEmpty()) {
+            sharedData.addMeta(result.meta());
+        }
+        return render(result.component(), result.props());
+    }
+
+    @Override
+    public InertiaRedirect redirect(
+            io.github.diovamny.inertia.core.result.InertiaRedirectResult result) {
+        return redirect(result.url(), result.fullPage());
+    }
+
+    @Override
+    public Uni<Object> location(
+            io.github.diovamny.inertia.core.result.InertiaLocationResult result) {
+        return location(result.url());
     }
 
     @Override
@@ -622,6 +647,14 @@ public class InertiaImpl implements Inertia {
     @Override
     public void scroll(String key, Object value, Map<String, Object> metadata, String wrapper) {
         sharedData.addScrollProp(key, value, wrapper, metadata);
+    }
+
+    @Inject
+    io.github.diovamny.inertia.core.head.HeadBuilder headBuilder;
+
+    @Override
+    public io.github.diovamny.inertia.core.head.HeadBuilder head() {
+        return headBuilder;
     }
 
     @Override

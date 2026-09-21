@@ -13,6 +13,56 @@ class InertiaPageTest {
 
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
+    private static InertiaPage nestedPage() {
+        var json = """
+            {"component":"Users/Index",
+             "props":{"users":{"total":50,"data":[{"name":"Alice"},{"name":"Bob"}]},
+                      "role":"admin","secret":"x"},
+             "url":"/users","version":"1.0.0"}
+            """;
+        return InertiaPage.fromJson(json, MAPPER);
+    }
+
+    @Test
+    void whereAssertsDeepPaths() {
+        var page = nestedPage();
+        page.where("users.total", 50);
+        page.where("users.data[0].name", "Alice");
+        page.where("users.data[1].name", "Bob");
+        assertThrows(AssertionError.class, () -> page.where("users.data[0].name", "Mallory"));
+        assertThrows(AssertionError.class, () -> page.where("users.missing", "x"));
+    }
+
+    @Test
+    void hasAssertsDeepCounts() {
+        var page = nestedPage();
+        page.has("users.data", 2);
+        page.has("users", 2);
+        assertThrows(AssertionError.class, () -> page.has("users.data", 3));
+        assertThrows(AssertionError.class, () -> page.has("role", 1));
+    }
+
+    @Test
+    void missingAssertsDeepAbsence() {
+        var page = nestedPage();
+        page.missing("users.data[0].age");
+        page.missing("nope.nothing");
+        assertThrows(AssertionError.class, () -> page.missing("role"));
+        assertThrows(AssertionError.class, () -> page.missing("users.data[0].name"));
+    }
+
+    @Test
+    void dumpDiffPassesWhenEqualAndFailsWithDiff() {
+        var page = nestedPage();
+        page.dumpDiff(nestedPage());
+        var other = InertiaPage.fromJson("""
+            {"component":"Users/Index","props":{"users":{"total":51},"role":"admin"},
+             "url":"/users","version":"1.0.0"}
+            """, MAPPER);
+        var error = assertThrows(AssertionError.class, () -> page.dumpDiff(other));
+        assertTrue(error.getMessage().contains("users.total"));
+    }
+
     @Test
     void parsesPagePayload() {
         var json = """

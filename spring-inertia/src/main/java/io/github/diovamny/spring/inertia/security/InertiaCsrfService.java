@@ -60,6 +60,30 @@ public class InertiaCsrfService {
     }
 
     /**
+     * Decide whether the {@code XSRF-TOKEN} cookie must be (re-)emitted.
+     * Always emits, except under the {@code lazy} policy on idempotent
+     * requests that already present a cookie equal to the session token
+     * (keeps those responses cacheable by CDNs and reverse proxies).
+     *
+     * @param lazy            whether the lazy policy is active
+     * @param method          the HTTP method
+     * @param presentedCookie the incoming {@code XSRF-TOKEN} cookie value
+     * @param sessionToken    the current session token
+     * @return {@code true} to emit {@code Set-Cookie}
+     */
+    public static boolean shouldEmitCookie(boolean lazy, String method,
+            String presentedCookie, String sessionToken) {
+        if (!lazy) {
+            return true;
+        }
+        if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
+            return true;
+        }
+        return presentedCookie == null || presentedCookie.isBlank()
+            || sessionToken == null || !presentedCookie.equals(sessionToken);
+    }
+
+    /**
      * Whether the current request has been CSRF-verified.
      *
      * @return {@code true} when verified

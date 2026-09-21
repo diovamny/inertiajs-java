@@ -17,9 +17,9 @@ Important: this file is now evidence-based. Rows that cite non-existent test cla
 | 4 | Detection | Partial reload headers parsed | Protocol | ✅ | ✅ | PartialReloadProcessorTest, PartialReloadProcessorUnitTest | X-Inertia-Partial-Component/Data/Except/Reset |
 | **Page Response** | | | | | | | |
 | 5 | Response | X-Inertia:true header on JSON responses | Protocol | ✅ | ✅ | RenderPageIntegrationTest, ReactiveRouteInertiaTest | JSON page responses include header |
-| 6 | Response | Component, props, URL, version in JSON | Protocol | ✅ | ✅ | InertiaPageTest (both), PageObjectTest | Full page object serialized |
-| 7 | Response | clearHistory boolean in page object | Protocol | ✅ | ✅ | PageObjectTest (both), InertiaPageTest | Configurable via properties and API |
-| 8 | Response | encryptHistory boolean in page object | Protocol | ✅ | ✅ | PageObjectTest (both), InertiaPageTest | Configurable via properties and API |
+| 6 | Response | Component, props, URL, version in JSON | Protocol | ✅ | ✅ | InertiaPageTest (both), PageObjectUnitTest (core) | Full page object serialized |
+| 7 | Response | clearHistory boolean in page object | Protocol | ✅ | ✅ | PageObjectUnitTest (core), InertiaPageTest | Configurable via properties and API |
+| 8 | Response | encryptHistory boolean in page object | Protocol | ✅ | ✅ | PageObjectUnitTest (core), InertiaPageTest | Configurable via properties and API |
 | 9 | Response | preserveFragment boolean in page object | Protocol | ✅ | ✅ | InertiaPageTest (both) | Inertia.preserveFragment() API |
 | **Versioning** | | | | | | | |
 | 10 | Version | Asset version match returns normal response | Protocol | ✅ | ✅ | RenderPageIntegrationTest, ReactiveRouteInertiaTest | Same version -> 200 JSON |

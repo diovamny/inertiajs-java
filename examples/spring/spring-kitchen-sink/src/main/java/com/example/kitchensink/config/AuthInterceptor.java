@@ -14,7 +14,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.example.kitchensink.service.AuthService;
 import io.github.diovamny.spring.inertia.api.Inertia;
-import io.github.diovamny.spring.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.spring.inertia.version.VersionProvider;
 
 /**

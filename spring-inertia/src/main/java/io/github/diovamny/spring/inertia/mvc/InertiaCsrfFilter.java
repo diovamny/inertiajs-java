@@ -12,7 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
 import io.github.diovamny.spring.inertia.security.InertiaCsrfService;
 import io.github.diovamny.spring.inertia.security.InertiaSecurityModes;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 /**
  * Adapter-owned CSRF protection (mode {@code adapter} only): synchronizes the
@@ -88,6 +88,12 @@ public class InertiaCsrfFilter extends OncePerRequestFilter {
 
     private void emitXsrfCookie(HttpServletRequest request, HttpServletResponse response) {
         var token = csrfService.token();
+        if (!InertiaCsrfService.shouldEmitCookie(
+                "lazy".equals(properties.getCsrfRefreshPolicy()),
+                request.getMethod(), requestCookie(request, "XSRF-TOKEN"), token)) {
+            csrfService.setToken(token);
+            return;
+        }
         csrfService.setToken(token);
         var security = properties.getSecurity();
         var cookie = new Cookie("XSRF-TOKEN", token);
@@ -101,6 +107,19 @@ public class InertiaCsrfFilter extends OncePerRequestFilter {
         }
         cookie.setAttribute("SameSite", sameSite(security.getCookieSameSite()));
         response.addCookie(cookie);
+    }
+
+    private static String requestCookie(HttpServletRequest request, String name) {
+        var cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (var cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     private static String sameSite(String configured) {

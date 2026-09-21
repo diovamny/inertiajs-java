@@ -12,9 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.spi.ComponentTransformer;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
-import io.github.diovamny.quarkus.inertia.spi.UrlResolver;
+import io.github.diovamny.inertia.core.spi.ComponentTransformer;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.UrlResolver;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
 
 class ComponentHooksUnitTest {

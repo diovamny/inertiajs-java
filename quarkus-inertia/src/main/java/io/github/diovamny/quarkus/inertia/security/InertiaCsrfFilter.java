@@ -46,7 +46,7 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
     InertiaCsrfService csrfService;
 
     @Inject
-    io.github.diovamny.quarkus.inertia.spi.FlashStore flashStore;
+    io.github.diovamny.inertia.core.spi.FlashStore flashStore;
 
     @Override
     public void filter(ContainerRequestContext request) {
@@ -104,8 +104,17 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
         // visit (which is not yet an Inertia request) can obtain the token.
         var token = getOrCreateToken();
         if (token == null) return;
+        if (!InertiaCsrfService.shouldEmitCookie(csrfService.isLazyRefresh(),
+                request.getMethod(), requestCookie(request, "XSRF-TOKEN"), token)) {
+            return;
+        }
 
         response.getHeaders().add("Set-Cookie", csrfService.cookieHeader(token));
+    }
+
+    private static String requestCookie(ContainerRequestContext request, String name) {
+        var cookie = request.getCookies().get(name);
+        return cookie != null ? cookie.getValue() : null;
     }
 
     private boolean isInertiaRequest(ContainerRequestContext request) {

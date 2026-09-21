@@ -13,7 +13,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 
-import io.github.diovamny.quarkus.inertia.model.OnceProp;
+import io.github.diovamny.inertia.core.model.OnceProp;
 
 import io.smallrye.mutiny.Uni;
 

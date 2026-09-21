@@ -4,7 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.json.bind.Jsonb;
 
-import io.github.diovamny.quarkus.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * JSON-B backed {@link JsonProvider}, the default when Jackson is not

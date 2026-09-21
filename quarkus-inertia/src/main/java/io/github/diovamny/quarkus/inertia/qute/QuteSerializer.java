@@ -5,8 +5,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import io.smallrye.mutiny.Uni;
 
-import io.github.diovamny.quarkus.inertia.model.PageObject;
-import io.github.diovamny.quarkus.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Serializes a {@link PageObject} to its JSON string for embedding in the

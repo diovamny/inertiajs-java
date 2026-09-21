@@ -6,7 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
 
-import io.github.diovamny.quarkus.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Jackson-backed {@link JsonProvider}, selected with priority 1 when the

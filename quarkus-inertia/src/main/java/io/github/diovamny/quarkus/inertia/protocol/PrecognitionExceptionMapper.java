@@ -13,7 +13,7 @@ import jakarta.ws.rs.ext.Provider;
 import io.vertx.core.Vertx;
 
 import io.github.diovamny.quarkus.inertia.api.Inertia;
-import io.github.diovamny.quarkus.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Maps a {@link ConstraintViolationException} (thrown by CDI bean

@@ -67,6 +67,33 @@ public class InertiaProperties {
     /** Read timeout for SSR requests. */
     private Duration ssrReadTimeout = Duration.ofSeconds(10);
 
+    /** Consecutive SSR sidecar failures before the circuit breaker opens. */
+    private int ssrBreakerFailureThreshold = 5;
+
+    /** Cooldown before a half-open probe is allowed through an open breaker. */
+    private Duration ssrBreakerCooldown = Duration.ofSeconds(30);
+
+    /** Cache SSR sidecar responses keyed by page hash. */
+    private boolean ssrCacheEnabled = false;
+
+    /** Default TTL for cached SSR responses (overridable per render). */
+    private Duration ssrCacheTtl = Duration.ofMinutes(15);
+
+    /** Supervise the Node.js SSR sidecar process (start, restart, stop). */
+    private boolean ssrSupervisorEnabled = false;
+
+    /** Sidecar executable for the supervisor. */
+    private String ssrSupervisorCommand = "node";
+
+    /** Sidecar entry file for the supervisor. */
+    private String ssrSupervisorEntry = "dist-ssr/ssr.mjs";
+
+    /** Working directory for the supervised sidecar (blank = JVM directory). */
+    private String ssrSupervisorWorkdir = "";
+
+    /** Restart attempts after the initial start before giving up. */
+    private int ssrSupervisorMaxRestarts = 5;
+
     /** Version strategy: {@code sha256} (default) or {@code vite-manifest}. */
     private String versionStrategy = "sha256";
 
@@ -81,6 +108,14 @@ public class InertiaProperties {
 
     /** Whether prop keys are converted from snake_case to camelCase. */
     private boolean camelizeProps = false;
+
+    /**
+     * XSRF-TOKEN cookie refresh policy (Rails {@code :always} / {@code :lazy}
+     * parity): {@code always} re-emits {@code Set-Cookie} on every response;
+     * {@code lazy} skips re-emission on idempotent requests that already
+     * present a valid token, keeping responses cacheable by CDNs.
+     */
+    private String csrfRefreshPolicy = "always";
 
     /**
      * Legacy CSRF flag, kept as a migration alias for
@@ -324,6 +359,78 @@ public class InertiaProperties {
         this.ssrReadTimeout = ssrReadTimeout;
     }
 
+    public int getSsrBreakerFailureThreshold() {
+        return ssrBreakerFailureThreshold;
+    }
+
+    public void setSsrBreakerFailureThreshold(int ssrBreakerFailureThreshold) {
+        this.ssrBreakerFailureThreshold = ssrBreakerFailureThreshold;
+    }
+
+    public Duration getSsrBreakerCooldown() {
+        return ssrBreakerCooldown;
+    }
+
+    public void setSsrBreakerCooldown(Duration ssrBreakerCooldown) {
+        this.ssrBreakerCooldown = ssrBreakerCooldown;
+    }
+
+    public boolean isSsrCacheEnabled() {
+        return ssrCacheEnabled;
+    }
+
+    public void setSsrCacheEnabled(boolean ssrCacheEnabled) {
+        this.ssrCacheEnabled = ssrCacheEnabled;
+    }
+
+    public Duration getSsrCacheTtl() {
+        return ssrCacheTtl;
+    }
+
+    public void setSsrCacheTtl(Duration ssrCacheTtl) {
+        this.ssrCacheTtl = ssrCacheTtl;
+    }
+
+    public boolean isSsrSupervisorEnabled() {
+        return ssrSupervisorEnabled;
+    }
+
+    public void setSsrSupervisorEnabled(boolean ssrSupervisorEnabled) {
+        this.ssrSupervisorEnabled = ssrSupervisorEnabled;
+    }
+
+    public String getSsrSupervisorCommand() {
+        return ssrSupervisorCommand;
+    }
+
+    public void setSsrSupervisorCommand(String ssrSupervisorCommand) {
+        this.ssrSupervisorCommand = ssrSupervisorCommand;
+    }
+
+    public String getSsrSupervisorEntry() {
+        return ssrSupervisorEntry;
+    }
+
+    public void setSsrSupervisorEntry(String ssrSupervisorEntry) {
+        this.ssrSupervisorEntry = ssrSupervisorEntry;
+    }
+
+    public String getSsrSupervisorWorkdir() {
+        return ssrSupervisorWorkdir;
+    }
+
+    public void setSsrSupervisorWorkdir(String ssrSupervisorWorkdir) {
+        this.ssrSupervisorWorkdir = ssrSupervisorWorkdir;
+    }
+
+    public int getSsrSupervisorMaxRestarts() {
+        return ssrSupervisorMaxRestarts;
+    }
+
+    public void setSsrSupervisorMaxRestarts(int ssrSupervisorMaxRestarts) {
+        this.ssrSupervisorMaxRestarts = ssrSupervisorMaxRestarts;
+    }
+
     public String getVersionStrategy() {
         return versionStrategy;
     }
@@ -354,6 +461,40 @@ public class InertiaProperties {
 
     public void setClearHistory(boolean clearHistory) {
         this.clearHistory = clearHistory;
+    }
+
+    /**
+     * Publish collected server head tags as the {@code head} page prop.
+     */
+    private boolean serverHead = false;
+
+    /**
+     * Title template applied by the head builder ({@code %s} is the title).
+     */
+    private String metaTitleTemplate = "%s";
+
+    public String getCsrfRefreshPolicy() {
+        return csrfRefreshPolicy;
+    }
+
+    public void setCsrfRefreshPolicy(String csrfRefreshPolicy) {
+        this.csrfRefreshPolicy = csrfRefreshPolicy;
+    }
+
+    public boolean isServerHead() {
+        return serverHead;
+    }
+
+    public void setServerHead(boolean serverHead) {
+        this.serverHead = serverHead;
+    }
+
+    public String getMetaTitleTemplate() {
+        return metaTitleTemplate;
+    }
+
+    public void setMetaTitleTemplate(String metaTitleTemplate) {
+        this.metaTitleTemplate = metaTitleTemplate;
     }
 
     public boolean isCamelizeProps() {

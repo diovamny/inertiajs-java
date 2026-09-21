@@ -5,7 +5,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
-import io.github.diovamny.spring.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 /**
  * An Inertia redirect response. Extends {@link ResponseEntity} so Spring MVC
@@ -70,5 +70,33 @@ public class InertiaRedirect extends ResponseEntity<String> {
     public InertiaRedirect withInput(Map<String, Object> input) {
         flashStore.put("old", input);
         return this;
+    }
+
+    /**
+     * Alias of {@link #with(String, Object)}.
+     */
+    public InertiaRedirect flash(String key, Object value) {
+        return with(key, value);
+    }
+
+    /**
+     * Alias of {@link #with(Map)}.
+     */
+    public InertiaRedirect flash(Map<String, Object> values) {
+        return with(values);
+    }
+
+    /**
+     * Alias of {@link #with(String, Object)}.
+     */
+    public InertiaRedirect withFlash(String key, Object value) {
+        return with(key, value);
+    }
+
+    /**
+     * Alias of {@link #with(Map)}.
+     */
+    public InertiaRedirect withFlash(Map<String, Object> values) {
+        return with(values);
     }
 }

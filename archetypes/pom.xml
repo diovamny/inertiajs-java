@@ -16,12 +16,14 @@
     <packaging>pom</packaging>
 
     <name>Inertia.js Java Archetypes</name>
-    <description>Maven archetypes for Spring Boot and Quarkus Inertia.js v3 starters (Vue 3 / React)</description>
+    <description>Maven archetypes for Spring Boot and Quarkus Inertia.js v3 starters (Vue 3 / React / Svelte 5)</description>
 
     <modules>
         <module>inertia-spring-vue-archetype</module>
         <module>inertia-spring-react-archetype</module>
+        <module>inertia-spring-svelte-archetype</module>
         <module>inertia-quarkus-vue-archetype</module>
         <module>inertia-quarkus-react-archetype</module>
+        <module>inertia-quarkus-svelte-archetype</module>
     </modules>
 </project>

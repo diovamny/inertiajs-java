@@ -113,7 +113,7 @@ class RedirectProcessorTest {
         assertEquals("/x", redirect.getHeaders().getFirst("Location"));
     }
 
-    private static final class TestFlashStore implements io.github.diovamny.spring.inertia.spi.FlashStore {
+    private static final class TestFlashStore implements io.github.diovamny.inertia.core.spi.FlashStore {
         final Map<String, Object> stored = new java.util.LinkedHashMap<>();
 
         @Override public void put(String key, Object value) { stored.put(key, value); }

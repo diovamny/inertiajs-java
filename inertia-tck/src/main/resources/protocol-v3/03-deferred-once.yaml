@@ -1,0 +1,54 @@
+# Deferred and once props.
+- id: deferred-excluded-on-full-visit
+  description: Deferred values are not resolved on a full visit.
+  request:
+    method: GET
+    path: /tck/deferred
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/Deferred
+    json:
+      props.title: t
+      props.data: null
+
+- id: deferred-resolves-on-partial
+  description: Requesting the deferred key via partial reload resolves it.
+  request:
+    method: GET
+    path: /tck/deferred
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/Deferred
+      X-Inertia-Partial-Data: data
+  expect:
+    status: 200
+    json:
+      props.data: lazy-value
+
+- id: once-present-on-first-visit
+  description: Once props are delivered on a full visit.
+  request:
+    method: GET
+    path: /tck/once
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/Once
+    json:
+      props.notice: Hello
+
+- id: once-excluded-with-except-header
+  description: X-Inertia-Except-Once-Props suppresses the listed once props.
+  request:
+    method: GET
+    path: /tck/once
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Except-Once-Props: notice
+  expect:
+    status: 200
+    json:
+      props.notice: null

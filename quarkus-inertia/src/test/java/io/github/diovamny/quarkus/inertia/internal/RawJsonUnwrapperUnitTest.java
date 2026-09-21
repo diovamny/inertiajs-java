@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.diovamny.quarkus.inertia.model.RawJson;
+import io.github.diovamny.inertia.core.model.RawJson;
 
 class RawJsonUnwrapperUnitTest {
 

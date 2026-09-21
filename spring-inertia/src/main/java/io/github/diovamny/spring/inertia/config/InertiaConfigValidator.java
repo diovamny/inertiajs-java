@@ -19,7 +19,15 @@ public class InertiaConfigValidator {
         validateStatus(properties.getErrorStatus());
         validateRootTemplate(properties.getRootTemplate());
         validateRootView(properties.getRootView());
+        validateCsrfRefreshPolicy(properties.getCsrfRefreshPolicy());
         validateSecurity(properties, environment);
+    }
+
+    private static void validateCsrfRefreshPolicy(String policy) {
+        if (policy == null || (!policy.equals("always") && !policy.equals("lazy"))) {
+            throw new IllegalArgumentException(
+                "inertia.csrf-refresh-policy must be 'always' or 'lazy', got: " + policy);
+        }
     }
 
     private static void validateSecurity(InertiaProperties properties,

@@ -5,7 +5,7 @@ import org.springframework.web.servlet.HandlerMapping;
 
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
-import io.github.diovamny.spring.inertia.spi.ComponentTransformer;
+import io.github.diovamny.inertia.core.spi.ComponentTransformer;
 
 /**
  * Automatically resolves frontend component names by convention from the

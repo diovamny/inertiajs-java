@@ -41,6 +41,40 @@ public class InertiaCsrfService {
     }
 
     /**
+     * Whether the {@code lazy} refresh policy is active
+     * ({@code inertia.csrf-refresh-policy=lazy}).
+     *
+     * @return {@code true} to skip redundant re-emission
+     */
+    public boolean isLazyRefresh() {
+        return "lazy".equals(config.csrfRefreshPolicy());
+    }
+
+    /**
+     * Decide whether the {@code XSRF-TOKEN} cookie must be (re-)emitted.
+     * Always emits, except under the {@code lazy} policy on idempotent
+     * requests that already present a cookie equal to the session token
+     * (keeps those responses cacheable by CDNs and reverse proxies).
+     *
+     * @param lazy            whether the lazy policy is active
+     * @param method          the HTTP method
+     * @param presentedCookie the incoming {@code XSRF-TOKEN} cookie value
+     * @param sessionToken    the current session token
+     * @return {@code true} to emit {@code Set-Cookie}
+     */
+    public static boolean shouldEmitCookie(boolean lazy, String method,
+            String presentedCookie, String sessionToken) {
+        if (!lazy) {
+            return true;
+        }
+        if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
+            return true;
+        }
+        return presentedCookie == null || presentedCookie.isBlank()
+            || sessionToken == null || !presentedCookie.equals(sessionToken);
+    }
+
+    /**
      * Whether the HTTP method can change server state.
      *
      * @param method the HTTP method

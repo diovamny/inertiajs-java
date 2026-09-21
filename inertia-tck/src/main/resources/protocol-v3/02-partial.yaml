@@ -1,0 +1,44 @@
+# Partial reloads: only / except filtering.
+- id: partial-only-filters-props
+  description: X-Inertia-Partial-Data restricts the response to the listed props.
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/Page
+      X-Inertia-Partial-Data: a
+  expect:
+    status: 200
+    component: Tck/Page
+    propsKeys: [a]
+    propsAbsent: [b]
+    json:
+      props.a: A
+
+- id: partial-only-multiple-keys
+  description: Several keys can be requested at once.
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/Page
+      X-Inertia-Partial-Data: a, b
+  expect:
+    status: 200
+    propsKeys: [a, b]
+
+- id: partial-except-filters-props
+  description: X-Inertia-Partial-Except removes the listed props.
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/Page
+      X-Inertia-Partial-Except: b
+  expect:
+    status: 200
+    propsKeys: [a]
+    propsAbsent: [b]

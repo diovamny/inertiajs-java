@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.github.diovamny.quarkus.inertia.model.AlwaysProp;
-import io.github.diovamny.quarkus.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.PageObject;
 
 /**
  * Applies a partial reload: keeps only the props requested by the client

@@ -14,9 +14,9 @@ import jakarta.ws.rs.ext.Provider;
 import io.vertx.ext.web.RoutingContext;
 
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.model.PageObject;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
-import io.github.diovamny.quarkus.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
 
 /**

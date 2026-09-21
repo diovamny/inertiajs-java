@@ -16,14 +16,15 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
+import io.github.diovamny.inertia.core.head.HeadBuilder;
 import io.github.diovamny.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.quarkus.inertia.api.RenderContext;
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.model.AlwaysProp;
-import io.github.diovamny.quarkus.inertia.model.PageObject;
-import io.github.diovamny.quarkus.inertia.spi.ComponentTransformer;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
-import io.github.diovamny.quarkus.inertia.spi.UrlResolver;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.spi.ComponentTransformer;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.UrlResolver;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
 
 /**
@@ -49,6 +50,13 @@ public class PageObjectBuilder {
     private final InertiaConfig config;
     private final Instance<ComponentTransformer> componentTransformer;
     private final Instance<UrlResolver> urlResolver;
+
+    @Inject
+    HeadBuilder headBuilder;
+
+    @Inject
+    io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics.noop();
 
     @Inject
     public PageObjectBuilder(
@@ -188,12 +196,15 @@ public class PageObjectBuilder {
         var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
         var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
 
-        return resolveSupplierProps(allProps, partialContext).map(resolvedProps -> {
+        var propsSample = metrics.startPropsResolution();
+        return resolveSupplierProps(allProps, partialContext)
+            .onTermination().invoke(() -> metrics.stopPropsResolution(propsSample, resolvedComponent))
+            .map(resolvedProps -> {
             var rescuedProps = sharedData.hasRescuedProps()
                 ? sharedData.getActuallyRescuedProps()
                 : null;
 
-            var page = new PageObject(resolvedComponent, copyOfNullTolerant(resolvedProps), url, version,
+            var page = new PageObject(resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), url, version,
                 flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
                 onceProps, scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
                 encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
@@ -333,13 +344,15 @@ public class PageObjectBuilder {
         checkAsyncProps(allProps, partialContext);
 
         // Use props as-is without resolving suppliers
+        var propsSample = metrics.startPropsResolution();
         var resolvedProps = stripSupplierProps(allProps);
+        metrics.stopPropsResolution(propsSample, resolvedComponent);
 
         var rescuedProps = sharedData.hasRescuedProps()
             ? sharedData.getActuallyRescuedProps()
             : null;
 
-        var page = new PageObject(resolvedComponent, copyOfNullTolerant(resolvedProps), url, version,
+        var page = new PageObject(resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), url, version,
             flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
             onceProps, scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
             encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
@@ -638,6 +651,24 @@ public class PageObjectBuilder {
         return rawErrors;
     }
 
+    /**
+     * Publish collected server head tags as the {@code head} prop when
+     * {@code inertia.server-head=true}. Never overwrites an explicit
+     * {@code head} prop and tolerates a missing builder (direct unit-test
+     * construction without CDI).
+     */
+    private Map<String, Object> withServerHead(Map<String, Object> props) {
+        if (headBuilder == null || !config.serverHead() || headBuilder.isEmpty()) {
+            return props;
+        }
+        if (props.containsKey("head")) {
+            return props;
+        }
+        var copy = new LinkedHashMap<>(props);
+        copy.put("head", headBuilder.toPropList());
+        return copy;
+    }
+
     private static Map<String, Object> copyOfNullTolerant(Map<String, Object> source) {
         var copy = new HashMap<String, Object>();
         if (source != null) {
@@ -778,7 +809,7 @@ public class PageObjectBuilder {
             var val = InertiaContextLocals.get(ctx, "inertia-clear-history");
             if (val != null) return Boolean.TRUE.equals(val);
         }
-        return false;
+        return config.clearHistory();
     }
 
     private boolean preserveFragment() {
