@@ -41,7 +41,7 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
 
         applyCustomHeaders(response, ctx);
 
-        var isPrecognition = Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
+        var isPrecognition = InertiaContextLocals.isTrue(ctx, "inertia-precognition");
         int status = response.getStatus();
 
         if (isPrecognition) {
@@ -49,14 +49,16 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
             response.setStatus(204);
             response.getHeaders().putSingle("Precognition", "true");
             response.getHeaders().putSingle("Precognition-Success", "true");
-            response.getHeaders().putSingle("Vary", "Precognition");
+            io.github.diovamny.quarkus.inertia.util.VaryHeaderUtil.addTo(
+                response.getHeaders(), "Precognition");
             response.setEntity(null, null, null);
             return;
         }
 
-        var isInertia = Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
+        var isInertia = InertiaContextLocals.isTrue(ctx, "inertia-request");
         if (isInertia) {
-            response.getHeaders().add("Vary", "X-Inertia");
+            io.github.diovamny.quarkus.inertia.util.VaryHeaderUtil.addTo(
+                response.getHeaders(), "X-Inertia");
         } else {
             return;
         }
@@ -78,7 +80,7 @@ public class InertiaResponseFilter implements ContainerResponseFilter {
 
     private void applyCustomHeaders(ContainerResponseContext response, io.vertx.core.Context ctx) {
         @SuppressWarnings("unchecked")
-        var headers = (Map<String, Object>) ctx.getLocal("inertia-response-headers");
+        var headers = (Map<String, Object>) InertiaContextLocals.get(ctx, "inertia-response-headers");
         if (headers == null || headers.isEmpty()) return;
         for (var entry : headers.entrySet()) {
             if (entry.getKey() == null || entry.getValue() == null) continue;
@@ -134,10 +136,10 @@ private void handleConditionalRequest(ContainerRequestContext request, Container
     private String computeEtag(Object entity, io.vertx.core.Context ctx) {
         if (entity == null || entity instanceof String s && s.isBlank()) return null;
 
-        var clientVersion = ctx.getLocal("inertia-version");
-        var partialComponent = ctx.getLocal("inertia-partial-component");
-        var partialData = ctx.getLocal("inertia-partial-data");
-        var partialExcept = ctx.getLocal("inertia-partial-except");
+        var clientVersion = InertiaContextLocals.get(ctx, "inertia-version");
+        var partialComponent = InertiaContextLocals.get(ctx, "inertia-partial-component");
+        var partialData = InertiaContextLocals.get(ctx, "inertia-partial-data");
+        var partialExcept = InertiaContextLocals.get(ctx, "inertia-partial-except");
 
         var representation = new StringBuilder();
         representation.append("inertia=true;");
@@ -185,7 +187,7 @@ private void handleConditionalRequest(ContainerRequestContext request, Container
         String location = getLocation(response);
         if (location == null) return;
 
-        var isPrefetch = Boolean.TRUE.equals(ctx.getLocal("inertia-prefetch"));
+        var isPrefetch = InertiaContextLocals.isTrue(ctx, "inertia-prefetch");
 
         if (location.contains("#") && !isPrefetch) {
             response.setStatus(409);
@@ -194,7 +196,7 @@ private void handleConditionalRequest(ContainerRequestContext request, Container
             return;
         }
 
-        var method = (String) ctx.getLocal("request-method");
+        var method = (String) InertiaContextLocals.get(ctx, "request-method");
         int currStatus = response.getStatus();
 
         if (isExternalRedirect(request, location) && !isPrefetch
@@ -218,7 +220,7 @@ private void handleConditionalRequest(ContainerRequestContext request, Container
     }
 
     private void handleEmptyResponse(ContainerResponseContext response, io.vertx.core.Context ctx) {
-        String referer = (String) ctx.getLocal("referer-url");
+        String referer = (String) InertiaContextLocals.get(ctx, "referer-url");
         if (referer != null && !referer.isBlank()) {
             response.setStatus(302);
             response.getHeaders().putSingle("Location", referer);

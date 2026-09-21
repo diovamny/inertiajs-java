@@ -348,11 +348,22 @@ public class InertiaImpl implements Inertia {
     public void header(String name, Object value) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx == null || name == null || value == null) return;
+        var rc = resolveRoutingContext();
         @SuppressWarnings("unchecked")
-        var headers = (Map<String, Object>) ctx.getLocal("inertia-response-headers");
+        Map<String, Object> headers = rc != null
+            ? (Map<String, Object>) rc.get("inertia-response-headers")
+            : null;
+        if (headers == null && ctx != null) {
+            headers = (Map<String, Object>) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-response-headers");
+        }
         if (headers == null) {
             headers = new java.util.LinkedHashMap<>();
-            ctx.putLocal("inertia-response-headers", headers);
+            if (rc != null) {
+                rc.put("inertia-response-headers", headers);
+            }
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-response-headers", headers);
         }
         headers.put(name, value);
     }
@@ -369,7 +380,8 @@ public class InertiaImpl implements Inertia {
     public void shareInstanceProps(Object instance) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx == null || instance == null) return;
-        ctx.putLocal("inertia-instance-props", instance);
+        io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+            ctx, "inertia-instance-props", instance);
     }
 
     @Override
@@ -381,10 +393,21 @@ public class InertiaImpl implements Inertia {
     public void viewData(String key, Object value) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            Map<String, Object> current = ctx.getLocal("inertia-view-data");
+            var rc = resolveRoutingContext();
+            Map<String, Object> current = rc != null
+                ? (Map<String, Object>) rc.get("inertia-view-data")
+                : null;
+            if (current == null) {
+                current = (Map<String, Object>) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                    ctx, "inertia-view-data");
+            }
             if (current == null) {
                 current = new java.util.LinkedHashMap<>();
-                ctx.putLocal("inertia-view-data", current);
+                if (rc != null) {
+                    rc.put("inertia-view-data", current);
+                }
+                io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                    ctx, "inertia-view-data", current);
             }
             current.put(key, value);
         }
@@ -395,10 +418,21 @@ public class InertiaImpl implements Inertia {
         if (data != null) {
             var ctx = io.vertx.core.Vertx.currentContext();
             if (ctx != null) {
-                Map<String, Object> current = ctx.getLocal("inertia-view-data");
+                var rc = resolveRoutingContext();
+                Map<String, Object> current = rc != null
+                    ? (Map<String, Object>) rc.get("inertia-view-data")
+                    : null;
+                if (current == null) {
+                    current = (Map<String, Object>) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                        ctx, "inertia-view-data");
+                }
                 if (current == null) {
                     current = new java.util.LinkedHashMap<>();
-                    ctx.putLocal("inertia-view-data", current);
+                    if (rc != null) {
+                        rc.put("inertia-view-data", current);
+                    }
+                    io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                        ctx, "inertia-view-data", current);
                 }
                 current.putAll(data);
             }
@@ -599,7 +633,8 @@ public class InertiaImpl implements Inertia {
     public void handleErrorUsing(ErrorMapper mapper) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal(io.github.diovamny.quarkus.inertia.internal.ErrorResponseFactory.CONTEXT_KEY, mapper);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, io.github.diovamny.quarkus.inertia.internal.ErrorResponseFactory.CONTEXT_KEY, mapper);
         }
     }
 
@@ -617,7 +652,8 @@ public class InertiaImpl implements Inertia {
     public void encryptHistory(boolean encrypt) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-encrypt-history", encrypt);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-encrypt-history", encrypt);
         }
     }
 
@@ -625,7 +661,8 @@ public class InertiaImpl implements Inertia {
     public void clearHistory(boolean clear) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-clear-history", clear);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-clear-history", clear);
         }
     }
 
@@ -633,7 +670,8 @@ public class InertiaImpl implements Inertia {
     public void preserveFragment(boolean preserve) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-preserve-fragment", preserve);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-preserve-fragment", preserve);
         }
         var session = session();
         if (session != null) {
@@ -660,9 +698,13 @@ public class InertiaImpl implements Inertia {
     private io.vertx.ext.web.RoutingContext resolveRoutingContext() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            var local = ctx.getLocal("inertia-routing-context");
-            if (local instanceof io.vertx.ext.web.RoutingContext rc) {
+            var rc = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.routingContext(ctx);
+            if (rc != null) {
                 return rc;
+            }
+            var local = ctx.getLocal("inertia-routing-context");
+            if (local instanceof io.vertx.ext.web.RoutingContext fallback) {
+                return fallback;
             }
         }
         return null;
@@ -676,7 +718,8 @@ public class InertiaImpl implements Inertia {
     boolean isEncryptHistory() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-encrypt-history");
+            var val = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-encrypt-history");
             if (val != null) return (Boolean) val;
         }
         return config.encryptHistory();
@@ -685,8 +728,8 @@ public class InertiaImpl implements Inertia {
     boolean isClearHistory() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-clear-history");
-            return Boolean.TRUE.equals(val);
+            return io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(
+                ctx, "inertia-clear-history");
         }
         return false;
     }
@@ -694,7 +737,8 @@ public class InertiaImpl implements Inertia {
     boolean isPreserveFragment() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-preserve-fragment");
+            var val = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-preserve-fragment");
             if (val != null) {
                 return Boolean.TRUE.equals(val);
             }
@@ -724,7 +768,8 @@ public class InertiaImpl implements Inertia {
     public void setRootView(String name) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-root-view", name);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-root-view", name);
         }
     }
 
@@ -732,7 +777,8 @@ public class InertiaImpl implements Inertia {
     public void withoutSsr(String... paths) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-ssr-exclude-paths", java.util.List.of(paths));
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-ssr-exclude-paths", java.util.List.of(paths));
         }
     }
 
@@ -740,7 +786,8 @@ public class InertiaImpl implements Inertia {
     public void disableSsr() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-disable-ssr", Boolean.TRUE);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-disable-ssr", Boolean.TRUE);
         }
     }
 
@@ -762,7 +809,8 @@ public class InertiaImpl implements Inertia {
     private void storePageStatus(int status) {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal("inertia-page-status", status);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-page-status", status);
         }
     }
 }

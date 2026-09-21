@@ -155,7 +155,8 @@ public class HtmlRenderer {
     private Map<String, Object> getViewData() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-view-data");
+            var val = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-view-data");
             if (val instanceof Map<?, ?> map) {
                 return (Map<String, Object>) map;
             }
@@ -302,7 +303,8 @@ public class HtmlRenderer {
     private String rootViewOverride() {
         var ctx = io.vertx.core.Vertx.currentContext();
         if (ctx != null) {
-            var override = (String) ctx.getLocal("inertia-root-view");
+            var override = (String) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-root-view");
             if (override != null) return override;
         }
         return null;

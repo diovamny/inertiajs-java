@@ -44,22 +44,34 @@ public class ReactiveResponseWriter {
         var ctx = Vertx.currentContext();
         if (ctx == null) return Uni.createFrom().item(response);
 
-        var rc = (RoutingContext) ctx.getLocal(ROUTING_CONTEXT_KEY);
+        RoutingContext rc = (RoutingContext) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, ROUTING_CONTEXT_KEY);
+        if (rc == null) {
+            var direct = ctx.getLocal(ROUTING_CONTEXT_KEY);
+            if (direct instanceof RoutingContext fallback) {
+                rc = fallback;
+            }
+        }
         if (rc == null) return Uni.createFrom().item(response);
-        if (Boolean.TRUE.equals(ctx.getLocal(JAXRS_KEY))) return Uni.createFrom().item(response);
+        final RoutingContext routingContext = rc;
+        Object jaxrsFlag = rc.get(JAXRS_KEY);
+        if (jaxrsFlag == null) {
+            jaxrsFlag = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(ctx, JAXRS_KEY);
+        }
+        if (Boolean.TRUE.equals(jaxrsFlag)) return Uni.createFrom().item(response);
 
-        var requestContext = (Context) rc.get(REQUEST_CONTEXT_KEY);
+        var requestContext = (Context) routingContext.get(REQUEST_CONTEXT_KEY);
         if (requestContext != null && requestContext != Vertx.currentContext()) {
             return Uni.createFrom().emitter(emitter -> requestContext.runOnContext(v -> {
                 try {
-                    write0(rc, response);
+                    write0(routingContext, response);
                     emitter.complete(null);
                 } catch (Throwable t) {
                     emitter.fail(t);
                 }
             }));
         }
-        write0(rc, response);
+        write0(routingContext, response);
         return Uni.createFrom().nullItem();
     }
 

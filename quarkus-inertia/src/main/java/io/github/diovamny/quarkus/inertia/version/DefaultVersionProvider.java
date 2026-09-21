@@ -54,7 +54,8 @@ public class DefaultVersionProvider implements VersionProvider {
     public String getVersion() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var override = (String) ctx.getLocal(CONTEXT_VERSION_OVERRIDE);
+            var override = (String) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, CONTEXT_VERSION_OVERRIDE);
             if (override != null) {
                 return override;
             }
@@ -71,7 +72,8 @@ public class DefaultVersionProvider implements VersionProvider {
     public void setVersion(String version) {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            ctx.putLocal(CONTEXT_VERSION_OVERRIDE, version);
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, CONTEXT_VERSION_OVERRIDE, version);
         }
     }
 

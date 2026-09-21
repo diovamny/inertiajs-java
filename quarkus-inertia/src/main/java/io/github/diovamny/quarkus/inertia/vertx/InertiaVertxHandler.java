@@ -58,17 +58,32 @@ public class InertiaVertxHandler {
 
     private void handle(RoutingContext rc) {
         var ctx = Vertx.currentContext();
+        // Bind the routing context BEFORE extracting headers so every
+        // InertiaContextLocals.put() mirrors into rc (request-scoped) instead
+        // of leaking into the shared event-loop context (G-17).
         if (ctx != null) {
             ctx.putLocal(ReactiveResponseWriter.ROUTING_CONTEXT_KEY, rc);
+            ctx.putLocal(io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.ROUTING_CONTEXT_KEY, rc);
             ctx.putLocal(ReactiveResponseWriter.REQUEST_CONTEXT_KEY, ctx);
             ctx.putLocal(ReactiveResponseWriter.JAXRS_KEY, Boolean.FALSE);
-            ctx.putLocal("inertia-headers-extracted", Boolean.TRUE);
 
             rc.put(ReactiveResponseWriter.ROUTING_CONTEXT_KEY, rc);
+            rc.put(io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.ROUTING_CONTEXT_KEY, rc);
             rc.put(ReactiveResponseWriter.REQUEST_CONTEXT_KEY, ctx);
 
-            headerExtractor.extract(ctx, rc.request().method().name(),
+            headerExtractor.extract(rc, ctx, rc.request().method().name(),
                 rc.request().uri(), name -> rc.request().getHeader(name));
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-headers-extracted", Boolean.TRUE);
+            rc.put("inertia-headers-extracted", Boolean.TRUE);
+            rc.addEndHandler(v -> clearRequestState(ctx));
+        } else {
+            // No Vert.x context (worker thread edge case): still bind rc.
+            rc.put(ReactiveResponseWriter.ROUTING_CONTEXT_KEY, rc);
+            rc.put(io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.ROUTING_CONTEXT_KEY, rc);
+            headerExtractor.extract(rc, null, rc.request().method().name(),
+                rc.request().uri(), name -> rc.request().getHeader(name));
+            rc.put("inertia-headers-extracted", Boolean.TRUE);
         }
 
         if (handleCsrf(rc)) {
@@ -89,9 +104,13 @@ public class InertiaVertxHandler {
 
         var token = csrfService.getOrCreateToken(rc);
         var ctx = Vertx.currentContext();
-        if (token != null && ctx != null) {
-            ctx.putLocal(InertiaCsrfService.CONTEXT_TOKEN, token);
-            ctx.putLocal(InertiaCsrfService.CONTEXT_HANDLED, Boolean.TRUE);
+        if (token != null) {
+            rc.put(InertiaCsrfService.CONTEXT_TOKEN, token);
+            rc.put(InertiaCsrfService.CONTEXT_HANDLED, Boolean.TRUE);
+            if (ctx != null) {
+                ctx.putLocal(InertiaCsrfService.CONTEXT_TOKEN, token);
+                ctx.putLocal(InertiaCsrfService.CONTEXT_HANDLED, Boolean.TRUE);
+            }
         }
 
         var method = rc.request().method().name();
@@ -110,7 +129,11 @@ public class InertiaVertxHandler {
         }
 
         var ctx = Vertx.currentContext();
-        if (ctx != null && Boolean.TRUE.equals(ctx.getLocal(ReactiveResponseWriter.JAXRS_KEY))) {
+        Object jaxrsFlag = rc.get(ReactiveResponseWriter.JAXRS_KEY);
+        if (jaxrsFlag == null && ctx != null) {
+            jaxrsFlag = ctx.getLocal(ReactiveResponseWriter.JAXRS_KEY);
+        }
+        if (Boolean.TRUE.equals(jaxrsFlag)) {
             rc.next();
             return;
         }
@@ -122,11 +145,11 @@ public class InertiaVertxHandler {
         var ctx = Vertx.currentContext();
 
         if (failure instanceof ConstraintViolationException cve) {
-            return handleConstraintViolation(ctx, cve);
+            return handleConstraintViolation(rc, ctx, cve);
         }
 
         if (failure instanceof WebApplicationException wae) {
-            if (isInertia(ctx)) {
+            if (isInertia(rc, ctx)) {
                 return errorResponseFactory.handle(failure, wae.getResponse().getStatus());
             }
             return wae.getResponse();
@@ -134,7 +157,7 @@ public class InertiaVertxHandler {
 
         if (failure instanceof ValidationException ve) {
             var status = errorResponseFactory.statusFor(failure);
-            if (isInertia(ctx)) {
+            if (isInertia(rc, ctx)) {
                 return errorResponseFactory.handle(failure, status);
             }
             var message = ve.getMessage() != null ? ve.getMessage() : "Validation failed";
@@ -144,11 +167,14 @@ public class InertiaVertxHandler {
         return errorResponseFactory.handle(failure);
     }
 
-    private Response handleConstraintViolation(io.vertx.core.Context ctx,
+    private Response handleConstraintViolation(RoutingContext rc, io.vertx.core.Context ctx,
             ConstraintViolationException exception) {
-        var validateFields = ctx != null
-            ? (String) ctx.getLocal("inertia-precognition-validate-fields")
-            : null;
+        var validateFields = rc.get("inertia-precognition-validate-fields") instanceof String s
+            ? s
+            : ctx != null
+                ? (String) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                    ctx, "inertia-precognition-validate-fields")
+                : null;
 
         var errors = new HashMap<String, String>();
         for (var violation : exception.getConstraintViolations()) {
@@ -163,9 +189,9 @@ public class InertiaVertxHandler {
             errors.put(field, violation.getMessage());
         }
 
-        var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
+        var isPrecognition = isTrue(rc, ctx, "inertia-precognition");
         if (isPrecognition) {
-            var errorBag = (String) ctx.getLocal("inertia-error-bag");
+            var errorBag = getString(rc, ctx, "inertia-error-bag");
             var body = errorBag != null && !errorBag.isBlank()
                 ? Map.of(errorBag, errors)
                 : errors;
@@ -177,14 +203,14 @@ public class InertiaVertxHandler {
                 .build();
         }
 
-        if (!isInertia(ctx)) {
+        if (!isInertia(rc, ctx)) {
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(errors)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .build();
         }
 
-        var errorBag = (String) ctx.getLocal("inertia-error-bag");
+        var errorBag = getString(rc, ctx, "inertia-error-bag");
         var errorsToFlash = errorBag != null && !errorBag.isBlank()
             ? Map.of(errorBag, errors)
             : errors;
@@ -192,9 +218,9 @@ public class InertiaVertxHandler {
         inertia.flash("errors", errorsToFlash);
         inertia.flash("_validation", true);
 
-        var referer = (String) ctx.getLocal("referer-url");
+        var referer = getString(rc, ctx, "referer-url");
         var location = (referer != null && !referer.isBlank()) ? referer : "/";
-        var method = (String) ctx.getLocal("request-method");
+        var method = getString(rc, ctx, "request-method");
         var nonGet = "POST".equalsIgnoreCase(method)
             || "PUT".equalsIgnoreCase(method)
             || "PATCH".equalsIgnoreCase(method)
@@ -214,6 +240,67 @@ public class InertiaVertxHandler {
     }
 
     private boolean isInertia(io.vertx.core.Context ctx) {
-        return ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
+        return ctx != null
+            && io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(ctx, "inertia-request");
+    }
+
+    private boolean isInertia(RoutingContext rc, io.vertx.core.Context ctx) {
+        if (rc != null && Boolean.TRUE.equals(rc.get("inertia-request"))) {
+            return true;
+        }
+        return isInertia(ctx);
+    }
+
+    private static String getString(RoutingContext rc, io.vertx.core.Context ctx, String key) {
+        if (rc != null && rc.get(key) instanceof String s) {
+            return s;
+        }
+        if (ctx == null) {
+            return null;
+        }
+        Object value = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(ctx, key);
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private static boolean isTrue(RoutingContext rc, io.vertx.core.Context ctx, String key) {
+        if (rc != null && Boolean.TRUE.equals(rc.get(key))) {
+            return true;
+        }
+        return ctx != null
+            && io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(ctx, key);
+    }
+
+    /**
+     * Remove per-request keys from the shared event-loop context when the
+     * request ends, so pipelined requests on the same loop never inherit
+     * stale Inertia headers (G-17 defense in depth; readers already prefer
+     * the routing context).
+     *
+     * @param ctx event-loop context at request start
+     */
+    private static void clearRequestState(io.vertx.core.Context ctx) {
+        if (ctx == null) {
+            return;
+        }
+        String[] keys = {
+            "inertia-request", "request-method", "request-uri", "inertia-version",
+            "inertia-partial-component", "inertia-partial-data", "inertia-partial-except",
+            "inertia-reset", "inertia-except-once-props", "inertia-error-bag",
+            "inertia-scroll-merge-intent", "inertia-precognition",
+            "inertia-precognition-validate-fields", "inertia-prefetch", "referer-url",
+            "inertia-headers-extracted"
+        };
+        for (String key : keys) {
+            try {
+                ctx.removeLocal(key);
+            } catch (Exception ignored) {
+                // Fallback for Vert.x versions without removeLocal(String).
+                try {
+                    ctx.putLocal(key, null);
+                } catch (Exception alsoIgnored) {
+                    // Best effort only.
+                }
+            }
+        }
     }
 }

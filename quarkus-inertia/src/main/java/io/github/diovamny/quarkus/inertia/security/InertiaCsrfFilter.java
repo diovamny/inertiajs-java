@@ -84,7 +84,9 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
 
     private boolean csrfHandled() {
         var ctx = Vertx.currentContext();
-        return ctx != null && Boolean.TRUE.equals(ctx.getLocal(InertiaCsrfService.CONTEXT_HANDLED));
+        return ctx != null
+            && io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(
+                ctx, InertiaCsrfService.CONTEXT_HANDLED);
     }
 
     private boolean tokenMatches(String provided) {

@@ -53,20 +53,28 @@ public class InertiaRequestFilter implements ContainerRequestFilter {
             ? rawPath + "?" + rawQuery
             : rawPath;
 
-        ctx.putLocal("inertia-jaxrs", Boolean.TRUE);
-        ctx.putLocal("request-method", method);
-        ctx.putLocal("request-uri", url);
-
-        // Set routing context for session access (propagated to @Blocking via request scope)
+        // Set routing context first so InertiaContextLocals mirrors into it (G-17).
         RoutingContext rc = null;
         try {
             rc = currentVertxRequest.getCurrent();
             if (rc != null) {
                 ctx.putLocal("inertia-routing-context", rc);
+                ctx.putLocal(InertiaContextLocals.ROUTING_CONTEXT_KEY, rc);
+                rc.put("inertia-routing-context", rc);
+                rc.put(InertiaContextLocals.ROUTING_CONTEXT_KEY, rc);
                 requestRoutingContext.setRoutingContext(rc);
             }
         } catch (Exception ignored) {
         }
+
+        if (rc != null) {
+            rc.put("inertia-jaxrs", Boolean.TRUE);
+            rc.put("request-method", method);
+            rc.put("request-uri", url);
+        }
+        ctx.putLocal("inertia-jaxrs", Boolean.TRUE);
+        InertiaContextLocals.put(ctx, "request-method", method);
+        InertiaContextLocals.put(ctx, "request-uri", url);
 
         // Extract session ID from cookie for test mode (propagated via request scope)
         var cookieHeader = requestContext.getHeaderString("Cookie");
@@ -85,10 +93,13 @@ public class InertiaRequestFilter implements ContainerRequestFilter {
             }
         }
 
-        if (Boolean.TRUE.equals(ctx.getLocal("inertia-headers-extracted"))) return;
+        if (InertiaContextLocals.isTrue(ctx, "inertia-headers-extracted")) return;
 
         headerExtractor.extract(ctx, method, url, requestContext::getHeaderString);
-        ctx.putLocal("inertia-headers-extracted", Boolean.TRUE);
+        InertiaContextLocals.put(ctx, "inertia-headers-extracted", Boolean.TRUE);
+        if (rc != null) {
+            rc.put("inertia-headers-extracted", Boolean.TRUE);
+        }
     }
 
     private boolean isTestMode() {

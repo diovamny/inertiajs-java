@@ -94,8 +94,10 @@ public class ResponseProcessor {
         if (partialComponent != null) {
             headers.set("X-Inertia-Partial-Component", String.valueOf(partialComponent));
         }
-        // Vary by Inertia headers that affect the response
-        headers.set("Vary", "X-Inertia, X-Inertia-Version, X-Inertia-Partial-Component, X-Inertia-Partial-Data, X-Inertia-Partial-Except");
+        // Vary by Inertia headers that affect the response (additive, Rails parity)
+        io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(headers,
+            "X-Inertia", "X-Inertia-Version", "X-Inertia-Partial-Component",
+            "X-Inertia-Partial-Data", "X-Inertia-Partial-Except");
         applyCustomHeaders(headers);
         var body = jsonProvider.toJson(page);
         return new InertiaResponse(HttpStatusCode.valueOf(status), headers, body);
@@ -105,7 +107,7 @@ public class ResponseProcessor {
     private ResponseEntity<String> renderHtml(PageObject page) {
         var headers = new HttpHeaders();
         headers.setContentType(new MediaType("text", "html", java.nio.charset.StandardCharsets.UTF_8));
-        headers.set("Vary", "X-Inertia");
+        io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(headers, "X-Inertia");
         applyCustomHeaders(headers);
         var stored = InertiaRequestContext.get(InertiaImpl.CONTEXT_VIEW_DATA);
         Map<String, Object> viewData = stored instanceof Map<?, ?> map ? (Map<String, Object>) map : null;
@@ -114,15 +116,18 @@ public class ResponseProcessor {
 
     private ResponseEntity<String> precognition(PageObject page) {
         if (InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION_VALIDATE_FIELDS) != null) {
+            var noContentHeaders = new HttpHeaders();
+            io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(
+                noContentHeaders, "X-Inertia", "Precognition");
             return ResponseEntity.noContent()
-                .header("Vary", "X-Inertia, Precognition")
+                .headers(noContentHeaders)
                 .build();
         }
         var errors = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_ERRORS);
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Inertia", "true");
-        headers.set("Vary", "X-Inertia, Precognition");
+        io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(headers, "X-Inertia", "Precognition");
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).headers(headers)
             .body(jsonProvider.toJson(Map.of("errors", errors != null ? errors : Map.of())));
     }
@@ -131,7 +136,8 @@ public class ResponseProcessor {
         var headers = new HttpHeaders();
         headers.set("X-Inertia-Location", page.url());
         headers.set("X-Inertia-Version", page.version() != null ? page.version() : "");
-        headers.set("Vary", "X-Inertia, X-Inertia-Version");
+        io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(
+            headers, "X-Inertia", "X-Inertia-Version");
         applyCustomHeaders(headers);
         return ResponseEntity.status(HttpStatus.CONFLICT).headers(headers).build();
     }

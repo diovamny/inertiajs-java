@@ -62,14 +62,16 @@ public class ResponseProcessor {
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .header("X-Inertia", "true")
                     .header("Precognition", "true")
-                    .header("Vary", "X-Inertia, Precognition")
+                    .header("Vary", io.github.diovamny.quarkus.inertia.util.VaryHeaderUtil.merge(
+                        null, "X-Inertia", "Precognition"))
                     .build());
             }
             return reactiveWriter.write(Response.noContent()
                 .header("X-Inertia", "true")
                 .header("Precognition", "true")
                 .header("Precognition-Success", "true")
-                .header("Vary", "X-Inertia, Precognition")
+                .header("Vary", io.github.diovamny.quarkus.inertia.util.VaryHeaderUtil.merge(
+                    null, "X-Inertia", "Precognition"))
                 .build());
         }
 
@@ -170,7 +172,7 @@ public class ResponseProcessor {
     private boolean isInertiaRequest() {
         var vertxContext = Vertx.currentContext();
         if (vertxContext != null) {
-            var request = vertxContext.getLocal("inertia-request");
+            var request = InertiaContextLocals.get(vertxContext, "inertia-request");
             if (request != null) return Boolean.TRUE.equals(request);
         }
         var request = resolveRequest();
@@ -184,7 +186,7 @@ public class ResponseProcessor {
     private boolean isGetRequest() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var method = ctx.getLocal("request-method");
+            var method = InertiaContextLocals.get(ctx, "request-method");
             if (method != null) return "GET".equalsIgnoreCase((String) method);
         }
         var request = resolveRequest();
@@ -197,7 +199,7 @@ public class ResponseProcessor {
     private boolean isMutatingRequest() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var method = ctx.getLocal("request-method");
+            var method = InertiaContextLocals.get(ctx, "request-method");
             if (method != null) {
                 var m = ((String) method).toUpperCase();
                 return "POST".equals(m) || "PUT".equals(m) || "PATCH".equals(m) || "DELETE".equals(m);
@@ -214,7 +216,7 @@ public class ResponseProcessor {
     private String getClientVersion() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var version = ctx.getLocal("inertia-version");
+            var version = InertiaContextLocals.get(ctx, "inertia-version");
             if (version != null) return (String) version;
         }
         var request = resolveRequest();
@@ -227,8 +229,7 @@ public class ResponseProcessor {
     private boolean isPrecognition() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-precognition");
-            return Boolean.TRUE.equals(val);
+            return InertiaContextLocals.isTrue(ctx, "inertia-precognition");
         }
         return false;
     }
@@ -236,7 +237,7 @@ public class ResponseProcessor {
     private boolean isPrefetch() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            return Boolean.TRUE.equals(ctx.getLocal("inertia-prefetch"));
+            return InertiaContextLocals.isTrue(ctx, "inertia-prefetch");
         }
         return false;
     }
@@ -244,7 +245,7 @@ public class ResponseProcessor {
     private Integer pageStatus() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var status = ctx.getLocal("inertia-page-status");
+            var status = InertiaContextLocals.get(ctx, "inertia-page-status");
             if (status instanceof Integer i) return i;
         }
         return null;

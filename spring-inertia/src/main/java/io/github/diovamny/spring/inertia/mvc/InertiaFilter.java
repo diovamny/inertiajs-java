@@ -60,9 +60,7 @@ public class InertiaFilter extends OncePerRequestFilter {
     }
 
     private void applyVaryHeader(ContentCachingResponseWrapper response) {
-        if (response.getHeader("Vary") == null) {
-            response.setHeader("Vary", "X-Inertia");
-        }
+        io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(response, "X-Inertia");
     }
 
     @SuppressWarnings("unchecked")
@@ -88,7 +86,7 @@ public class InertiaFilter extends OncePerRequestFilter {
                 && "GET".equalsIgnoreCase(method) && isExternal(location, request)) {
             response.setStatus(409);
             response.setHeader("X-Inertia-Location", location);
-            response.setHeader("Vary", "X-Inertia");
+            io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(response, "X-Inertia");
         }
     }
 
@@ -108,7 +106,7 @@ public class InertiaFilter extends OncePerRequestFilter {
         response.setStatus(204);
         response.setHeader("Precognition", "true");
         response.setHeader("Precognition-Success", "true");
-        response.setHeader("Vary", "Precognition");
+        io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(response, "Precognition");
         response.resetBuffer();
     }
 

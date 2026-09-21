@@ -114,7 +114,7 @@ public class ErrorResponseFactory {
     public ErrorMapper resolveMapper() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal(CONTEXT_KEY);
+            var val = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(ctx, CONTEXT_KEY);
             if (val instanceof ErrorMapper mapper) {
                 return mapper;
             }
@@ -150,7 +150,7 @@ public class ErrorResponseFactory {
     private String resolveUrl() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var uri = ctx.getLocal("request-uri");
+            var uri = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(ctx, "request-uri");
             if (uri != null) return (String) uri;
         }
         return "/";
