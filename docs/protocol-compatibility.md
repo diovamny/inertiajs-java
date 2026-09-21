@@ -72,3 +72,6 @@ Important: this file is now evidence-based. Rows that cite non-existent test cla
 | 48 | Asset | Version strategy: custom > vite-manifest > sha256 > fallback | Protocol | ✅ | ✅ | FeatureMetadataIntegrationTest, DefaultVersionProviderUnitTest | Deterministic precedence |
 | 49 | Asset | SHA-256 hash of static assets | Protocol | ✅ | ✅ | DefaultVersionProviderUnitTest, FeatureMetadataIntegrationTest | Path + content hash |
 | 50 | Asset | JAR resource enumeration | Protocol | ✅ | ✅ | DefaultVersionProviderUnitTest, FeatureMetadataIntegrationTest | ZIP entry fallback |
+| **TCK (normative suite)** | | | | | | | |
+| 51 | TCK | Handshake, partial `only`/`except`, deferred, once | `01-handshake.yaml`, `02-partial.yaml`, `03-deferred-once.yaml` | ✅ | ✅ | TckSpringTest, TckQuarkusTest, TckReactiveTest | `inertia-tck`, same cases on 3 stacks |
+| 52 | TCK | Redirects 302/303/409, versioning, adapter CSRF, validation | `04-redirects.yaml`, `05-version.yaml`, `06-csrf.yaml`, `07-validation.yaml` | ✅ | ✅ | TckSpringTest, TckQuarkusTest | per-stack overrides where contracts diverge |

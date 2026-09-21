@@ -6,7 +6,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>spring-pingcrm</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <packaging>jar</packaging>
 
     <name>Spring Boot PingCRM Demo</name>
