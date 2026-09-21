@@ -144,6 +144,12 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=${{ inputs.publish_mode == 'draft' && 'false' || 'true' }}
 
+      - name: Generate aggregate SBOM (outside the parallel reactor)
+        # makeAggregateBom is a reactor aggregator and must NOT run inside
+        # the parallel deploy above (it deadlocks against central-publishing's
+        # end-of-reactor wait). A single standalone invocation is safe.
+        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+
       - name: Compute release artifact hashes (SLSA subjects)
         # Runs on tag pushes only; manual dispatches skip it, and the
         # provenance job additionally guards on a non-empty output.
@@ -190,6 +196,8 @@ jobs:
             archetypes/inertia-quarkus-vue-archetype/target/inertia-quarkus-vue-archetype-*.jar
             archetypes/inertia-quarkus-react-archetype/target/inertia-quarkus-react-archetype-*.jar
             archetypes/inertia-quarkus-svelte-archetype/target/inertia-quarkus-svelte-archetype-*.jar
+            target/bom.xml
+            target/bom.json
           generate_release_notes: true
 
     outputs:

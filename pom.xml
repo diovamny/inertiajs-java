@@ -349,20 +349,12 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.cyclonedx</groupId>
-            <artifactId>cyclonedx-maven-plugin</artifactId>
-            <version>2.9.1</version>
-            <executions>
-              <execution>
-                <id>make-aggregate-sbom</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>makeAggregateBom</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
+          <!-- NOTE: no CycloneDX execution here on purpose. makeAggregateBom
+               is a reactor aggregator: running it inside every module of a
+               parallel (-T) deploy deadlocks against central-publishing's
+               end-of-reactor wait (seen on the 0.0.3 release). The SBOM is
+               generated once, after the deploy, by a dedicated workflow
+               step (see release.yml) and attached to the GitHub release. -->
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
