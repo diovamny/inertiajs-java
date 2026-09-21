@@ -9,7 +9,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.awt.image.BufferedImage;
@@ -32,6 +34,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import com.example.pingcrm.controller.AuthController;
+
 import io.github.diovamny.spring.inertia.testing.InertiaPage;
 
 @SpringBootTest
@@ -44,14 +48,14 @@ class PingCrmSpringTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private static final MockHttpSession session = new MockHttpSession();
+    private static MockHttpSession session = new MockHttpSession();
 
     private static long organizationId;
     private static long contactId;
     private static String photoUrl;
 
     // ──────────────────────────────────────────────
-    // Authentication
+    // Authentication (Spring Security owns auth + CSRF)
     // ──────────────────────────────────────────────
 
     @Test
@@ -65,6 +69,14 @@ class PingCrmSpringTest {
 
     @Test
     @Order(2)
+    void initialVisitIssuesXsrfCookie() throws Exception {
+        mockMvc.perform(get("/login"))
+            .andExpect(status().isOk())
+            .andExpect(cookie().exists("XSRF-TOKEN"));
+    }
+
+    @Test
+    @Order(3)
     void rootRequiresAuthentication() throws Exception {
         mockMvc.perform(get("/"))
             .andExpect(status().isFound())
@@ -72,44 +84,55 @@ class PingCrmSpringTest {
     }
 
     @Test
-    @Order(3)
-    void inertiaPostWithoutSessionRedirectsToLogin() throws Exception {
-        mockMvc.perform(delete("/organizations/1").header("X-Inertia", "true"))
-            .andExpect(status().isSeeOther())
-            .andExpect(header().string("Location", "/login"))
+    @Order(4)
+    void anonymousInertiaVisitIs409Challenge() throws Exception {
+        mockMvc.perform(get("/").header("X-Inertia", "true"))
+            .andExpect(status().isConflict())
+            .andExpect(header().string("X-Inertia-Location", "/login"))
+            .andExpect(header().doesNotExist("X-Inertia"));
+    }
+
+    @Test
+    @Order(5)
+    void inertiaDeleteWithoutSessionIs409Challenge() throws Exception {
+        var anonymous = new MockHttpSession();
+        var xsrf = xsrf();
+        mockMvc.perform(delete("/organizations/1").session(anonymous)
+                .cookie(xsrf.cookies())
+                .header("X-Inertia", "true")
+                .header("X-XSRF-TOKEN", xsrf.token()))
+            .andExpect(status().isConflict())
             .andExpect(header().string("X-Inertia-Location", "/login"));
     }
 
     @Test
-    @Order(4)
+    @Order(6)
     void loginWithBadCredentialsShowsFlashError() throws Exception {
+        var fresh = new MockHttpSession();
+        var xsrf = xsrf();
         mockMvc.perform(post("/login")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/login")
+                .header("X-XSRF-TOKEN", xsrf.token())
+                .cookie(xsrf.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"email\":\"johndoe@example.com\",\"password\":\"wrong\"}")
-                .session(session))
+                .session(fresh))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", BASE + "/login"));
 
-        var page = inertiaGet("/login");
+        var page = inertiaGet("/login", fresh);
         assertThat(page.component()).isEqualTo("Auth/Login");
         assertThat(page.props().get("errors"))
             .isEqualTo(Map.of("email", "These credentials do not match our records."));
     }
 
     @Test
-    @Order(5)
+    @Order(7)
     void loginWithValidCredentialsSucceeds() throws Exception {
-        mockMvc.perform(post("/login")
-                .header("X-Inertia", "true")
-                .contentType(APPLICATION_JSON)
-                .content("{\"email\":\"johndoe@example.com\",\"password\":\"secret\"}")
-                .session(session))
-            .andExpect(status().isSeeOther())
-            .andExpect(header().string("Location", "/"));
+        session = loginAs("johndoe@example.com", "secret");
 
-        var page = inertiaGet("/");
+        var page = inertiaGet("/", session);
         assertThat(page.component()).isEqualTo("Dashboard/Index");
         assertThat(nav(page, "auth.user.email")).isEqualTo("johndoe@example.com");
         assertThat(nav(page, "auth.user.first_name")).isEqualTo("John");
@@ -118,11 +141,26 @@ class PingCrmSpringTest {
     }
 
     @Test
-    @Order(6)
+    @Order(8)
     void authenticatedUserCannotVisitLoginAgain() throws Exception {
         mockMvc.perform(get("/login").session(session))
             .andExpect(status().isFound())
             .andExpect(header().string("Location", "/"));
+    }
+
+    @Test
+    @Order(9)
+    void postWithTamperedTokenIs303WithFlash() throws Exception {
+        var state = xsrf();
+        mockMvc.perform(post("/contacts").session(session)
+                .cookie(state.cookies())
+                .header("X-Inertia", "true")
+                .header("X-XSRF-TOKEN", "tampered")
+                .header("Referer", BASE + "/contacts/create")
+                .contentType(APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", BASE + "/contacts/create"));
     }
 
     // ──────────────────────────────────────────────
@@ -130,9 +168,9 @@ class PingCrmSpringTest {
     // ──────────────────────────────────────────────
 
     @Test
-    @Order(7)
+    @Order(10)
     void organizationsArePaginated() throws Exception {
-        var page = inertiaGet("/organizations");
+        var page = inertiaGet("/organizations", session);
         assertThat(page.component()).isEqualTo("Organizations/Index");
         assertThat(list(page, "organizations.data")).hasSize(10);
         assertThat(list(page, "organizations.links")).hasSizeGreaterThanOrEqualTo(6);
@@ -145,81 +183,93 @@ class PingCrmSpringTest {
     }
 
     @Test
-    @Order(8)
+    @Order(11)
     void organizationsSearchWithNoMatchesIsEmpty() throws Exception {
-        var page = inertiaGet("/organizations?search=zzzznotfound");
+        var page = inertiaGet("/organizations?search=zzzznotfound", session);
         assertThat(list(page, "organizations.data")).isEmpty();
         assertThat(nav(page, "filters.search")).isEqualTo("zzzznotfound");
     }
 
     @Test
-    @Order(9)
+    @Order(12)
     void createOrganizationRedirectsAndFlashesSuccess() throws Exception {
+        var state = xsrf();
         mockMvc.perform(post("/organizations")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/organizations/create")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"name\":\"Inertia Test Org\",\"email\":\"org@test.dev\",\"city\":\"Ottawa\"}")
                 .session(session))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", "/organizations"));
 
-        var page = inertiaGet("/organizations?search=Inertia");
+        var page = inertiaGet("/organizations?search=Inertia", session);
         assertThat(page.props().get("success")).isEqualTo("Organization created.");
         assertThat(nav(page, "organizations.data[0].name")).isEqualTo("Inertia Test Org");
         organizationId = (long) (int) nav(page, "organizations.data[0].id");
     }
 
     @Test
-    @Order(10)
+    @Order(13)
     void organizationValidationErrorsAreFlashed() throws Exception {
+        var state = xsrf();
         mockMvc.perform(post("/organizations")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/organizations/create")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"email\":\"not-an-email\"}")
                 .session(session))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", BASE + "/organizations/create"));
 
-        var page = inertiaGet("/organizations/create");
+        var page = inertiaGet("/organizations/create", session);
         assertThat(nav(page, "errors.name")).isEqualTo("required");
         assertThat(nav(page, "errors.email")).isEqualTo("invalid");
     }
 
     @Test
-    @Order(11)
+    @Order(14)
     void updateOrganizationRedirectsBack() throws Exception {
+        var state = xsrf();
         mockMvc.perform(put("/organizations/" + organizationId)
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/organizations/" + organizationId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"name\":\"Inertia Test Org Renamed\",\"city\":\"Toronto\"}")
                 .session(session))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", BASE + "/organizations/" + organizationId + "/edit"));
 
-        var page = inertiaGet("/organizations/" + organizationId + "/edit");
+        var page = inertiaGet("/organizations/" + organizationId + "/edit", session);
         assertThat(page.props().get("success")).isEqualTo("Organization updated.");
         assertThat(nav(page, "organization.name")).isEqualTo("Inertia Test Org Renamed");
         assertThat(nav(page, "organization.city")).isEqualTo("Toronto");
     }
 
     @Test
-    @Order(12)
+    @Order(15)
     void deleteOrganizationMovesItToTrashAndCanRestore() throws Exception {
+        var state = xsrf();
         mockMvc.perform(delete("/organizations/" + organizationId)
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/organizations/" + organizationId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var trashed = inertiaGet("/organizations?trashed=only");
+        var trashed = inertiaGet("/organizations?trashed=only", session);
         assertThat(list(trashed, "organizations.data")).hasSize(1);
         assertThat(nav(trashed, "organizations.data[0].id")).isEqualTo((int) organizationId);
         assertThat(nav(trashed, "organizations.data[0].deleted_at")).isNotNull();
 
-        var all = inertiaGet("/organizations");
+        var all = inertiaGet("/organizations", session);
         assertThat(list(all, "organizations.data").stream()
             .map(item -> ((Number) ((Map<?, ?>) item).get("id")).longValue()).toList())
             .doesNotContain(organizationId);
@@ -227,15 +277,17 @@ class PingCrmSpringTest {
         mockMvc.perform(put("/organizations/" + organizationId + "/restore")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/organizations/" + organizationId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var afterRestore = inertiaGet("/organizations?trashed=only");
+        var afterRestore = inertiaGet("/organizations?trashed=only", session);
         assertThat(list(afterRestore, "organizations.data")).isEmpty();
     }
 
     @Test
-    @Order(13)
+    @Order(16)
     void editMissingOrganizationRedirectsWithError() throws Exception {
         mockMvc.perform(get("/organizations/999999/edit").header("X-Inertia", "true").session(session))
             .andExpect(status().isFound())
@@ -247,23 +299,26 @@ class PingCrmSpringTest {
     // ──────────────────────────────────────────────
 
     @Test
-    @Order(14)
+    @Order(17)
     void contactsArePaginatedAndSearchable() throws Exception {
-        var page = inertiaGet("/contacts");
+        var page = inertiaGet("/contacts", session);
         assertThat(page.component()).isEqualTo("Contacts/Index");
         assertThat(list(page, "contacts.data")).hasSize(10);
         assertThat(nav(page, "contacts.data[0].name")).isNotNull();
 
-        var empty = inertiaGet("/contacts?search=zzzznotfound");
+        var empty = inertiaGet("/contacts?search=zzzznotfound", session);
         assertThat(list(empty, "contacts.data")).isEmpty();
     }
 
     @Test
-    @Order(15)
+    @Order(18)
     void createContactWithOrganization() throws Exception {
+        var state = xsrf();
         mockMvc.perform(post("/contacts")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/contacts/create")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"first_name\":\"Jane\",\"last_name\":\"Doe\",\"email\":\"jane@test.dev\","
                     + "\"organization_id\":" + organizationId + "}")
@@ -271,62 +326,72 @@ class PingCrmSpringTest {
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", "/contacts"));
 
-        var page = inertiaGet("/contacts?search=Doe");
+        var page = inertiaGet("/contacts?search=Doe", session);
         assertThat(page.props().get("success")).isEqualTo("Contact created.");
         assertThat(nav(page, "contacts.data[0].name")).isEqualTo("Jane Doe");
         assertThat(nav(page, "contacts.data[0].organization.name")).isEqualTo("Inertia Test Org Renamed");
         contactId = (long) (int) nav(page, "contacts.data[0].id");
 
-        var orgPage = inertiaGet("/organizations/" + organizationId + "/edit");
+        var orgPage = inertiaGet("/organizations/" + organizationId + "/edit", session);
         assertThat(nav(orgPage, "organization.contacts[0].name")).isEqualTo("Jane Doe");
     }
 
     @Test
-    @Order(16)
+    @Order(19)
     void contactWithInvalidOrganizationFails() throws Exception {
+        var state = xsrf();
         mockMvc.perform(post("/contacts")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/contacts/create")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"first_name\":\"Bad\",\"last_name\":\"Org\",\"organization_id\":999999}")
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var page = inertiaGet("/contacts/create");
+        var page = inertiaGet("/contacts/create", session);
         assertThat(nav(page, "errors.organization_id"))
             .isEqualTo("The selected organization is invalid.");
     }
 
     @Test
-    @Order(17)
+    @Order(20)
     void updateAndDeleteContact() throws Exception {
+        var state = xsrf();
         mockMvc.perform(put("/contacts/" + contactId)
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/contacts/" + contactId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .contentType(APPLICATION_JSON)
                 .content("{\"first_name\":\"Jane\",\"last_name\":\"Doe\",\"city\":\"Vancouver\"}")
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var edit = inertiaGet("/contacts/" + contactId + "/edit");
+        var edit = inertiaGet("/contacts/" + contactId + "/edit", session);
         assertThat(nav(edit, "contact.city")).isEqualTo("Vancouver");
 
         mockMvc.perform(delete("/contacts/" + contactId)
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/contacts/" + contactId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var trashed = inertiaGet("/contacts?trashed=only");
+        var trashed = inertiaGet("/contacts?trashed=only", session);
         assertThat(nav(trashed, "contacts.data[0].id")).isEqualTo((int) contactId);
 
         mockMvc.perform(put("/contacts/" + contactId + "/restore")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/contacts/" + contactId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var afterRestore = inertiaGet("/contacts?trashed=only");
+        var afterRestore = inertiaGet("/contacts?trashed=only", session);
         assertThat(list(afterRestore, "contacts.data")).isEmpty();
     }
 
@@ -335,9 +400,9 @@ class PingCrmSpringTest {
     // ──────────────────────────────────────────────
 
     @Test
-    @Order(18)
+    @Order(21)
     void usersIndexListsDemoUser() throws Exception {
-        var page = inertiaGet("/users");
+        var page = inertiaGet("/users", session);
         assertThat(page.component()).isEqualTo("Users/Index");
         assertThat(list(page, "users")).hasSize(1);
         assertThat(nav(page, "users[0].email")).isEqualTo("johndoe@example.com");
@@ -346,8 +411,9 @@ class PingCrmSpringTest {
     }
 
     @Test
-    @Order(19)
+    @Order(22)
     void createUserWithPhotoUpload() throws Exception {
+        var state = xsrf();
         var png = pngBytes();
         mockMvc.perform(multipart("/users")
                 .file(new MockMultipartFile("photo", "avatar.png", "image/png", png))
@@ -358,11 +424,13 @@ class PingCrmSpringTest {
                 .param("owner", "false")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/users/create")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", "/users"));
 
-        var page = inertiaGet("/users");
+        var page = inertiaGet("/users", session);
         assertThat(page.props().get("success")).isEqualTo("User created.");
         assertThat(list(page, "users")).hasSize(2);
         var jane = findByEmail(list(page, "users"), "jane.roe@example.com");
@@ -377,8 +445,9 @@ class PingCrmSpringTest {
     }
 
     @Test
-    @Order(20)
+    @Order(23)
     void duplicateUserEmailIsRejected() throws Exception {
+        var state = xsrf();
         mockMvc.perform(multipart("/users")
                 .param("first_name", "Dup")
                 .param("last_name", "User")
@@ -386,17 +455,20 @@ class PingCrmSpringTest {
                 .param("owner", "false")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/users/create")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var page = inertiaGet("/users/create");
+        var page = inertiaGet("/users/create", session);
         assertThat(nav(page, "errors.email")).isEqualTo("The email has already been taken.");
     }
 
     @Test
-    @Order(21)
+    @Order(24)
     void demoUserCannotBeModifiedOrDeleted() throws Exception {
-        var users = inertiaGet("/users");
+        var state = xsrf();
+        var users = inertiaGet("/users", session);
         var demoId = (int) nav(users, "users[0].id");
 
         mockMvc.perform(multipart("/users/" + demoId)
@@ -406,10 +478,12 @@ class PingCrmSpringTest {
                 .param("owner", "true")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/users/" + demoId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var edit = inertiaGet("/users/" + demoId + "/edit");
+        var edit = inertiaGet("/users/" + demoId + "/edit", session);
         assertThat(edit.props().get("error"))
             .isEqualTo("Updating the demo user is not allowed.");
         assertThat(nav(edit, "user.first_name")).isEqualTo("John");
@@ -417,39 +491,56 @@ class PingCrmSpringTest {
         mockMvc.perform(delete("/users/" + demoId)
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/users/" + demoId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var edit2 = inertiaGet("/users/" + demoId + "/edit");
+        var edit2 = inertiaGet("/users/" + demoId + "/edit", session);
         assertThat(edit2.props().get("error"))
             .isEqualTo("Deleting the demo user is not allowed.");
     }
 
     @Test
-    @Order(22)
+    @Order(25)
     void userCanBeDeletedAndRestored() throws Exception {
-        var users = inertiaGet("/users");
+        var state = xsrf();
+        var users = inertiaGet("/users", session);
         var jane = findByEmail(list(users, "users"), "jane.roe@example.com");
         var userId = (int) jane.get("id");
 
         mockMvc.perform(delete("/users/" + userId)
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/users/" + userId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var trashed = inertiaGet("/users?trashed=only");
+        var trashed = inertiaGet("/users?trashed=only", session);
         assertThat(list(trashed, "users")).hasSize(1);
         assertThat(nav(trashed, "users[0].id")).isEqualTo(userId);
 
         mockMvc.perform(put("/users/" + userId + "/restore")
                 .header("X-Inertia", "true")
                 .header("Referer", BASE + "/users/" + userId + "/edit")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
                 .session(session))
             .andExpect(status().isSeeOther());
 
-        var afterRestore = inertiaGet("/users?trashed=only");
+        var afterRestore = inertiaGet("/users?trashed=only", session);
         assertThat(list(afterRestore, "users")).isEmpty();
+    }
+
+    @Test
+    @Order(26)
+    void nonOwnerIsForbiddenOnUserManagement() throws Exception {
+        var janeSession = loginAs("jane.roe@example.com", "secret123");
+        mockMvc.perform(get("/users").session(janeSession).header("X-Inertia", "true"))
+            .andExpect(status().isForbidden())
+            .andExpect(header().string("X-Inertia", "true"))
+            .andExpect(jsonPath("$.component").value("Errors/Forbidden"));
     }
 
     // ──────────────────────────────────────────────
@@ -457,20 +548,22 @@ class PingCrmSpringTest {
     // ──────────────────────────────────────────────
 
     @Test
-    @Order(23)
+    @Order(27)
     void reportsPageRenders() throws Exception {
-        var page = inertiaGet("/reports");
+        var page = inertiaGet("/reports", session);
         assertThat(page.component()).isEqualTo("Reports/Index");
     }
 
     @Test
-    @Order(24)
+    @Order(28)
     void imageRequestsAreServedOrRejectedSafely() throws Exception {
         mockMvc.perform(get("/img/missing.png").session(session))
             .andExpect(status().isNotFound());
 
+        // StrictHttpFirewall (now active via Spring Security) rejects path
+        // traversal with 400 before MVC runs: still safely rejected.
         mockMvc.perform(get("/img/../application.properties").session(session))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isBadRequest());
 
         mockMvc.perform(get(photoUrl).session(session))
             .andExpect(status().isOk())
@@ -478,9 +571,13 @@ class PingCrmSpringTest {
     }
 
     @Test
-    @Order(25)
+    @Order(29)
     void logoutClearsSession() throws Exception {
-        mockMvc.perform(delete("/logout").header("X-Inertia", "true").session(session))
+        var state = xsrf();
+        mockMvc.perform(delete("/logout").header("X-Inertia", "true")
+                .header("X-XSRF-TOKEN", state.token())
+                .cookie(state.cookies())
+                .session(session))
             .andExpect(status().isSeeOther())
             .andExpect(header().string("Location", "/login"));
 
@@ -493,10 +590,46 @@ class PingCrmSpringTest {
     // Helpers
     // ──────────────────────────────────────────────
 
-    private InertiaPage inertiaGet(String path) throws Exception {
-        return page(mockMvc.perform(get(path).header("X-Inertia", "true").session(session))
+    private record XsrfState(String token, jakarta.servlet.http.Cookie[] cookies) {
+    }
+
+    private MockHttpSession loginAs(String email, String password) throws Exception {
+        var fresh = new MockHttpSession();
+        var xsrf = xsrf();
+        mockMvc.perform(post("/login").session(fresh)
+                .cookie(xsrf.cookies())
+                .contentType(APPLICATION_JSON)
+                .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}")
+                .header("X-XSRF-TOKEN", xsrf.token()))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", "/"));
+        // Session fixation rotates the id on login; MockMvc still pins the
+        // stale object, so continue with the server-side session.
+        return (MockHttpSession) AuthController.LAST_SESSION;
+    }
+
+    /**
+     * Fetch a fresh XSRF token. Spring Security's cookie repository is
+     * stateless (the token lives in the cookie, not the session), so the
+     * token is fetched anonymously: the login page redirects authenticated
+     * sessions, which would break token retrieval after login.
+     */
+    private XsrfState xsrf() throws Exception {
+        var result = mockMvc.perform(get("/login").session(new MockHttpSession()))
+            .andExpect(status().isOk())
+            .andReturn();
+        var response = result.getResponse();
+        return new XsrfState(response.getCookie("XSRF-TOKEN").getValue(), response.getCookies());
+    }
+
+    private InertiaPage inertiaGet(String path, MockHttpSession current) throws Exception {
+        return page(mockMvc.perform(get(path).header("X-Inertia", "true").session(current))
             .andExpect(status().isOk())
             .andReturn());
+    }
+
+    private InertiaPage inertiaGet(String path) throws Exception {
+        return inertiaGet(path, session);
     }
 
     private static InertiaPage page(MvcResult result) throws Exception {

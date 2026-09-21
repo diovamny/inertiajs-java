@@ -91,7 +91,7 @@ class DemoAppTest {
             .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("\"component\":\"Persons/Index\""));
+                .body(containsString("\"component\":\"Persons\\/Index\""));
     }
 
     @Test @Order(11)
@@ -125,7 +125,7 @@ class DemoAppTest {
             .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("\"component\":\"Persons/Form\""));
+                .body(containsString("\"component\":\"Persons\\/Form\""));
     }
 
     @Test @Order(14)
@@ -135,7 +135,7 @@ class DemoAppTest {
             .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("\"component\":\"Persons/Form\""));
+                .body(containsString("\"component\":\"Persons\\/Form\""));
     }
 
     @Test @Order(15)
@@ -483,7 +483,7 @@ class DemoAppTest {
             .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("\"component\":\"Employees/Index\""));
+                .body(containsString("\"component\":\"Employees\\/Index\""));
     }
 
     @Test @Order(51)
@@ -505,7 +505,7 @@ class DemoAppTest {
             .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("\"component\":\"Employees/Form\""));
+                .body(containsString("\"component\":\"Employees\\/Form\""));
     }
 
     @Test @Order(53)
@@ -515,7 +515,7 @@ class DemoAppTest {
             .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("\"component\":\"Employees/Form\""));
+                .body(containsString("\"component\":\"Employees\\/Form\""));
     }
 
     @Test @Order(54)

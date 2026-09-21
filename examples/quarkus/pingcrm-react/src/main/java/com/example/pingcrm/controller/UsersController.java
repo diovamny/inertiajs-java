@@ -30,6 +30,11 @@ import io.smallrye.mutiny.Uni;
 
 @Path("/users")
 
+/**
+ * User management is restricted to account owners at the framework level;
+ * non-owners receive the {@code 403} Inertia page from the security bridge.
+ */
+@jakarta.annotation.security.RolesAllowed("owner")
 @Blocking
 @SuppressWarnings("removal")
 public class UsersController {
@@ -58,8 +63,8 @@ public class UsersController {
     @GET
     @Blocking
     public Uni<Object> index(@QueryParam("search") String search,
-                             @QueryParam("role") String role,
-                             @QueryParam("trashed") String trashed) {
+            @QueryParam("role") String role,
+            @QueryParam("trashed") String trashed) {
         var list = users.list(auth.accountId(), search, role, trashed);
         var filters = new LinkedHashMap<String, Object>();
         filters.put("search", search);

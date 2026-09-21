@@ -32,7 +32,8 @@ class InertiaCsrfFilterTest {
     void setUp() {
         var properties = new InertiaProperties();
         properties.setCsrfEnabled(true);
-        filter = new InertiaCsrfFilter(properties, new InertiaCsrfService());
+        filter = new InertiaCsrfFilter(properties, new InertiaCsrfService(),
+            new io.github.diovamny.spring.inertia.internal.SpringFlashStore());
         request = new MockHttpServletRequest("GET", "/dashboard");
         request.addHeader("X-Inertia", "true");
         response = new MockHttpServletResponse();

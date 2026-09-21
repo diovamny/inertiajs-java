@@ -143,13 +143,14 @@ class ReactiveRouteInertiaTest {
     }
 
     @Test
-    void postWithoutTokenIsRejectedWith419() {
+    void postWithoutTokenIs303WithFlash() {
         given()
             .header("X-Inertia", "true")
             .redirects().follow(false)
             .when().post("/reactive/back")
             .then()
-                .statusCode(419);
+                .statusCode(303)
+                .header("Location", "/");
     }
 
     @Test

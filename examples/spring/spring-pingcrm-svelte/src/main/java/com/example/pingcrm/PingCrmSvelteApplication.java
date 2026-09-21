@@ -1,84 +1,113 @@
 package com.example.pingcrm;
 
+import java.util.ArrayList;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.example.pingcrm.config.AuthInterceptor;
+import com.example.pingcrm.service.AuthService;
+import io.github.diovamny.spring.inertia.config.InertiaProperties;
+import io.github.diovamny.spring.inertia.security.InertiaAccessDeniedHandler;
+import io.github.diovamny.spring.inertia.security.InertiaAuthenticationEntryPoint;
+import io.github.diovamny.spring.inertia.security.InertiaCsrfConfigurer;
+
 @SpringBootApplication
 @EnableWebSecurity
+@EnableMethodSecurity
 public class PingCrmSvelteApplication implements WebMvcConfigurer {
 
     public static void main(String[] args) {
         SpringApplication.run(PingCrmSvelteApplication.class, args);
     }
 
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    private final AuthInterceptor authInterceptor;
+
+    public PingCrmSvelteApplication(AuthInterceptor authInterceptor) {
+        this.authInterceptor = authInterceptor;
     }
 
     @Bean
-    UserDetailsManager userDetailsManager(com.example.pingcrm.repository.UserRepository userRepository, PasswordEncoder encoder) {
-        return new UserDetailsManager() {
+    PasswordEncoder passwordEncoder() {
+        return new PasswordEncoder() {
             @Override
-            public void createUser(UserDetails user) {
-                throw new UnsupportedOperationException("Use repository directly");
+            public String encode(CharSequence rawPassword) {
+                return AuthService.hash(rawPassword.toString());
             }
 
             @Override
-            public void updateUser(UserDetails user) {
-                throw new UnsupportedOperationException("Use repository directly");
-            }
-
-            @Override
-            public void deleteUser(String username) {
-                throw new UnsupportedOperationException("Use repository directly");
-            }
-
-            @Override
-            public void changePassword(String oldPassword, String newPassword) {
-                throw new UnsupportedOperationException("Use repository directly");
-            }
-
-            @Override
-            public boolean userExists(String username) {
-                return userRepository.findByEmail(username).isPresent();
-            }
-
-            @Override
-            public UserDetails loadUserByUsername(String username) {
-                return userRepository.findByEmail(username)
-                    .map(u -> User.withUsername(u.email)
-                        .password(u.password)
-                        .authorities("ROLE_USER")
-                        .build())
-                    .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found"));
+            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                return AuthService.matches(rawPassword.toString(), encodedPassword);
             }
         };
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    UserDetailsService userDetailsService(com.example.pingcrm.repository.UserRepository userRepository) {
+        return username -> {
+            var user = userRepository.findByEmail(username).orElse(null);
+            if (user == null) {
+                throw new UsernameNotFoundException("User not found: " + username);
+            }
+            var authorities = new ArrayList<SimpleGrantedAuthority>();
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+            if (user.owner) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_OWNER"));
+            }
+            return User.withUsername(user.email)
+                .password(user.password)
+                .authorities(authorities)
+                .build();
+        };
+    }
+
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
+            throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    CookieCsrfTokenRepository xsrfTokenRepository(InertiaProperties properties) {
+        return InertiaCsrfConfigurer.xsrfTokenRepository(properties.getSecurity().getCookiePath());
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+            CookieCsrfTokenRepository xsrfTokenRepository,
+            InertiaAuthenticationEntryPoint entryPoint,
+            InertiaAccessDeniedHandler deniedHandler) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> InertiaCsrfConfigurer.configure(csrf, xsrfTokenRepository))
+            .exceptionHandling(handling -> handling
+                .authenticationEntryPoint(entryPoint)
+                .accessDeniedHandler(deniedHandler))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            )
-            .formLogin(form -> form.disable())
-            .logout(logout -> logout.disable())
-            .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
+                .requestMatchers("/login", "/assets/**", "/favicon.svg").permitAll()
+                .anyRequest().authenticated()
+            );
         return http.build();
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor).addPathPatterns("/**");
     }
 
     @Override

@@ -30,6 +30,11 @@ import io.smallrye.mutiny.Uni;
 
 @Path("/users")
 
+/**
+ * User management is restricted to account owners at the framework level;
+ * non-owners receive the {@code 403} Inertia page from the security bridge.
+ */
+@jakarta.annotation.security.RolesAllowed("owner")
 @Blocking
 @SuppressWarnings("removal")
 public class UsersController {

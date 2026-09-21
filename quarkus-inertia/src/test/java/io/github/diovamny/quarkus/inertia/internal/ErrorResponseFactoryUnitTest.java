@@ -39,6 +39,20 @@ class ErrorResponseFactoryUnitTest {
             @Override public boolean templateCacheEnabled() { return true; }
             @Override public boolean conventionRoutingEnabled() { return false; }
             @Override public java.util.Optional<String> conventionRoutingPrefix() { return java.util.Optional.empty(); }
+            @Override public java.util.Optional<String> securityMode() { return java.util.Optional.empty(); }
+            @Override public boolean securityFailOnFallback() { return false; }
+            @Override public boolean securityAllowDisabledInProduction() { return false; }
+            @Override public String securityLoginUrl() { return "/login"; }
+            @Override public String securityForbiddenComponent() { return "Errors/Forbidden"; }
+            @Override public String securityCsrfFailurePath() { return "/"; }
+            @Override public String securityCsrfFlashKey() { return "error"; }
+            @Override public String securityCsrfFlashMessage() { return "La página expiró. Vuelve a intentarlo."; }
+            @Override public String securityCookieSameSite() { return "Lax"; }
+            @Override public boolean securityCookieSecure() { return false; }
+            @Override public String securityCookiePath() { return "/"; }
+            @Override public java.util.Optional<String> securityCookieDomain() { return java.util.Optional.empty(); }
+            @Override public java.util.Optional<java.util.List<String>> securityReactiveCsrfPaths() { return java.util.Optional.empty(); }
+            @Override public boolean authPropsEnabled() { return false; }
         };
         factory.versionProvider = () -> version;
         return factory;

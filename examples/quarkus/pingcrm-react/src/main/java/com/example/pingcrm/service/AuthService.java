@@ -8,8 +8,8 @@ import java.util.Map;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 
@@ -18,6 +18,8 @@ import com.example.pingcrm.entity.User;
 import com.example.pingcrm.repository.AccountRepository;
 import com.example.pingcrm.repository.UserRepository;
 import io.github.diovamny.quarkus.inertia.protocol.RequestRoutingContext;
+import io.github.diovamny.quarkus.inertia.protocol.RequestSessionId;
+import io.github.diovamny.quarkus.inertia.protocol.TestSessionHolder;
 
 /**
  * Session-based authentication for the demo. The Vert.x session cookie keeps
@@ -26,17 +28,26 @@ import io.github.diovamny.quarkus.inertia.protocol.RequestRoutingContext;
 @RequestScoped
 public class AuthService {
 
-    static final String SESSION_USER_KEY = "pingcrm.userId";
+    public static final String SESSION_USER_KEY = "pingcrm.userId";
+    public static final String SESSION_EMAIL_KEY = "pingcrm.userEmail";
+    public static final String SESSION_OWNER_KEY = "pingcrm.userOwner";
+    private static final String SESSION_COOKIE_NAME = "vertx-web.session";
 
     private static final int PBKDF2_ITERATIONS = 210_000;
     private static final int PBKDF2_KEY_BITS = 256;
     private static final int SALT_BYTES = 16;
 
     @Inject
-    Instance<RoutingContext> routingContext;
+    CurrentVertxRequest currentVertxRequest;
 
     @Inject
     RequestRoutingContext requestRoutingContext;
+
+    @Inject
+    RequestSessionId requestSessionId;
+
+    @Inject
+    io.quarkus.security.identity.SecurityIdentity identity;
 
     @Inject
     UserRepository userRepository;
@@ -52,15 +63,22 @@ public class AuthService {
             return cached;
         }
         cachedSet = true;
-        var rc = resolve();
-        var session = rc != null ? rc.session() : null;
-        var id = session != null ? session.get(SESSION_USER_KEY) : null;
-        if (!(id instanceof Long userId)) {
+        var identity = securityIdentity();
+        if (identity == null || identity.isAnonymous()
+                || identity.getPrincipal() == null) {
             cached = null;
             return null;
         }
-        cached = userRepository.findById(userId);
+        cached = userRepository.findByEmail(identity.getPrincipal().getName());
         return cached;
+    }
+
+    private io.quarkus.security.identity.SecurityIdentity securityIdentity() {
+        try {
+            return identity;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public Account currentAccount() {
@@ -77,6 +95,8 @@ public class AuthService {
     public void login(User user) {
         var session = requireSession();
         session.put(SESSION_USER_KEY, user.id);
+        session.put(SESSION_EMAIL_KEY, user.email);
+        session.put(SESSION_OWNER_KEY, user.owner);
         cached = user;
         cachedSet = true;
     }
@@ -86,6 +106,8 @@ public class AuthService {
         var session = rc != null ? rc.session() : null;
         if (session != null) {
             session.remove(SESSION_USER_KEY);
+            session.remove(SESSION_EMAIL_KEY);
+            session.remove(SESSION_OWNER_KEY);
         }
         cached = null;
         cachedSet = true;
@@ -118,9 +140,9 @@ public class AuthService {
         if (requestRoutingContext.hasRoutingContext()) {
             return requestRoutingContext.getRoutingContext();
         }
-        // Fallback: Injected RoutingContext (works in @Blocking worker threads)
+        // Fallback: CurrentVertxRequest (works in @Blocking worker threads)
         try {
-            var rc = routingContext.get();
+            var rc = currentVertxRequest.getCurrent();
             if (rc != null) {
                 return rc;
             }
@@ -134,6 +156,25 @@ public class AuthService {
                 return rc;
             }
         }
+        // Test fallback: Try to get routing context from session ID in request-scoped bean
+        var testRc = getTestRoutingContextFromSessionId();
+        if (testRc != null) {
+            return testRc;
+        }
+        return null;
+    }
+
+    private RoutingContext getTestRoutingContextFromSessionId() {
+        try {
+            if (requestSessionId.hasSessionId()) {
+                var sessionId = requestSessionId.getSessionId();
+                var testRc = TestSessionHolder.get(sessionId);
+                if (testRc != null) {
+                    return testRc;
+                }
+            }
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
@@ -145,6 +186,8 @@ public class AuthService {
         }
         return session;
     }
+
+    // ... rest unchanged
 
     // ------------------------------------------------------------------
     // Password hashing (PBKDF2-HMAC-SHA256), format: pbkdf2$iter$salt$key

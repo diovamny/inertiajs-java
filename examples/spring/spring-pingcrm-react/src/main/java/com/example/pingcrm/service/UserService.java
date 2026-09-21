@@ -38,12 +38,49 @@ public class UserService {
         users.save(user);
     }
 
+    public boolean existsByAccountIdAndEmail(Long accountId, String email) {
+        return users.findByAccountIdAndEmail(accountId, email).isPresent();
+    }
+
+    public User create(Long accountId, java.util.Map<String, Object> values) {
+        var user = new User();
+        user.accountId = accountId;
+        apply(user, values);
+        var password = (String) values.get("password");
+        user.password = password != null && !password.isBlank()
+            ? passwordEncoder.encode(password)
+            : null;
+        user.createdAt = java.time.Instant.now();
+        user.updatedAt = user.createdAt;
+        users.save(user);
+        return user;
+    }
+
     public void update(User user) {
         users.save(user);
     }
 
+    public void update(User user, java.util.Map<String, Object> values) {
+        apply(user, values);
+        var password = (String) values.get("password");
+        if (password != null && !password.isBlank()) {
+            user.password = passwordEncoder.encode(password);
+        }
+        user.updatedAt = java.time.Instant.now();
+        users.save(user);
+    }
+
+    private void apply(User user, java.util.Map<String, Object> values) {
+        user.firstName = (String) values.get("first_name");
+        user.lastName = (String) values.get("last_name");
+        user.email = (String) values.get("email");
+        var owner = values.get("owner");
+        user.owner = Boolean.TRUE.equals(owner)
+            || "true".equalsIgnoreCase(String.valueOf(owner));
+    }
+
     public void softDelete(User user) {
-        user.deletedAt = java.time.LocalDateTime.now();
+        user.deletedAt = java.time.Instant.now();
         users.save(user);
     }
 

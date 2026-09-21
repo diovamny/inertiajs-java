@@ -45,13 +45,17 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
     @Inject
     InertiaCsrfService csrfService;
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.spi.FlashStore flashStore;
+
     @Override
     public void filter(ContainerRequestContext request) {
-        if (!config.csrfEnabled()) return;
+        if (!csrfService.enabled()) return;
         if (csrfHandled()) return;
         // Only validate state-changing Inertia requests. The CSRF cookie is
         // issued on every response (see the response filter) so the initial
         // HTML visit can obtain the token before an Inertia request occurs.
+        // Non-Inertia requests pass through untouched.
         if (!isInertiaRequest(request)) return;
 
         var xsrfToken = request.getHeaderString("X-XSRF-TOKEN");
@@ -62,13 +66,40 @@ public class InertiaCsrfFilter implements ContainerRequestFilter, ContainerRespo
         if (!csrfService.isStateChanging(request.getMethod())) return;
 
         if (!tokenMatches(xsrfToken)) {
-            request.abortWith(Response.status(419).entity("CSRF token mismatch").build());
+            rejectInertia(request);
         }
+    }
+
+    /**
+     * Answer a failed Inertia visit with {@code 303} back to the same-origin
+     * referer (or the configured fallback) carrying a generic flash message,
+     * so the user can retry without a technical error.
+     *
+     * @param request the current request
+     */
+    private void rejectInertia(ContainerRequestContext request) {
+        flashStore.put(config.securityCsrfFlashKey(), config.securityCsrfFlashMessage());
+        var rc = resolveRoutingContext();
+        String target;
+        if (rc != null) {
+            target = InertiaSecurityModes.safeFailureTarget(
+                rc.request().getHeader("Referer"),
+                rc.request().scheme(),
+                rc.request().authority().toString(),
+                config.securityCsrfFailurePath());
+        } else {
+            // Without routing context the origin cannot be verified: never
+            // echo an unverified URL, use the configured safe path.
+            target = config.securityCsrfFailurePath();
+        }
+        request.abortWith(Response.status(Response.Status.SEE_OTHER)
+            .header("Location", target)
+            .build());
     }
 
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) {
-        if (!config.csrfEnabled()) return;
+        if (!csrfService.enabled()) return;
         // Issue the XSRF-TOKEN cookie on every response so the first HTML
         // visit (which is not yet an Inertia request) can obtain the token.
         var token = getOrCreateToken();

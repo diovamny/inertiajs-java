@@ -32,6 +32,8 @@
     <modules>
         <module>quarkus-inertia</module>
         <module>spring-inertia</module>
+        <module>spring-inertia-security</module>
+        <module>quarkus-inertia-security</module>
     </modules>
   <properties>
     <java.version>21</java.version>

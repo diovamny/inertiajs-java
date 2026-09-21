@@ -88,8 +88,16 @@ public class InertiaAutoConfiguration {
     }
 
     @Bean
-    public InertiaConfigValidator inertiaConfigValidator(InertiaProperties properties) {
-        return new InertiaConfigValidator(properties);
+    public InertiaConfigValidator inertiaConfigValidator(InertiaProperties properties,
+            org.springframework.core.env.Environment environment) {
+        return new InertiaConfigValidator(properties, environment);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public io.github.diovamny.spring.inertia.security.InertiaSecurityGuard inertiaSecurityGuard(
+            InertiaProperties properties) {
+        return new io.github.diovamny.spring.inertia.security.InertiaSecurityGuard(properties);
     }
 
     @Bean
@@ -197,9 +205,10 @@ public class InertiaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @org.springframework.context.annotation.Conditional(InertiaAdapterCsrfCondition.class)
     public InertiaCsrfFilter inertiaCsrfFilter(InertiaProperties properties,
-            InertiaCsrfService csrfService) {
-        return new InertiaCsrfFilter(properties, csrfService);
+            InertiaCsrfService csrfService, FlashStore flashStore) {
+        return new InertiaCsrfFilter(properties, csrfService, flashStore);
     }
 
     @Bean

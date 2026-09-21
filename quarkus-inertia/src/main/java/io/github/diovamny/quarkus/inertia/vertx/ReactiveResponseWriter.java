@@ -52,7 +52,9 @@ public class ReactiveResponseWriter {
                 rc = fallback;
             }
         }
-        if (rc == null) return Uni.createFrom().item(response);
+        if (rc == null) {
+            return Uni.createFrom().item(response);
+        }
         final RoutingContext routingContext = rc;
         Object jaxrsFlag = rc.get(JAXRS_KEY);
         if (jaxrsFlag == null) {

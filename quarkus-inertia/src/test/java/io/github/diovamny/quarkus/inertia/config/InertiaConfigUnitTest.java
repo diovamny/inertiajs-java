@@ -36,6 +36,20 @@ class InertiaConfigUnitTest {
             @Override public boolean templateCacheEnabled() { return true; }
             @Override public boolean conventionRoutingEnabled() { return false; }
             @Override public Optional<String> conventionRoutingPrefix() { return Optional.empty(); }
+            @Override public Optional<String> securityMode() { return Optional.empty(); }
+            @Override public boolean securityFailOnFallback() { return false; }
+            @Override public boolean securityAllowDisabledInProduction() { return false; }
+            @Override public String securityLoginUrl() { return "/login"; }
+            @Override public String securityForbiddenComponent() { return "Errors/Forbidden"; }
+            @Override public String securityCsrfFailurePath() { return "/"; }
+            @Override public String securityCsrfFlashKey() { return "error"; }
+            @Override public String securityCsrfFlashMessage() { return "La página expiró. Vuelve a intentarlo."; }
+            @Override public String securityCookieSameSite() { return "Lax"; }
+            @Override public boolean securityCookieSecure() { return false; }
+            @Override public String securityCookiePath() { return "/"; }
+            @Override public Optional<String> securityCookieDomain() { return Optional.empty(); }
+            @Override public Optional<java.util.List<String>> securityReactiveCsrfPaths() { return Optional.empty(); }
+            @Override public boolean authPropsEnabled() { return false; }
         };
     }
 

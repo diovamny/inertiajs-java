@@ -16,13 +16,17 @@ import com.example.kitchensink.entity.User;
 import com.example.kitchensink.repository.UserRepository;
 
 /**
- * Session-based authentication for the demo. The Vert.x session cookie keeps
- * the logged-in user id; passwords are hashed with PBKDF2-HMAC-SHA256.
+ * Authentication for the demo, owned by Quarkus Security: the identity comes
+ * from the {@code SecurityIdentity} (populated by {@code DemoIdentityAugmentor}
+ * from the session login); this service only resolves the full user entity
+ * for presentation. Passwords are hashed with PBKDF2-HMAC-SHA256 and verified
+ * at login.
  */
 @RequestScoped
 public class AuthService {
 
-    static final String SESSION_USER_KEY = "kitchenSink.userId";
+    public static final String SESSION_USER_KEY = "kitchenSink.userId";
+    public static final String SESSION_EMAIL_KEY = "kitchenSink.userEmail";
 
     private static final int PBKDF2_ITERATIONS = 210_000;
     private static final int PBKDF2_KEY_BITS = 256;
@@ -32,24 +36,34 @@ public class AuthService {
     Instance<RoutingContext> routingContext;
 
     @Inject
+    io.quarkus.security.identity.SecurityIdentity identity;
+
+    @Inject
     UserRepository userRepository;
 
     private User cached;
     private boolean cachedSet;
+
+    private io.quarkus.security.identity.SecurityIdentity securityIdentity() {
+        try {
+            return identity;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     public User currentUser() {
         if (cachedSet) {
             return cached;
         }
         cachedSet = true;
-        var rc = resolve();
-        var session = rc != null ? rc.session() : null;
-        var id = session != null ? session.get(SESSION_USER_KEY) : null;
-        if (!(id instanceof Long userId)) {
+        var identity = securityIdentity();
+        if (identity == null || identity.isAnonymous()
+                || identity.getPrincipal() == null) {
             cached = null;
             return null;
         }
-        cached = userRepository.findById(userId);
+        cached = userRepository.findByEmail(identity.getPrincipal().getName());
         return cached;
     }
 
@@ -60,6 +74,7 @@ public class AuthService {
     public void login(User user) {
         var session = requireSession();
         session.put(SESSION_USER_KEY, user.id);
+        session.put(SESSION_EMAIL_KEY, user.email);
         cached = user;
         cachedSet = true;
     }
@@ -69,6 +84,7 @@ public class AuthService {
         var session = rc != null ? rc.session() : null;
         if (session != null) {
             session.remove(SESSION_USER_KEY);
+            session.remove(SESSION_EMAIL_KEY);
         }
         cached = null;
         cachedSet = true;

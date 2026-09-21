@@ -20,8 +20,18 @@ class PrecognitionQuarkusTest {
 
     @BeforeEach
     void login() {
+        var landing = given()
+            .redirects().follow(false)
+            .when().get("/login")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .extract();
+        var xsrf = landing.cookie("XSRF-TOKEN");
         var response = given()
+            .cookies(landing.cookies())
             .contentType(ContentType.JSON)
+            .header("X-XSRF-TOKEN", xsrf)
             .body(Map.of("email", "test@example.com", "password", "password"))
             .redirects().follow(false)
             .when().post("/login")
@@ -29,7 +39,12 @@ class PrecognitionQuarkusTest {
                 .log().ifValidationFails()
                 .statusCode(303)
                 .extract();
-        cookies = response.cookies();
+        // Accumulate cookies like a browser jar: the login response only
+        // carries freshly issued cookies, while the session cookie set by the
+        // initial visit must be kept for subsequent requests.
+        var merged = new java.util.LinkedHashMap<>(landing.cookies());
+        merged.putAll(response.cookies());
+        cookies = merged;
     }
 
     private ValidatableResponse precognition(String validateOnly, Map<String, Object> body) {
@@ -38,6 +53,7 @@ class PrecognitionQuarkusTest {
             .contentType(ContentType.JSON)
             .header("X-Inertia", "true")
             .header("Precognition", "true")
+            .header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"))
             .body(body)
             .redirects().follow(false);
         if (validateOnly != null) {
@@ -95,6 +111,7 @@ class PrecognitionQuarkusTest {
             .contentType(ContentType.JSON)
             .header("X-Inertia", "true")
             .header("Precognition", "true")
+            .header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"))
             .header("Precognition-Validate-Only", "name")
             .body(Map.of("name", "", "email", "not-an-email", "bio", "", "role", "developer"))
             .redirects().follow(false)
@@ -154,6 +171,7 @@ class PrecognitionQuarkusTest {
             .cookies(cookies)
             .contentType(ContentType.JSON)
             .header("X-Inertia", "true")
+            .header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"))
             .header("Referer", "/features/forms/precognition")
             .body(form("alice", "", "", ""))
             .redirects().follow(false)
@@ -183,6 +201,7 @@ class PrecognitionQuarkusTest {
             .cookies(cookies)
             .contentType(ContentType.JSON)
             .header("X-Inertia", "true")
+            .header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"))
             .header("Referer", "/features/forms/precognition")
             .body(form("alice", "alice@example.com", "secret12", "secret12"))
             .redirects().follow(false)

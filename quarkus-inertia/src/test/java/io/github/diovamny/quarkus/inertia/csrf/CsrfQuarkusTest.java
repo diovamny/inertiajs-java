@@ -60,4 +60,81 @@ class CsrfQuarkusTest {
             .then()
                 .statusCode(419);
     }
+
+    @Test
+    void inertiaPostWithMismatchedTokenRedirectsToSameOriginReferer() {
+        var response = given()
+            .when().get("/csrf-test")
+            .then()
+                .statusCode(200)
+                .extract();
+        var referer = "http://localhost:" + io.restassured.RestAssured.port + "/csrf-test";
+
+        given()
+            .redirects().follow(false)
+            .cookies(response.cookies())
+            .header("X-Inertia", "true")
+            .header("X-XSRF-TOKEN", "wrong-token")
+            .header("Referer", referer)
+            .when().post("/csrf-test")
+            .then()
+                .statusCode(303)
+                .header("Location", referer);
+    }
+
+    @Test
+    void inertiaPostWithWrongTokenAndNoRefererIs303ToFallback() {
+        var response = given()
+            .when().get("/csrf-test")
+            .then()
+                .statusCode(200)
+                .extract();
+
+        given()
+            .redirects().follow(false)
+            .cookies(response.cookies())
+            .header("X-Inertia", "true")
+            .header("X-XSRF-TOKEN", "wrong-token")
+            .when().post("/csrf-test")
+            .then()
+                .statusCode(303)
+                .header("Location", "/");
+    }
+
+    @Test
+    void nonInertiaPostWithWrongTokenAndRefererIs419() {
+        var response = given()
+            .when().get("/csrf-test")
+            .then()
+                .statusCode(200)
+                .extract();
+
+        given()
+            .cookies(response.cookies())
+            .header("X-XSRF-TOKEN", "wrong-token")
+            .header("Referer", "http://localhost:8081/csrf-test")
+            .when().post("/csrf-test")
+            .then()
+                .statusCode(419);
+    }
+
+    @Test
+    void inertiaPostWithExternalRefererFallsBackToSafePath() {
+        var response = given()
+            .when().get("/csrf-test")
+            .then()
+                .statusCode(200)
+                .extract();
+
+        given()
+            .redirects().follow(false)
+            .cookies(response.cookies())
+            .header("X-Inertia", "true")
+            .header("X-XSRF-TOKEN", "wrong-token")
+            .header("Referer", "https://evil.example/phish")
+            .when().post("/csrf-test")
+            .then()
+                .statusCode(303)
+                .header("Location", "/");
+    }
 }
