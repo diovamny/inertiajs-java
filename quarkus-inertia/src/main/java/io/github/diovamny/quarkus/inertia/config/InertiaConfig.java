@@ -2,6 +2,7 @@ package io.github.diovamny.quarkus.inertia.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 
 /**
  * Runtime configuration of Quarkus Inertia, bound from the
@@ -118,12 +119,162 @@ public interface InertiaConfig {
 
     /**
      * Whether CSRF protection is enforced on non-GET Inertia requests.
+     * Legacy flag: only honored when {@code inertia.security.mode} is unset
+     * ({@code true} maps to {@code adapter}, {@code false} to
+     * {@code disabled}).
      * <p>Property: {@code inertia.csrf-enabled}.</p>
      *
      * @return {@code true} to enforce, default {@code true}
+     * @deprecated use {@code inertia.security.mode} instead
      */
+    @Deprecated
     @WithDefault("true")
     boolean csrfEnabled();
+
+    /**
+     * CSRF ownership: {@code auto} (recommended), {@code framework},
+     * {@code adapter} or {@code disabled}.
+     * <p>Property: {@code inertia.security.mode}.</p>
+     *
+     * @return the mode, empty for {@code auto}
+     */
+    @WithName("security.mode")
+    java.util.Optional<String> securityMode();
+
+    /**
+     * Fail startup when {@code auto} resolves to the adapter fallback.
+     * <p>Property: {@code inertia.security.fail-on-fallback}.</p>
+     *
+     * @return {@code true} to refuse the fallback, default {@code false}
+     */
+    @WithName("security.fail-on-fallback")
+    @WithDefault("false")
+    boolean securityFailOnFallback();
+
+    /**
+     * Allow {@code disabled} with the prod profile.
+     * <p>Property: {@code inertia.security.allow-disabled-in-production}.</p>
+     *
+     * @return {@code true} to allow, default {@code false}
+     */
+    @WithName("security.allow-disabled-in-production")
+    @WithDefault("false")
+    boolean securityAllowDisabledInProduction();
+
+    /**
+     * Login/OIDC URL used for {@code 409 + X-Inertia-Location} challenges.
+     * <p>Property: {@code inertia.security.login-url}.</p>
+     *
+     * @return the login URL, default {@code /login}
+     */
+    @WithName("security.login-url")
+    @WithDefault("/login")
+    String securityLoginUrl();
+
+    /**
+     * Inertia component rendered for {@code 403} pages.
+     * <p>Property: {@code inertia.security.forbidden-component}.</p>
+     *
+     * @return the component name, default {@code Errors/Forbidden}
+     */
+    @WithName("security.forbidden-component")
+    @WithDefault("Errors/Forbidden")
+    String securityForbiddenComponent();
+
+    /**
+     * Safe fallback path for CSRF-failure redirects.
+     * <p>Property: {@code inertia.security.csrf-failure-path}.</p>
+     *
+     * @return the fallback path, default {@code /}
+     */
+    @WithName("security.csrf-failure-path")
+    @WithDefault("/")
+    String securityCsrfFailurePath();
+
+    /**
+     * Flash key carrying the CSRF-expiry message.
+     * <p>Property: {@code inertia.security.csrf-flash-key}.</p>
+     *
+     * @return the flash key, default {@code error}
+     */
+    @WithName("security.csrf-flash-key")
+    @WithDefault("error")
+    String securityCsrfFlashKey();
+
+    /**
+     * Generic CSRF-expiry message (no internals, safe to display).
+     * <p>Property: {@code inertia.security.csrf-flash-message}.</p>
+     *
+     * @return the message
+     */
+    @WithName("security.csrf-flash-message")
+    @WithDefault("La página expiró. Vuelve a intentarlo.")
+    String securityCsrfFlashMessage();
+
+    /**
+     * {@code SameSite} attribute of the XSRF-TOKEN cookie.
+     * <p>Property: {@code inertia.security.cookie-same-site}.</p>
+     *
+     * @return the attribute, default {@code Lax}
+     */
+    @WithName("security.cookie-same-site")
+    @WithDefault("Lax")
+    String securityCookieSameSite();
+
+    /**
+     * {@code Secure} attribute of the XSRF-TOKEN cookie (enable on HTTPS).
+     * <p>Property: {@code inertia.security.cookie-secure}.</p>
+     *
+     * @return {@code true} to force Secure, default {@code false}
+     */
+    @WithName("security.cookie-secure")
+    @WithDefault("false")
+    boolean securityCookieSecure();
+
+    /**
+     * {@code Path} attribute of the XSRF-TOKEN cookie.
+     * <p>Property: {@code inertia.security.cookie-path}.</p>
+     *
+     * @return the path, default {@code /}
+     */
+    @WithName("security.cookie-path")
+    @WithDefault("/")
+    String securityCookiePath();
+
+    /**
+     * {@code Domain} attribute of the XSRF-TOKEN cookie (empty = host-only).
+     * <p>Property: {@code inertia.security.cookie-domain}.</p>
+     *
+     * @return the domain, empty when unset
+     */
+    @WithName("security.cookie-domain")
+    java.util.Optional<String> securityCookieDomain();
+
+    /**
+     * Reactive path prefixes owned by the adapter CSRF filter in
+     * {@code framework} mode ({@code quarkus-rest-csrf} only sees JAX-RS).
+     * Router-level filters run before route matching and cannot tell
+     * transports apart, so the application declares its mutating reactive
+     * prefixes here (exact or segment-prefix match).
+     * <p>Property: {@code inertia.security.reactive-csrf-paths} (comma
+     * separated).</p>
+     *
+     * @return the declared prefixes, empty when unset
+     */
+    @WithName("security.reactive-csrf-paths")
+    java.util.Optional<java.util.List<String>> securityReactiveCsrfPaths();
+
+    /**
+     * Whether the security integration contributes the allowlisted identity
+     * summary ({@code auth.user}) to every page. Presentation only; never
+     * authorizes.
+     * <p>Property: {@code inertia.security.auth-props-enabled}.</p>
+     *
+     * @return {@code true} to contribute, default {@code false}
+     */
+    @WithName("security.auth-props-enabled")
+    @WithDefault("false")
+    boolean authPropsEnabled();
 
     /**
      * Custom root view template name used for non-Inertia (full page)

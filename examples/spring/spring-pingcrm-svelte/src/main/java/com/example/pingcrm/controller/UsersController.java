@@ -25,6 +25,10 @@ import com.example.pingcrm.service.AuthService;
 import com.example.pingcrm.service.UserService;
 import io.github.diovamny.spring.inertia.api.Inertia;
 
+/**
+ * User management is restricted to account owners at the framework level.
+ */
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
 @RestController
 public class UsersController {
 

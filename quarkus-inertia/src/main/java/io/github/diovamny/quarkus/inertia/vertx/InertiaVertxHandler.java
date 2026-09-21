@@ -52,6 +52,9 @@ public class InertiaVertxHandler {
     @Inject
     Inertia inertia;
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.config.InertiaConfig config;
+
     void setup(@Observes Router router) {
         router.route().order(-1).handler(this::handle).failureHandler(this::handleFailure);
     }
@@ -96,8 +99,16 @@ public class InertiaVertxHandler {
     /**
      * Validate the CSRF token when the session is already available. Returns
      * {@code true} when the request was rejected and must not continue.
+     *
+     * <p>Failed Inertia visits are answered with {@code 303} back to the
+     * same-origin referer (or the configured fallback) carrying a generic
+     * flash message; other requests keep the legacy {@code 419}.</p>
      */
     private boolean handleCsrf(RoutingContext rc) {
+        // Adapter-owned validation only: in framework mode quarkus-rest-csrf
+        // owns JAX-RS and InertiaReactiveCsrfFilter owns reactive routes, so
+        // this pre-handler (which cannot tell transports apart yet) stands
+        // down to avoid double validation with a different token.
         if (!csrfService.enabled()) return false;
         var session = rc.session();
         if (session == null) return false;
@@ -117,10 +128,32 @@ public class InertiaVertxHandler {
         if (!csrfService.isStateChanging(method)) return false;
 
         if (!csrfService.matches(token, csrfService.resolveProvidedToken(rc))) {
-            responseWriter.write(rc, Response.status(419).entity("CSRF token mismatch").build());
+            if (isInertiaVisit(rc)) {
+                var config = csrfConfig();
+                inertia.flash(config.securityCsrfFlashKey(), config.securityCsrfFlashMessage());
+                var target = io.github.diovamny.quarkus.inertia.security.InertiaSecurityModes
+                    .safeFailureTarget(rc.request().getHeader("Referer"),
+                        rc.request().scheme(), rc.request().authority().toString(),
+                        config.securityCsrfFailurePath());
+                responseWriter.write(rc, Response.status(Response.Status.SEE_OTHER)
+                    .header("Location", target).build());
+            } else {
+                responseWriter.write(rc, Response.status(419).entity("CSRF token mismatch").build());
+            }
             return true;
         }
         return false;
+    }
+
+    private boolean isInertiaVisit(RoutingContext rc) {
+        var header = rc.request().getHeader("X-Inertia");
+        return header != null && ("true".equalsIgnoreCase(header) || Boolean.parseBoolean(header));
+    }
+
+
+
+    private io.github.diovamny.quarkus.inertia.config.InertiaConfig csrfConfig() {
+        return config;
     }
 
     private void handleFailure(RoutingContext rc) {

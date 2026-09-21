@@ -35,12 +35,39 @@ public class OrganizationService {
         organizations.save(organization);
     }
 
+    public Organization create(Long accountId, Map<String, Object> values) {
+        var organization = new Organization();
+        organization.accountId = accountId;
+        apply(organization, values);
+        organization.createdAt = java.time.Instant.now();
+        organization.updatedAt = organization.createdAt;
+        organizations.save(organization);
+        return organization;
+    }
+
     public void update(Organization organization) {
         organizations.save(organization);
     }
 
+    public void update(Organization organization, Map<String, Object> values) {
+        apply(organization, values);
+        organization.updatedAt = java.time.Instant.now();
+        organizations.save(organization);
+    }
+
+    private void apply(Organization organization, Map<String, Object> values) {
+        organization.name = (String) values.get("name");
+        organization.email = (String) values.get("email");
+        organization.phone = (String) values.get("phone");
+        organization.address = (String) values.get("address");
+        organization.city = (String) values.get("city");
+        organization.region = (String) values.get("region");
+        organization.country = (String) values.get("country");
+        organization.postalCode = (String) values.get("postal_code");
+    }
+
     public void softDelete(Organization organization) {
-        organization.deletedAt = java.time.LocalDateTime.now();
+        organization.deletedAt = java.time.Instant.now();
         organizations.save(organization);
     }
 

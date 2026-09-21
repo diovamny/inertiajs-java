@@ -11,6 +11,7 @@ import com.example.kitchensink.dto.FormValidator;
 import com.example.kitchensink.dto.LoginForm;
 import com.example.kitchensink.repository.UserRepository;
 import com.example.kitchensink.service.AuthService;
+import com.example.kitchensink.service.AuthService;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import io.github.diovamny.quarkus.inertia.api.Inertia;
@@ -53,8 +54,8 @@ public class AuthController {
     @Blocking
     public Uni<Object> login(LoginForm form) {
         FormValidator.validate(validator, form);
-        var user = users.findByEmail(form.email);
-        if (user == null || form.password == null || form.password.isBlank()) {
+        var user = form.email != null ? users.findByEmail(form.email) : null;
+        if (user == null || !AuthService.matches(form.password, user.password)) {
             return inertia.back().withErrors(Map.of("email", "These credentials do not match our records."));
         }
         auth.login(user);

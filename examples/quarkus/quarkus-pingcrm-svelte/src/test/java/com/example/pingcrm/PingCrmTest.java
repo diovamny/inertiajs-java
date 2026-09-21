@@ -28,28 +28,72 @@ public class PingCrmTest {
     }
 
     private static String sessionCookie;
+    private static String xsrf;
+    private static final java.util.Map<String, String> cookieJar = new java.util.LinkedHashMap<>();
 
     private static RequestSpecification inertia() {
-        return given()
+        // Anonymous helper: sends NO session cookie (like a fresh visitor),
+        // only the CSRF pair when a token was fetched.
+        var req = given()
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "1.0.0");
+        if (xsrf != null) {
+            req.header("X-XSRF-TOKEN", xsrf).cookie("XSRF-TOKEN", xsrf);
+        }
+        return req;
     }
 
     private static RequestSpecification authed() {
-        return given()
-                .cookie("vertx-web.session", sessionCookie);
+        var req = given().cookies(cookieJar);
+        if (xsrf != null) {
+            req.cookie("XSRF-TOKEN", xsrf);
+        }
+        if (sessionCookie != null) {
+            req.cookie("vertx-web.session", sessionCookie);
+        }
+        return req;
     }
 
     private static RequestSpecification authedInertia() {
-        return authed()
+        var req = authed()
                 .header("X-Inertia", "true")
                 .header("X-Inertia-Version", "1.0.0");
+        if (xsrf != null) {
+            req.header("X-XSRF-TOKEN", xsrf);
+        }
+        return req;
     }
 
     private static void captureSession(ExtractableResponse<Response> res) {
+        // Accumulate like a browser jar: responses only carry freshly issued
+        // cookies, so merge instead of replacing. The XSRF-TOKEN cookie is
+        // deliberately excluded: the token is always sent explicitly from the
+        // xsrf field, and a stale jar copy would shadow it (400s).
+        for (var entry : res.cookies().entrySet()) {
+            if (entry.getValue() != null && !"XSRF-TOKEN".equals(entry.getKey())) {
+                cookieJar.put(entry.getKey(), entry.getValue());
+            }
+        }
         var cookie = res.detailedCookies().get("vertx-web.session");
         if (cookie != null) {
             sessionCookie = cookie.getValue();
+        }
+        var token = res.detailedCookies().get("XSRF-TOKEN");
+        if (token != null && token.getValue() != null && !token.getValue().isBlank()) {
+            xsrf = token.getValue();
+        }
+    }
+
+    private static void fetchXsrf() {
+        // Token-only fetch: must NOT merge the response session into the jar,
+        // otherwise anonymous-after-login tests would inherit a logged-in
+        // session (and vice versa).
+        var res = given().when().get("/login")
+            .then().statusCode(200)
+            .extract();
+        var token = res.detailedCookies().get("XSRF-TOKEN");
+        if (token != null && token.getValue() != null && !token.getValue().isBlank()) {
+            xsrf = token.getValue();
         }
     }
 
@@ -61,13 +105,15 @@ public class PingCrmTest {
             .get("/login")
         .then()
             .statusCode(200)
-            .body(containsString("Auth\\/Login"));
+            .body(containsString("Auth/Login"));
     }
 
     @Test
     @Order(2)
     void loginBadCredentials() {
+        fetchXsrf();
         inertia()
+            .header("Referer", "/login")
             .contentType("application/json")
             .body("{\"email\":\"bad@example.com\",\"password\":\"wrong\"}")
         .when()
@@ -80,6 +126,8 @@ public class PingCrmTest {
     @Test
     @Order(3)
     void loginSuccess() {
+        // Order-independent: a valid CSRF token is required for the POST.
+        fetchXsrf();
         var res = inertia()
             .contentType("application/json")
             .body("{\"email\":\"johndoe@example.com\",\"password\":\"secret\"}")
@@ -97,7 +145,8 @@ public class PingCrmTest {
     @Test
     @Order(4)
     void unauthorizedRedirect() {
-        inertia()
+        // Plain (non-Inertia) visit without session: 302 to the login page.
+        given()
         .when()
             .get("/")
         .then()
@@ -107,13 +156,31 @@ public class PingCrmTest {
 
     @Test
     @Order(5)
-    void unauthorizedInertia303() {
+    void anonymousLogoutRedirectsToLogin() {
+        // /logout is public: even anonymous visits reach the controller,
+        // which redirects to the login page (the old hand-written 303 is gone,
+        // the outcome coincides by design).
+        fetchXsrf();
         inertia()
         .when()
             .delete("/logout")
         .then()
             .statusCode(303)
             .header("Location", "/login");
+    }
+
+    @Test
+    @Order(51)
+    void anonymousInertiaVisitToProtectedRouteIs409Challenge() {
+        // Framework-owned security: anonymous Inertia visits to protected
+        // routes get the 409 challenge contract (instead of the old 303).
+        fetchXsrf();
+        inertia()
+        .when()
+            .get("/organizations")
+        .then()
+            .statusCode(409)
+            .header("X-Inertia-Location", "/login");
     }
 
     @Test
@@ -419,6 +486,8 @@ public class PingCrmTest {
     }
 
     private void loginAgain() {
+        // Order-independent: a valid CSRF token is required for the POST.
+        fetchXsrf();
         var res = inertia()
             .contentType("application/json")
             .body("{\"email\":\"johndoe@example.com\",\"password\":\"secret\"}")

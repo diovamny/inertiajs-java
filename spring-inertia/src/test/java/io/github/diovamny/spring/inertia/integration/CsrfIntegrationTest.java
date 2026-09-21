@@ -9,6 +9,7 @@ import org.springframework.mock.web.MockHttpSession;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static io.github.diovamny.spring.inertia.testing.InertiaResultMatchers.inertia;
 
@@ -34,17 +35,57 @@ class CsrfIntegrationTest {
     }
 
     @Test
-    void stateChangingRequestWithoutTokenIs419() throws Exception {
-        mockMvc.perform(post("/submit").header("X-Inertia", "true"))
-            .andExpect(status().is(419));
+    void stateChangingRequestWithoutTokenRedirectsWithFlash() throws Exception {
+        mockMvc.perform(post("/submit")
+                .header("X-Inertia", "true")
+                .header("Referer", "http://localhost/dashboard"))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", "http://localhost/dashboard"));
     }
 
     @Test
-    void stateChangingRequestWithWrongTokenIs419() throws Exception {
+    void stateChangingRequestWithWrongTokenRedirectsWithFlash() throws Exception {
         mockMvc.perform(post("/submit")
                 .header("X-Inertia", "true")
-                .header("X-XSRF-TOKEN", "wrong"))
-            .andExpect(status().is(419));
+                .header("X-XSRF-TOKEN", "wrong")
+                .header("Referer", "http://localhost/dashboard"))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", "http://localhost/dashboard"));
+    }
+
+    @Test
+    void csrfFailureWithExternalRefererFallsBackToSafePath() throws Exception {
+        mockMvc.perform(post("/submit")
+                .header("X-Inertia", "true")
+                .header("X-XSRF-TOKEN", "wrong")
+                .header("Referer", "https://evil.example/phish"))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", "/"));
+    }
+
+    @Test
+    void nonInertiaRequestPassesThroughToController() throws Exception {
+        mockMvc.perform(post("/submit"))
+            .andExpect(status().isSeeOther())
+            .andExpect(header().string("Location", "/flash"));
+    }
+
+    @Test
+    void csrfFailureFlashSurfacesOnNextPage() throws Exception {
+        var session = new org.springframework.mock.web.MockHttpSession();
+        fetchToken(session);
+        mockMvc.perform(post("/submit")
+                .session(session)
+                .header("X-Inertia", "true")
+                .header("X-XSRF-TOKEN", "wrong")
+                .header("Referer", "http://localhost/dashboard"))
+            .andExpect(status().isSeeOther());
+        mockMvc.perform(get("/flash")
+                .session(session)
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Version", "test-version"))
+            .andExpect(status().isOk())
+            .andExpect(inertia().prop("error", "La página expiró. Vuelve a intentarlo."));
     }
 
     @Test

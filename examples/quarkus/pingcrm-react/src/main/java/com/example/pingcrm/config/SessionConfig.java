@@ -14,6 +14,9 @@ public class SessionConfig {
         var store = LocalSessionStore.create(vertx);
         var sessionHandler = SessionHandler.create(store);
         sessionHandler.setLazySession(false);
-        router.route().order(0).handler(sessionHandler);
+        // Before authentication: the session login mechanism reads the
+        // session during Quarkus HTTP-policy enforcement, which runs before
+        // user routes (including the adapter pre-handler at order -1).
+        router.route().order(-1000).handler(sessionHandler);
     }
 }

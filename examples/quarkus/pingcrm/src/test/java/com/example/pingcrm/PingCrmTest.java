@@ -32,6 +32,8 @@ class PingCrmTest {
     }
 
     private static String session;
+    private static String xsrf;
+    private static final java.util.Map<String, String> cookieJar = new java.util.LinkedHashMap<>();
     private static long organizationId;
     private static long contactId;
     private static String photoUrl;
@@ -39,21 +41,45 @@ class PingCrmTest {
     private static final String BASE = "";
 
     private static RequestSpecification inertia() {
-        return given().header("X-Inertia", "true");
+        var req = given().header("X-Inertia", "true");
+        if (xsrf != null) {
+            req.header("X-XSRF-TOKEN", xsrf).cookie("XSRF-TOKEN", xsrf);
+        }
+        return req;
     }
 
     private static RequestSpecification authed() {
-        return given().cookie("vertx-web.session", session);
+        var req = given().cookies(cookieJar);
+        if (xsrf != null) {
+            req.cookie("XSRF-TOKEN", xsrf);
+        }
+        return req;
     }
 
     private static RequestSpecification authedInertia() {
-        return authed().header("X-Inertia", "true");
+        var req = authed().header("X-Inertia", "true");
+        if (xsrf != null) {
+            req.header("X-XSRF-TOKEN", xsrf);
+        }
+        return req;
     }
 
     private static void captureSession(ExtractableResponse<Response> res) {
+        // Accumulate like a browser jar: responses only carry freshly issued
+        // cookies, so merge instead of replacing (the session cookie set by
+        // the initial visit must be kept for subsequent requests).
+        for (var entry : res.cookies().entrySet()) {
+            if (entry.getValue() != null) {
+                cookieJar.put(entry.getKey(), entry.getValue());
+            }
+        }
         var cookie = res.detailedCookies().get("vertx-web.session");
         if (cookie != null) {
             session = cookie.getValue();
+        }
+        var token = res.detailedCookies().get("XSRF-TOKEN");
+        if (token != null && token.getValue() != null && !token.getValue().isBlank()) {
+            xsrf = token.getValue();
         }
     }
 
@@ -80,11 +106,22 @@ class PingCrmTest {
 
     @Test
     @Order(3)
-    void inertiaPostWithoutSessionRedirectsToLogin() {
+    void inertiaDeleteWithoutSessionIs409Challenge() {
+        // Anonymous visits carry the XSRF cookie from the login page; with a
+        // valid token the request reaches authentication and gets the 409
+        // challenge (instead of the old 303 from the manual filter).
+        fetchXsrf();
         inertia().when().delete("/organizations/1")
-            .then().statusCode(303)
-            .and().header("Location", equalTo("/login"))
-            .and().header("X-Inertia-Location", equalTo("/login"));
+            .then().statusCode(409)
+            .and().header("X-Inertia-Location", equalTo("/login"))
+            .and().header("X-Inertia", nullValue());
+    }
+
+    private static void fetchXsrf() {
+        var res = given().when().get("/login")
+            .then().statusCode(200)
+            .extract();
+        captureSession(res);
     }
 
     @Test
@@ -111,6 +148,8 @@ class PingCrmTest {
     @Test
     @Order(5)
     void loginWithValidCredentialsSucceeds() {
+        // Order-independent: a valid CSRF token is required for the POST.
+        fetchXsrf();
         var res = inertia()
             .contentType(ContentType.JSON)
             .body("{\"email\":\"johndoe@example.com\",\"password\":\"secret\"}")
@@ -521,6 +560,33 @@ class PingCrmTest {
         authed().when().get("/")
             .then().statusCode(302)
             .and().header("Location", equalTo("/login"));
+    }
+
+    @Test
+    @Order(26)
+    void nonOwnerIsForbiddenOnUserManagement() {
+        var landing = given().when().get("/login")
+            .then().statusCode(200)
+            .extract();
+        var jar = new java.util.LinkedHashMap<>(landing.cookies());
+        var res = given()
+            .cookies(jar)
+            .header("X-XSRF-TOKEN", landing.cookie("XSRF-TOKEN"))
+            .header("Referer", BASE + "/login")
+            .contentType(ContentType.JSON)
+            .body("{\"email\":\"jane.roe@example.com\",\"password\":\"secret123\"}")
+            .when().post("/login")
+            .then().statusCode(303)
+            .extract();
+        jar.putAll(res.cookies());
+        jar.put("XSRF-TOKEN", xsrf);
+        given()
+            .cookies(jar)
+            .header("X-Inertia", "true")
+            .when().get("/users")
+            .then().statusCode(403)
+            .and().header("X-Inertia", equalTo("true"))
+            .and().body("component", equalTo("Errors/Forbidden"));
     }
 
     private static byte[] pngBytes() throws Exception {

@@ -9,10 +9,7 @@ import java.util.Map;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.example.pingcrm.entity.Account;
 import com.example.pingcrm.entity.User;
@@ -20,13 +17,14 @@ import com.example.pingcrm.repository.AccountRepository;
 import com.example.pingcrm.repository.UserRepository;
 
 /**
- * Session-based authentication for the demo. The {@code HttpSession} keeps
- * the logged-in user id; passwords are hashed with PBKDF2-HMAC-SHA256.
+ * Authentication for the demo, owned by Spring Security: the identity lives
+ * in the {@code SecurityContext} (populated by the login controller through
+ * the {@code AuthenticationManager}); this service only resolves the full
+ * user/account entities for presentation. Passwords are hashed with
+ * PBKDF2-HMAC-SHA256 and verified by the security {@code PasswordEncoder}.
  */
 @Service
 public class AuthService {
-
-    static final String SESSION_USER_KEY = "pingcrm.userId";
 
     private static final int PBKDF2_ITERATIONS = 210_000;
     private static final int PBKDF2_KEY_BITS = 256;
@@ -41,12 +39,13 @@ public class AuthService {
     }
 
     public User currentUser() {
-        var session = session();
-        var id = session != null ? session.getAttribute(SESSION_USER_KEY) : null;
-        if (!(id instanceof Long userId)) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+            .getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
             return null;
         }
-        return userRepository.findById(userId).orElse(null);
+        return userRepository.findByEmail(authentication.getName()).orElse(null);
     }
 
     public Account currentAccount() {
@@ -58,17 +57,6 @@ public class AuthService {
     public Long accountId() {
         var account = currentAccount();
         return account != null ? account.id : null;
-    }
-
-    public void login(User user) {
-        session().setAttribute(SESSION_USER_KEY, (long) user.id);
-    }
-
-    public void logout() {
-        var session = session();
-        if (session != null) {
-            session.removeAttribute(SESSION_USER_KEY);
-        }
     }
 
     /** Shared prop payload for {@code inertia.share("auth", ...)}. */
@@ -91,14 +79,6 @@ public class AuthService {
             "name", account != null ? account.name : null));
         payload.put("user", userMap);
         return payload;
-    }
-
-    private HttpSession session() {
-        var attrs = RequestContextHolder.getRequestAttributes();
-        if (attrs instanceof ServletRequestAttributes servlet) {
-            return servlet.getRequest().getSession(true);
-        }
-        return null;
     }
 
     // ------------------------------------------------------------------

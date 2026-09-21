@@ -1,6 +1,5 @@
 package com.example.kitchensink.config;
 
-import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.DispatcherType;
@@ -19,19 +18,18 @@ import io.github.diovamny.spring.inertia.model.PageObject;
 import io.github.diovamny.spring.inertia.version.VersionProvider;
 
 /**
- * Guards every route except public ones (login, logout, assets).
- * Unauthenticated requests are redirected to /login; Inertia non-GET requests
- * get a 303 with X-Inertia-Location so the client follows with a GET.
+ * Shares the Security-backed identity on every visit and registers a
+ * per-visit error mapper so HTTP/business exceptions are rendered as the
+ * {@code ErrorPage} component with their semantic HTTP status (mirrors the
+ * Quarkus adapter's exception mapping).
  *
- * <p>Also registers a per-visit error mapper so HTTP/business exceptions are
- * rendered as the {@code ErrorPage} component with their semantic HTTP
- * status (mirrors the Quarkus adapter's exception mapping).</p>
+ * <p>Route protection itself is owned by Spring Security (see
+ * {@code DemoSecurityConfig}): anonymous HTML visits are redirected to the
+ * login page while anonymous Inertia visits receive {@code 409} with
+ * {@code X-Inertia-Location}.</p>
  */
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
-
-    private static final List<String> PUBLIC_PREFIXES = List.of("assets");
-    private static final List<String> PUBLIC_EXACT = List.of("login", "logout", "favicon.svg");
 
     private final AuthService auth;
     private final Inertia inertia;
@@ -48,40 +46,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (request.getDispatcherType() == DispatcherType.ERROR) {
             return true;
         }
-        var path = request.getRequestURI().substring(request.getContextPath().length());
-        var normalized = path.startsWith("/") ? path.substring(1) : path;
-        if (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-
-        var user = auth.currentUser();
         inertia.share("auth", auth.authProps());
         inertia.handleErrorUsing(error -> errorPage(error, request));
-
-        if (isPublic(normalized)) {
-            return true;
-        }
-
-        if ("login".equals(normalized) && user != null) {
-            response.setStatus(HttpServletResponse.SC_FOUND);
-            response.setHeader("Location", "/");
-            return false;
-        }
-
-        if (user != null) {
-            return true;
-        }
-
-        var isInertia = "true".equalsIgnoreCase(request.getHeader("X-Inertia"));
-        if (isInertia && !"GET".equalsIgnoreCase(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_SEE_OTHER);
-            response.setHeader("Location", "/login");
-            response.setHeader("X-Inertia-Location", "/login");
-        } else {
-            response.setStatus(HttpServletResponse.SC_FOUND);
-            response.setHeader("Location", "/login");
-        }
-        return false;
+        return true;
     }
 
     private ResponseEntity<?> errorPage(Throwable error, HttpServletRequest request) {
@@ -118,11 +85,4 @@ public class AuthInterceptor implements HandlerInterceptor {
         return cause.getMessage() != null ? cause.getMessage() : "Internal Server Error";
     }
 
-    private boolean isPublic(String path) {
-        if (PUBLIC_EXACT.contains(path)) return true;
-        for (var prefix : PUBLIC_PREFIXES) {
-            if (path.startsWith(prefix)) return true;
-        }
-        return false;
-    }
 }

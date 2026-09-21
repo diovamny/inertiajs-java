@@ -37,6 +37,19 @@
             <version>0.0.2</version>
         </dependency>
         <dependency>
+            <groupId>io.github.diovamny.quarkus.inertia</groupId>
+            <artifactId>quarkus-inertia-security</artifactId>
+            <version>0.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-csrf</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm-panache</artifactId>
         </dependency>

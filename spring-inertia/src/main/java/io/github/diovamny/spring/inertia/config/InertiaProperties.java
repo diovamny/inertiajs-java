@@ -20,7 +20,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   version-custom: null
  *   encrypt-history: false
  *   camelize-props: false
- *   csrf-enabled: true
+ *   csrf-enabled: true (deprecated alias, see security.mode)
+ *   security.mode: auto
+ *   security.fail-on-fallback: false
+ *   security.allow-disabled-in-production: false
+ *   security.login-url: /login
+ *   security.forbidden-component: Errors/Forbidden
+ *   security.csrf-failure-path: /
+ *   security.csrf-flash-key: error
+ *   security.csrf-flash-message: ...
+ *   security.cookie-same-site: Lax
+ *   security.cookie-secure: false
+ *   security.cookie-path: /
+ *   security.cookie-domain: ""
  *   flash-keys: []
  *   always-include-errors: true
  *   error-status: 500
@@ -70,8 +82,164 @@ public class InertiaProperties {
     /** Whether prop keys are converted from snake_case to camelCase. */
     private boolean camelizeProps = false;
 
-    /** Whether the XSRF-TOKEN cookie synchronization is active. */
-    private boolean csrfEnabled = true;
+    /**
+     * Legacy CSRF flag, kept as a migration alias for
+     * {@code inertia.security.mode} ({@code true} maps to {@code adapter},
+     * {@code false} maps to {@code disabled}) and only honored when
+     * {@code inertia.security.mode} is unset.
+     *
+     * @deprecated use {@code inertia.security.mode} instead
+     */
+    @Deprecated
+    private Boolean csrfEnabled;
+
+    /** Security integration settings (CSRF ownership, guardrails, cookies). */
+    private final Security security = new Security();
+
+    /**
+     * Security integration settings, prefix {@code inertia.security}.
+     */
+    public static class Security {
+
+        /**
+         * CSRF ownership: {@code auto} (recommended), {@code framework},
+         * {@code adapter} or {@code disabled}.
+         */
+        private String mode;
+
+        /** Fail startup when {@code auto} resolves to the adapter fallback. */
+        private boolean failOnFallback = false;
+
+        /** Allow {@code disabled} in the production profile (default refuses). */
+        private boolean allowDisabledInProduction = false;
+
+        /** Login/OIDC URL used for {@code 409 + X-Inertia-Location} challenges. */
+        private String loginUrl = "/login";
+
+        /** Inertia component rendered for {@code 403} pages. */
+        private String forbiddenComponent = "Errors/Forbidden";
+
+        /** Safe fallback path for CSRF-failure redirects (default {@code /}). */
+        private String csrfFailurePath = "/";
+
+        /** Flash key carrying the CSRF-expiry message. */
+        private String csrfFlashKey = "error";
+
+        /** Generic CSRF-expiry message (no internals, safe to display). */
+        private String csrfFlashMessage = "La página expiró. Vuelve a intentarlo.";
+
+        /** {@code SameSite} attribute of the XSRF-TOKEN cookie. */
+        private String cookieSameSite = "Lax";
+
+        /** {@code Secure} attribute of the XSRF-TOKEN cookie (enable on HTTPS). */
+        private boolean cookieSecure = false;
+
+        /** {@code Path} attribute of the XSRF-TOKEN cookie. */
+        private String cookiePath = "/";
+
+        /** {@code Domain} attribute of the XSRF-TOKEN cookie (empty = host-only). */
+        private String cookieDomain = "";
+
+        public String getMode() {
+            return mode;
+        }
+
+        public void setMode(String mode) {
+            this.mode = mode;
+        }
+
+        public boolean isFailOnFallback() {
+            return failOnFallback;
+        }
+
+        public void setFailOnFallback(boolean failOnFallback) {
+            this.failOnFallback = failOnFallback;
+        }
+
+        public boolean isAllowDisabledInProduction() {
+            return allowDisabledInProduction;
+        }
+
+        public void setAllowDisabledInProduction(boolean allowDisabledInProduction) {
+            this.allowDisabledInProduction = allowDisabledInProduction;
+        }
+
+        public String getLoginUrl() {
+            return loginUrl;
+        }
+
+        public void setLoginUrl(String loginUrl) {
+            this.loginUrl = loginUrl;
+        }
+
+        public String getForbiddenComponent() {
+            return forbiddenComponent;
+        }
+
+        public void setForbiddenComponent(String forbiddenComponent) {
+            this.forbiddenComponent = forbiddenComponent;
+        }
+
+        public String getCsrfFailurePath() {
+            return csrfFailurePath;
+        }
+
+        public void setCsrfFailurePath(String csrfFailurePath) {
+            this.csrfFailurePath = csrfFailurePath;
+        }
+
+        public String getCsrfFlashKey() {
+            return csrfFlashKey;
+        }
+
+        public void setCsrfFlashKey(String csrfFlashKey) {
+            this.csrfFlashKey = csrfFlashKey;
+        }
+
+        public String getCsrfFlashMessage() {
+            return csrfFlashMessage;
+        }
+
+        public void setCsrfFlashMessage(String csrfFlashMessage) {
+            this.csrfFlashMessage = csrfFlashMessage;
+        }
+
+        public String getCookieSameSite() {
+            return cookieSameSite;
+        }
+
+        public void setCookieSameSite(String cookieSameSite) {
+            this.cookieSameSite = cookieSameSite;
+        }
+
+        public boolean isCookieSecure() {
+            return cookieSecure;
+        }
+
+        public void setCookieSecure(boolean cookieSecure) {
+            this.cookieSecure = cookieSecure;
+        }
+
+        public String getCookiePath() {
+            return cookiePath;
+        }
+
+        public void setCookiePath(String cookiePath) {
+            this.cookiePath = cookiePath;
+        }
+
+        public String getCookieDomain() {
+            return cookieDomain;
+        }
+
+        public void setCookieDomain(String cookieDomain) {
+            this.cookieDomain = cookieDomain;
+        }
+    }
+
+    public Security getSecurity() {
+        return security;
+    }
 
     /** Additional session keys that must be flashed with every page. */
     private List<String> flashKeys = List.of();
@@ -196,12 +364,41 @@ public class InertiaProperties {
         this.camelizeProps = camelizeProps;
     }
 
-    public boolean isCsrfEnabled() {
+    /**
+     * Legacy CSRF flag (migration alias for {@code inertia.security.mode}).
+     *
+     * @return the legacy flag, or {@code null} when unset
+     * @deprecated use {@code inertia.security.mode} instead
+     */
+    @Deprecated
+    public Boolean getCsrfEnabled() {
         return csrfEnabled;
     }
 
-    public void setCsrfEnabled(boolean csrfEnabled) {
+    /**
+     * Whether the adapter CSRF filter is active under the legacy flag.
+     * Only honored when {@code inertia.security.mode} is unset.
+     *
+     * @return {@code true} unless explicitly disabled via the legacy flag
+     * @deprecated use {@code inertia.security.mode} instead
+     */
+    @Deprecated
+    public boolean isCsrfEnabled() {
+        return csrfEnabled == null || csrfEnabled;
+    }
+
+    @Deprecated
+    public void setCsrfEnabled(Boolean csrfEnabled) {
         this.csrfEnabled = csrfEnabled;
+    }
+
+    /**
+     * Whether the legacy {@code inertia.csrf-enabled} property was set.
+     *
+     * @return {@code true} when migration warnings apply
+     */
+    public boolean isCsrfEnabledSet() {
+        return csrfEnabled != null;
     }
 
     public List<String> getFlashKeys() {

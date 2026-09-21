@@ -17,6 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * User management is restricted to account owners at the framework level.
+ */
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
 @Controller
 @RequestMapping("/users")
 public class UsersController {

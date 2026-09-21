@@ -30,12 +30,14 @@ public class InertiaCsrfService {
     InertiaConfig config;
 
     /**
-     * Whether CSRF protection is enabled.
+     * Whether the adapter-owned CSRF protection is active: only in effective
+     * mode {@code adapter}. In {@code framework} mode {@code quarkus-rest-csrf}
+     * owns CSRF; in {@code disabled} mode nobody does.
      *
      * @return {@code true} to enforce
      */
     public boolean enabled() {
-        return config.csrfEnabled();
+        return InertiaSecurityModes.effectiveMode(config) == InertiaSecurityModes.Mode.ADAPTER;
     }
 
     /**
@@ -94,11 +96,35 @@ public class InertiaCsrfService {
 
     /**
      * The {@code Set-Cookie} header that hands the token to the client.
+     * The cookie stays readable by the client ({@code HttpOnly=false}) so the
+     * official Inertia v3 client can echo it in {@code X-XSRF-TOKEN};
+     * {@code SameSite}, {@code Secure}, {@code Path} and {@code Domain} come
+     * from the {@code inertia.security.cookie-*} settings.
      *
      * @param token the session token
      * @return the header value
      */
     public String cookieHeader(String token) {
-        return "XSRF-TOKEN=" + token + "; Path=/; SameSite=Lax";
+        var path = config.securityCookiePath();
+        var sameSite = sameSite(config.securityCookieSameSite());
+        var builder = new StringBuilder("XSRF-TOKEN=").append(token)
+            .append("; Path=").append(path == null || path.isBlank() ? "/" : path.trim())
+            .append("; SameSite=").append(sameSite);
+        if (config.securityCookieSecure()) {
+            builder.append("; Secure");
+        }
+        var domain = config.securityCookieDomain();
+        if (domain.isPresent() && !domain.get().isBlank()) {
+            builder.append("; Domain=").append(domain.get().trim());
+        }
+        return builder.toString();
+    }
+
+    private static String sameSite(String configured) {
+        if (configured == null || configured.isBlank()) {
+            return "Lax";
+        }
+        var normalized = configured.trim();
+        return normalized.substring(0, 1).toUpperCase() + normalized.substring(1).toLowerCase();
     }
 }
