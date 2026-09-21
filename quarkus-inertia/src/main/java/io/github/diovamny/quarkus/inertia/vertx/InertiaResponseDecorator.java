@@ -51,23 +51,25 @@ public class InertiaResponseDecorator {
             applyCsrfCookie(headers, ctx);
         }
 
-        var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
+        var isPrecognition = ctx != null
+            && io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(ctx, "inertia-precognition");
         if (isPrecognition) {
             if (status >= 400) {
                 return new DecoratedResponse(status, headers, entity);
             }
             headers.set("Precognition", "true");
             headers.set("Precognition-Success", "true");
-            headers.set("Vary", "Precognition");
+            io.github.diovamny.quarkus.inertia.util.VaryHeaderUtil.addTo(headers, "Precognition");
             return new DecoratedResponse(Response.Status.NO_CONTENT.getStatusCode(), headers, null);
         }
 
-        var isInertia = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
+        var isInertia = ctx != null
+            && io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(ctx, "inertia-request");
         if (!isInertia) {
             return new DecoratedResponse(status, headers, entity);
         }
 
-        headers.add("Vary", "X-Inertia");
+        io.github.diovamny.quarkus.inertia.util.VaryHeaderUtil.addTo(headers, "X-Inertia");
 
         if (isRedirect(status)) {
             return handleRedirect(rc, ctx, status, headers, entity);
@@ -85,7 +87,8 @@ public class InertiaResponseDecorator {
 
     private void applyCustomHeaders(MultiMap headers, Context ctx) {
         @SuppressWarnings("unchecked")
-        var custom = (Map<String, Object>) ctx.getLocal("inertia-response-headers");
+        var custom = (Map<String, Object>) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "inertia-response-headers");
         if (custom == null || custom.isEmpty()) return;
         for (var entry : custom.entrySet()) {
             if (entry.getKey() == null || entry.getValue() == null) continue;
@@ -94,8 +97,24 @@ public class InertiaResponseDecorator {
     }
 
     private void applyCsrfCookie(MultiMap headers, Context ctx) {
-        if (!Boolean.TRUE.equals(ctx.getLocal(InertiaCsrfService.CONTEXT_HANDLED))) return;
-        var token = (String) ctx.getLocal(InertiaCsrfService.CONTEXT_TOKEN);
+        // Prefer routing-context value (G-17 isolation); fall back to event-loop context.
+        Object handled = null;
+        Object tokenObj = null;
+        var rc = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.routingContext(ctx);
+        if (rc != null) {
+            handled = rc.get(InertiaCsrfService.CONTEXT_HANDLED);
+            tokenObj = rc.get(InertiaCsrfService.CONTEXT_TOKEN);
+        }
+        if (handled == null) {
+            handled = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, InertiaCsrfService.CONTEXT_HANDLED);
+        }
+        if (tokenObj == null) {
+            tokenObj = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, InertiaCsrfService.CONTEXT_TOKEN);
+        }
+        if (!Boolean.TRUE.equals(handled)) return;
+        var token = (String) tokenObj;
         if (token != null) {
             headers.add("Set-Cookie", csrfService.cookieHeader(token));
         }
@@ -112,14 +131,16 @@ public class InertiaResponseDecorator {
             return new DecoratedResponse(status, headers, entity);
         }
 
-        var isPrefetch = Boolean.TRUE.equals(ctx.getLocal("inertia-prefetch"));
+        var isPrefetch = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(
+            ctx, "inertia-prefetch");
 
         if (location.contains("#") && !isPrefetch) {
             headers.set("X-Inertia-Redirect", location);
             return new DecoratedResponse(Response.Status.CONFLICT.getStatusCode(), headers, null);
         }
 
-        var method = (String) ctx.getLocal("request-method");
+        var method = (String) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "request-method");
 
         if (isExternalRedirect(rc, location) && !isPrefetch
                 && "GET".equalsIgnoreCase(method) && status == 302) {
@@ -135,7 +156,8 @@ public class InertiaResponseDecorator {
     }
 
     private DecoratedResponse handleEmptyResponse(Context ctx, MultiMap headers) {
-        String referer = (String) ctx.getLocal("referer-url");
+        String referer = (String) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "referer-url");
         if (referer != null && !referer.isBlank()) {
             headers.set("Location", referer);
             return new DecoratedResponse(Response.Status.FOUND.getStatusCode(), headers, null);
@@ -174,10 +196,14 @@ public class InertiaResponseDecorator {
     private String computeEtag(Object entity, Context ctx) {
         if (entity == null || entity instanceof String s && s.isBlank()) return null;
 
-        var clientVersion = ctx.getLocal("inertia-version");
-        var partialComponent = ctx.getLocal("inertia-partial-component");
-        var partialData = ctx.getLocal("inertia-partial-data");
-        var partialExcept = ctx.getLocal("inertia-partial-except");
+        var clientVersion = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "inertia-version");
+        var partialComponent = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "inertia-partial-component");
+        var partialData = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "inertia-partial-data");
+        var partialExcept = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+            ctx, "inertia-partial-except");
 
         var representation = new StringBuilder();
         representation.append("inertia=true;");

@@ -52,14 +52,17 @@ public class SsrHandler {
         if (!config.ssrEnabled()) return false;
 
         var ctx = Vertx.currentContext();
-        if (ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-disable-ssr"))) return false;
+        if (ctx != null
+            && io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.isTrue(
+                ctx, "inertia-disable-ssr")) return false;
 
         var uri = resolveUri(ctx);
         if (uri == null) return true;
 
         if (matches(uri, config.ssrExcludePaths().orElse(List.of()))) return false;
         if (ctx != null) {
-            var localPaths = (List<String>) ctx.getLocal("inertia-ssr-exclude-paths");
+            var localPaths = (List<String>) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-ssr-exclude-paths");
             if (localPaths != null && matches(uri, localPaths)) return false;
         }
         return true;
@@ -148,7 +151,8 @@ public class SsrHandler {
 
     private String resolveUri(Context ctx) {
         if (ctx != null) {
-            var uri = (String) ctx.getLocal("request-uri");
+            var uri = (String) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "request-uri");
             if (uri != null) return uri;
         }
         var request = resolveRequest();

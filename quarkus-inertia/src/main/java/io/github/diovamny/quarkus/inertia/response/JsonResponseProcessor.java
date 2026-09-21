@@ -114,7 +114,8 @@ public class JsonResponseProcessor {
     private String partialComponent() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var component = ctx.getLocal("inertia-partial-component");
+            var component = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
+                ctx, "inertia-partial-component");
             if (component != null) return (String) component;
         }
         return null;

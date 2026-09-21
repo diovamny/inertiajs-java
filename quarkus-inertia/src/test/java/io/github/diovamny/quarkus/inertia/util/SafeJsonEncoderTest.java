@@ -58,4 +58,51 @@ class SafeJsonEncoderTest {
         var result = SafeJsonEncoder.encodeForScript(input);
         assertTrue(result.contains("\\/users\\/42?page=2"));
     }
+
+    @Test
+    void breaksOutOfScriptContext() {
+        var input = "</script><script>alert(1)</script>";
+        var result = SafeJsonEncoder.encodeForScript(input);
+        assertFalse(result.contains("</script>"));
+        assertFalse(result.contains("<script>"));
+    }
+
+    @Test
+    void escapesHtmlCommentBreakout() {
+        var input = "<!--<script>alert(1)</script>-->";
+        var result = SafeJsonEncoder.encodeForScript(input);
+        assertFalse(result.contains("<!--"));
+        assertFalse(result.contains("</script>"));
+    }
+
+    @Test
+    void escapesSvgAndImgEventHandlers() {
+        var svg = "<svg/onload=alert(1)>";
+        var img = "<img src=x onerror=alert(1)>";
+        assertFalse(SafeJsonEncoder.encodeForScript(svg).contains("<svg"));
+        assertFalse(SafeJsonEncoder.encodeForScript(img).contains("<img"));
+        assertTrue(SafeJsonEncoder.encodeForScript(svg).contains("\\u003c"));
+        assertTrue(SafeJsonEncoder.encodeForScript(img).contains("\\u003e"));
+    }
+
+    @Test
+    void preservesSurrogatePairsAndEmoji() {
+        var input = "{\"emoji\":\"\uD83D\uDE00\"}";
+        var result = SafeJsonEncoder.encodeForScript(input);
+        assertTrue(result.contains("\uD83D\uDE00"));
+        assertFalse(result.contains("</script>"));
+    }
+
+    @Test
+    void escapesComplexQuotedPayload() {
+        var input = "{\"x\":\"\\\"</script>\\\"\"}";
+        var result = SafeJsonEncoder.encodeForScript(input);
+        assertFalse(result.contains("</script>"));
+        assertTrue(result.contains("\\/script"));
+    }
+
+    @Test
+    void handlesNullInput() {
+        assertEquals("", SafeJsonEncoder.encodeForScript(null));
+    }
 }

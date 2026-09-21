@@ -320,8 +320,8 @@ public class RedirectProcessor {
     private boolean isPrecognitionValidateOnly() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var precognition = ctx.getLocal("inertia-precognition");
-            var fields = ctx.getLocal("inertia-precognition-validate-fields");
+            var precognition = InertiaContextLocals.get(ctx, "inertia-precognition");
+            var fields = InertiaContextLocals.get(ctx, "inertia-precognition-validate-fields");
             if (precognition != null || fields != null) {
                 return Boolean.TRUE.equals(precognition) && fields != null;
             }
@@ -368,7 +368,7 @@ public class RedirectProcessor {
     private boolean isInertiaRequest() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-request");
+            var val = InertiaContextLocals.get(ctx, "inertia-request");
             if (val != null) return Boolean.TRUE.equals(val);
         }
         var request = resolveRequest();
@@ -382,7 +382,7 @@ public class RedirectProcessor {
     private boolean isNonGetRequest() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var method = ctx.getLocal("request-method");
+            var method = InertiaContextLocals.get(ctx, "request-method");
             if (method != null) {
                 var m = (String) method;
                 return "POST".equalsIgnoreCase(m) ||
@@ -405,7 +405,7 @@ public class RedirectProcessor {
     private String getRefererUrl() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var referer = ctx.getLocal("referer-url");
+            var referer = InertiaContextLocals.get(ctx, "referer-url");
             if (referer != null) return (String) referer;
         }
         var request = resolveRequest();

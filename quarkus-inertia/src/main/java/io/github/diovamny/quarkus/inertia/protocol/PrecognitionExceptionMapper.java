@@ -42,7 +42,7 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
         var ctx = Vertx.currentContext();
 
         var validateFields = ctx != null
-            ? (String) ctx.getLocal("inertia-precognition-validate-fields")
+            ? (String) InertiaContextLocals.get(ctx, "inertia-precognition-validate-fields")
             : null;
 
         var errors = new HashMap<String, String>();
@@ -64,9 +64,9 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                 .build();
         }
 
-        var isPrecognition = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-precognition"));
+        var isPrecognition = ctx != null && InertiaContextLocals.isTrue(ctx, "inertia-precognition");
         if (isPrecognition) {
-            var errorBag = (String) ctx.getLocal("inertia-error-bag");
+            var errorBag = (String) InertiaContextLocals.get(ctx, "inertia-error-bag");
             var body = errorBag != null && !errorBag.isBlank()
                 ? Map.of(errorBag, errors)
                 : errors;
@@ -89,7 +89,7 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
             }
         }
 
-        var isInertia = ctx != null && Boolean.TRUE.equals(ctx.getLocal("inertia-request"));
+        var isInertia = ctx != null && InertiaContextLocals.isTrue(ctx, "inertia-request");
         if (!isInertia) {
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(errors)
@@ -97,7 +97,7 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                 .build();
         }
 
-        var errorBag = (String) ctx.getLocal("inertia-error-bag");
+        var errorBag = (String) InertiaContextLocals.get(ctx, "inertia-error-bag");
         var errorsToFlash = errorBag != null && !errorBag.isBlank()
             ? Map.of(errorBag, errors)
             : errors;
@@ -105,12 +105,13 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
         inertia.flash("errors", errorsToFlash);
         inertia.flash("_validation", true);
 
-        var referer = (String) ctx.getLocal("referer-url");
+        var referer = (String) InertiaContextLocals.get(ctx, "referer-url");
         var location = (referer != null && !referer.isBlank()) ? referer : "/";
-        var nonGet = "POST".equalsIgnoreCase((String) ctx.getLocal("request-method"))
-            || "PUT".equalsIgnoreCase((String) ctx.getLocal("request-method"))
-            || "PATCH".equalsIgnoreCase((String) ctx.getLocal("request-method"))
-            || "DELETE".equalsIgnoreCase((String) ctx.getLocal("request-method"));
+        var method = (String) InertiaContextLocals.get(ctx, "request-method");
+        var nonGet = "POST".equalsIgnoreCase(method)
+            || "PUT".equalsIgnoreCase(method)
+            || "PATCH".equalsIgnoreCase(method)
+            || "DELETE".equalsIgnoreCase(method);
         var status = nonGet ? Response.Status.SEE_OTHER : Response.Status.FOUND;
         return Response.status(status)
             .header("Location", location)

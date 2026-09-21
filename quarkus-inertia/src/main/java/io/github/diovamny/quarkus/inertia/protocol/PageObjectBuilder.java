@@ -526,7 +526,7 @@ public class PageObjectBuilder {
     private java.util.Set<String> resetProps() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
-        var raw = (String) ctx.getLocal("inertia-reset");
+        var raw = (String) InertiaContextLocals.get(ctx, "inertia-reset");
         if (raw == null || raw.isBlank()) return java.util.Set.of();
         var keys = new HashSet<String>();
         for (var part : raw.split(",")) {
@@ -564,7 +564,7 @@ public class PageObjectBuilder {
     private String scrollMergeIntent() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var intent = (String) ctx.getLocal("inertia-scroll-merge-intent");
+            var intent = (String) InertiaContextLocals.get(ctx, "inertia-scroll-merge-intent");
             if (intent != null) return intent;
         }
         return null;
@@ -573,7 +573,7 @@ public class PageObjectBuilder {
     private Map<String, Object> instanceProps() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return Map.of();
-        var instance = ctx.getLocal("inertia-instance-props");
+        var instance = InertiaContextLocals.get(ctx, "inertia-instance-props");
         if (instance == null) return Map.of();
         try {
             var info = java.beans.Introspector.getBeanInfo(instance.getClass(), Object.class);
@@ -594,10 +594,10 @@ public class PageObjectBuilder {
     private boolean isGetVersionMismatch() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return false;
-        if (!Boolean.TRUE.equals(ctx.getLocal("inertia-request"))) return false;
-        var method = (String) ctx.getLocal("request-method");
+        if (!InertiaContextLocals.isTrue(ctx, "inertia-request")) return false;
+        var method = (String) InertiaContextLocals.get(ctx, "request-method");
         if (!"GET".equalsIgnoreCase(method)) return false;
-        var clientVersion = (String) ctx.getLocal("inertia-version");
+        var clientVersion = (String) InertiaContextLocals.get(ctx, "inertia-version");
         if (clientVersion == null || clientVersion.isBlank()) return false;
         return !clientVersion.equals(versionProvider.getVersion());
     }
@@ -605,7 +605,7 @@ public class PageObjectBuilder {
     private java.util.Set<String> exceptOncePropKeys() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
-        var raw = (String) ctx.getLocal("inertia-except-once-props");
+        var raw = (String) InertiaContextLocals.get(ctx, "inertia-except-once-props");
         if (raw == null || raw.isBlank()) return java.util.Set.of();
         var keys = new HashSet<String>();
         for (var part : raw.split(",")) {
@@ -626,8 +626,8 @@ public class PageObjectBuilder {
         var ctx = Vertx.currentContext();
         if (ctx == null) return Map.of();
 
-        var errorBag = (String) ctx.getLocal("inertia-error-bag");
-        var rawErrors = (Map<String, Object>) ctx.getLocal("inertia-validation-errors");
+        var errorBag = (String) InertiaContextLocals.get(ctx, "inertia-error-bag");
+        var rawErrors = (Map<String, Object>) InertiaContextLocals.get(ctx, "inertia-validation-errors");
         if (rawErrors == null || rawErrors.isEmpty()) {
             return Map.of();
         }
@@ -667,7 +667,7 @@ public class PageObjectBuilder {
     private String currentUrl() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var uri = ctx.getLocal("request-uri");
+            var uri = InertiaContextLocals.get(ctx, "request-uri");
             if (uri != null) return (String) uri;
         }
         var request = resolveRequest();
@@ -685,11 +685,11 @@ public class PageObjectBuilder {
             return buildPartialReloadFromRequest(request);
         }
 
-        var component = (String) ctx.getLocal("inertia-partial-component");
+        var component = (String) InertiaContextLocals.get(ctx, "inertia-partial-component");
         if (component != null) {
-            var dataStr = (String) ctx.getLocal("inertia-partial-data");
-            var exceptStr = (String) ctx.getLocal("inertia-partial-except");
-            var resetStr = (String) ctx.getLocal("inertia-reset");
+            var dataStr = (String) InertiaContextLocals.get(ctx, "inertia-partial-data");
+            var exceptStr = (String) InertiaContextLocals.get(ctx, "inertia-partial-except");
+            var resetStr = (String) InertiaContextLocals.get(ctx, "inertia-reset");
 
             Set<String> data = splitToSet(dataStr);
             Set<String> except = splitToSet(exceptStr);
@@ -753,7 +753,7 @@ public class PageObjectBuilder {
     private boolean isCurrentRequestPartial() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var component = ctx.getLocal("inertia-partial-component");
+            var component = InertiaContextLocals.get(ctx, "inertia-partial-component");
             if (component != null) return true;
         }
         var request = resolveRequest();
@@ -766,7 +766,7 @@ public class PageObjectBuilder {
     private boolean encryptHistory() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-encrypt-history");
+            var val = InertiaContextLocals.get(ctx, "inertia-encrypt-history");
             if (val != null) return Boolean.TRUE.equals(val);
         }
         return config.encryptHistory();
@@ -775,7 +775,7 @@ public class PageObjectBuilder {
     private boolean clearHistory() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-clear-history");
+            var val = InertiaContextLocals.get(ctx, "inertia-clear-history");
             if (val != null) return Boolean.TRUE.equals(val);
         }
         return false;
@@ -784,7 +784,7 @@ public class PageObjectBuilder {
     private boolean preserveFragment() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-preserve-fragment");
+            var val = InertiaContextLocals.get(ctx, "inertia-preserve-fragment");
             if (val != null) {
                 return Boolean.TRUE.equals(val);
             }

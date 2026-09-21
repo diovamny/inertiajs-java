@@ -52,7 +52,7 @@ public class PrecognitionHandler {
             var headers = new org.springframework.http.HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Precognition", "true");
-            headers.set("Vary", "Precognition");
+            io.github.diovamny.spring.inertia.util.VaryHeaderUtil.addTo(headers, "Precognition");
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).headers(headers)
                 .body(jsonProvider.toJson(Map.of("errors", filtered)));
         }

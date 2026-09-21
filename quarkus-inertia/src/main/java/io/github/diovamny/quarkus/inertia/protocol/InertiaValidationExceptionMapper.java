@@ -47,7 +47,7 @@ public class InertiaValidationExceptionMapper implements ExceptionMapper<Validat
     private boolean isInertiaRequest() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var val = ctx.getLocal("inertia-request");
+            var val = InertiaContextLocals.get(ctx, "inertia-request");
             if (val != null) return Boolean.TRUE.equals(val);
         }
         return false;

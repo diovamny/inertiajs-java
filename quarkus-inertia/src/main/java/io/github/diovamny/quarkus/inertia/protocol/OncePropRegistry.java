@@ -210,7 +210,7 @@ public class OncePropRegistry {
     public Set<String> exceptOnceKeys() {
         var ctx = Vertx.currentContext();
         if (ctx != null) {
-            var raw = (String) ctx.getLocal("inertia-except-once-props");
+            var raw = (String) InertiaContextLocals.get(ctx, "inertia-except-once-props");
             if (raw != null && !raw.isBlank()) {
                 var keys = new HashSet<String>();
                 for (var part : raw.split(",")) {
