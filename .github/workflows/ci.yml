@@ -61,8 +61,11 @@ jobs:
 
       - name: Install adapters (resolve locally, faster and hermetic)
         # Installs the current reactor artifacts so demos resolve them
-        # without depending on Maven Central state.
-        run: mvn -B -q -DskipTests install -pl quarkus-inertia,spring-inertia -am
+        # without depending on Maven Central state. Installs every default
+        # module (core, both adapters, both security integrations and the
+        # TCK): the demos need the security artifacts and the adapters'
+        # test classpath needs the TCK, none of which is published yet.
+        run: mvn -B -q -DskipTests install
 
       - name: Spring demo smoke
         run: mvn clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-kitchen-sink -Pexamples
