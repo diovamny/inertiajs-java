@@ -139,10 +139,37 @@ jobs:
         # maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE directly from the
         # environment, bypassing the settings.xml decryption path that fails
         # without settings-security.xml on fresh runners. The `archetypes`
-        # profile adds the 4 starter archetypes to the release reactor.
+        # profile adds the 6 starter archetypes to the release reactor.
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=${{ inputs.publish_mode == 'draft' && 'false' || 'true' }}
+
+      - name: Compute release artifact hashes (SLSA subjects)
+        # Runs on tag pushes only; manual dispatches skip it, and the
+        # provenance job additionally guards on a non-empty output.
+        id: hashes
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mapfile -t FILES < <(ls -1 \
+            inertia-core/target/inertia-core-*.jar \
+            inertia-tck/target/inertia-tck-*.jar \
+            quarkus-inertia/target/quarkus-inertia-*.jar \
+            spring-inertia/target/spring-inertia-*.jar \
+            quarkus-inertia-security/target/quarkus-inertia-security-*.jar \
+            spring-inertia-security/target/spring-inertia-security-*.jar \
+            archetypes/inertia-spring-vue-archetype/target/inertia-spring-vue-archetype-*.jar \
+            archetypes/inertia-spring-react-archetype/target/inertia-spring-react-archetype-*.jar \
+            archetypes/inertia-spring-svelte-archetype/target/inertia-spring-svelte-archetype-*.jar \
+            archetypes/inertia-quarkus-vue-archetype/target/inertia-quarkus-vue-archetype-*.jar \
+            archetypes/inertia-quarkus-react-archetype/target/inertia-quarkus-react-archetype-*.jar \
+            archetypes/inertia-quarkus-svelte-archetype/target/inertia-quarkus-svelte-archetype-*.jar \
+            | grep -v -e '-sources' -e '-javadoc' -e '\.original$' || true)
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "hashes=" >> "$GITHUB_OUTPUT"
+          else
+            hashes=$(printf '%s\n' "${FILES[@]}" | xargs sha256sum | base64 -w0 | tr -d '\n')
+            echo "hashes=$hashes" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Attach release artifacts
         # GitHub Releases require a tag: only attach on tag pushes, not on
@@ -151,10 +178,31 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: |
+            inertia-core/target/inertia-core-*.jar
+            inertia-tck/target/inertia-tck-*.jar
             quarkus-inertia/target/quarkus-inertia-*.jar
             spring-inertia/target/spring-inertia-*.jar
+            quarkus-inertia-security/target/quarkus-inertia-security-*.jar
+            spring-inertia-security/target/spring-inertia-security-*.jar
             archetypes/inertia-spring-vue-archetype/target/inertia-spring-vue-archetype-*.jar
             archetypes/inertia-spring-react-archetype/target/inertia-spring-react-archetype-*.jar
+            archetypes/inertia-spring-svelte-archetype/target/inertia-spring-svelte-archetype-*.jar
             archetypes/inertia-quarkus-vue-archetype/target/inertia-quarkus-vue-archetype-*.jar
             archetypes/inertia-quarkus-react-archetype/target/inertia-quarkus-react-archetype-*.jar
+            archetypes/inertia-quarkus-svelte-archetype/target/inertia-quarkus-svelte-archetype-*.jar
           generate_release_notes: true
+
+    outputs:
+      hashes: ${{ steps.hashes.outputs.hashes }}
+
+  provenance:
+    name: SLSA provenance
+    needs: [publish]
+    if: startsWith(github.ref, 'refs/tags/') && needs.publish.outputs.hashes != ''
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.publish.outputs.hashes }}

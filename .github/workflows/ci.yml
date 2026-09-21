@@ -82,9 +82,13 @@ jobs:
             framework-version: 4.1.0
           - archetype: inertia-spring-react-archetype
             framework-version: 4.1.0
+          - archetype: inertia-spring-svelte-archetype
+            framework-version: 4.1.0
           - archetype: inertia-quarkus-vue-archetype
             framework-version: 3.39.2
           - archetype: inertia-quarkus-react-archetype
+            framework-version: 3.39.2
+          - archetype: inertia-quarkus-svelte-archetype
             framework-version: 3.39.2
     steps:
       - uses: actions/checkout@v5
@@ -110,12 +114,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.2
+          -DarchetypeVersion=0.0.3
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.2
+          -DinertiaAdapterVersion=0.0.3
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp

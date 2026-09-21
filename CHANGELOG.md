@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.3
+
+- Security, framework-first: `spring-inertia-security` and
+  `quarkus-inertia-security` bridges (401 → 409 challenges, 403 Inertia
+  pages, native CSRF ownership, fail-fast guardrails); hand-written
+  `AuthFilter`s removed from every demo.
+- Executable TCK (`inertia-tck`): normative YAML suite certified against
+  Spring MVC, Quarkus JAX-RS and reactive routes.
+- New `inertia-core` module: protocol model, pure SPIs, `VaryHeaders`,
+  server head builder, sealed `InertiaResult`, testing and SSR resilience
+  primitives shared by both adapters.
+- Protocol parity: fluent `flash()` on renders/redirects, `clearHistory`
+  config, XSRF `always|lazy` refresh policy, concurrent-isolation suites,
+  CSP nonce SPI, precognition write guard, resilient SSR (breaker,
+  supervisor, health) with MD5 response cache, enriched testing DSL
+  (`where`/`has`/`missing`/`dumpDiff`), Micrometer metrics.
+- New Maven archetypes: `inertia-spring-svelte-archetype` and
+  `inertia-quarkus-svelte-archetype` (Svelte 5 starters).
+- Release engineering: CycloneDX SBOM, SLSA provenance, signed artifacts
+  via the Central Portal pipeline.
+
 ## 0.0.2
 
 - GroupId and Java packages renamed `io.github.dg.*` → `io.github.diovamny.*`
