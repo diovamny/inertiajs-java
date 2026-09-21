@@ -15,9 +15,10 @@ import io.smallrye.mutiny.Uni;
 import org.jboss.logging.Logger;
 
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.quarkus.inertia.qute.QuteSerializer;
-import io.github.diovamny.quarkus.inertia.util.SafeJsonEncoder;
+import io.github.diovamny.inertia.core.spi.NonceProvider;
+import io.github.diovamny.inertia.core.security.SafeJsonEncoder;
 
 /**
  * Renders the full HTML document for non-Inertia requests by injecting the
@@ -30,7 +31,7 @@ public class HtmlRenderer {
 
     private static final Logger LOG = Logger.getLogger(HtmlRenderer.class);
 
-    private static final String DEFAULT_TEMPLATE = "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>__INERTIA_PAGE_TITLE__</title>\n    @vite('resources/js/app.ts')\n    __INERTIA_SSR_HEAD__\n</head>\n<body>\n    <div id=\"app\" data-page=\"__INERTIA_PAGE_JSON__\">__INERTIA_SSR_BODY__</div>\n    <script type=\"application/json\" id=\"inertia-page\">__INERTIA_PAGE__</script>\n</body>\n</html>";
+    private static final String DEFAULT_TEMPLATE = "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>__INERTIA_PAGE_TITLE__</title>\n    @vite('resources/js/app.ts')\n    __INERTIA_SSR_HEAD__\n</head>\n<body>\n    <div id=\"app\" data-page=\"__INERTIA_PAGE_JSON__\">__INERTIA_SSR_BODY__</div>\n    <script type=\"application/json\" id=\"inertia-page\" __INERTIA_CSP_NONCE__>__INERTIA_PAGE__</script>\n</body>\n</html>";
 
     private static final String DEFAULT_TEMPLATE_PATH = "templates/index.html";
 
@@ -39,6 +40,7 @@ public class HtmlRenderer {
     private final Instance<Engine> quteEngine;
     private final InertiaConfig config;
     private final SsrHandler ssrHandler;
+    private final Instance<NonceProvider> nonceProviders;
 
     private volatile String cachedTemplate;
 
@@ -48,12 +50,39 @@ public class HtmlRenderer {
             QuteSerializer serializer,
             Instance<Engine> quteEngine,
             InertiaConfig config,
-            SsrHandler ssrHandler) {
+            SsrHandler ssrHandler,
+            Instance<NonceProvider> nonceProviders) {
         this.defaultRootTemplate = defaultRootTemplate;
         this.serializer = serializer;
         this.quteEngine = quteEngine;
         this.config = config;
         this.ssrHandler = ssrHandler;
+        this.nonceProviders = nonceProviders;
+    }
+
+    /**
+     * The CSP nonce for the current render, or {@code null} when no
+     * {@link NonceProvider} is registered or none applies. Absence keeps the
+     * output byte-identical to a build without CSP support.
+     */
+    String currentNonce() {
+        if (nonceProviders == null || nonceProviders.isUnsatisfied()) {
+            return null;
+        }
+        for (var provider : nonceProviders) {
+            var nonce = provider.nonce();
+            if (nonce != null && !nonce.isBlank()) {
+                return nonce.trim();
+            }
+        }
+        return null;
+    }
+
+    static String nonceAttribute(String nonce) {
+        if (nonce == null || nonce.isBlank()) {
+            return "";
+        }
+        return "nonce=\"" + nonce.replace("\"", "&quot;") + "\"";
     }
 
     public Uni<String> render(PageObject page) {
@@ -65,30 +94,99 @@ public class HtmlRenderer {
                 return Uni.createFrom().item(renderTemplate(page, json, null, null));
             });
     }
-
     public String renderSync(PageObject page, String json) {
         String ssrBody = null;
         String ssrHead = null;
         if (ssrHandler.isSsrEnabled()) {
+            var ttlMillis = ssrCacheTtlMillis();
+            var cached = cachedSsrHtml(page, json, ttlMillis);
+            if (cached != null) {
+                return cached;
+            }
             try {
-                var timeout = config.ssrReadTimeout() != null ? config.ssrReadTimeout() : java.time.Duration.ofSeconds(10);
+                var timeout = config.ssrReadTimeout() != null ? config.ssrReadTimeout() :
+java.time.Duration.ofSeconds(10);
                 var ssr = ssrHandler.render(new io.vertx.core.json.JsonObject(json))
                     .await().atMost(timeout);
                 ssrBody = ssr.getString("body");
+                var headList = ssrHeadList(ssr);
                 ssrHead = ssrHead(ssr);
-            } catch (Exception e) {
+                storeSsrCache(json, ssrBody, headList, ttlMillis);
+              } catch (Exception e) {
                 LOG.warnf(e, "SSR render failed (sync), falling back to client-side rendering");
-            }
+                metrics.recordSsrFallback();
+              }
         }
         return renderTemplate(page, json, ssrBody, ssrHead);
     }
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics.noop();
+
+    @Inject
+    SsrCachePolicy ssrCachePolicy;
+
+    private final io.github.diovamny.inertia.core.ssr.SsrResponseCache ssrCache =
+        new io.github.diovamny.inertia.core.ssr.SsrResponseCache(200);
+
+    /**
+     * Effective SSR cache TTL in millis: per-render override first, then the
+     * global setting when caching is enabled, otherwise {@code null} (off).
+     */
+    Long ssrCacheTtlMillis() {
+        if (ssrCachePolicy != null && ssrCachePolicy.ttlMillis() != null) {
+            return ssrCachePolicy.ttlMillis();
+        }
+        if (config.ssrCacheEnabled()) {
+            var ttl = config.ssrCacheTtl();
+            return ttl != null ? ttl.toMillis() : null;
+        }
+        return null;
+    }
+
+    private String cachedSsrHtml(PageObject page, String json, Long ttlMillis) {
+        if (ttlMillis == null) {
+            return null;
+        }
+        return ssrCache.get(json)
+            .map(entry -> renderTemplate(page, json, entry.body(), joinHead(entry.head())))
+            .orElse(null);
+    }
+
+    private static String joinHead(java.util.List<String> fragments) {
+        if (fragments == null || fragments.isEmpty()) {
+            return null;
+        }
+        var sb = new StringBuilder();
+        fragments.forEach(fragment -> sb.append(fragment).append("\n"));
+        return sb.toString();
+    }
+
+    private void storeSsrCache(String json, String body, java.util.List<String> head,
+            Long ttlMillis) {
+        if (ttlMillis != null && body != null) {
+            ssrCache.put(json, body, head, ttlMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
+    }
+
     private Uni<String> renderWithSsr(PageObject page, String json) {
+        var ttlMillis = ssrCacheTtlMillis();
+        var cached = cachedSsrHtml(page, json, ttlMillis);
+        if (cached != null) {
+            return Uni.createFrom().item(cached);
+        }
         return ssrHandler.render(new io.vertx.core.json.JsonObject(json))
-            .map(ssr -> renderTemplate(page, json, ssr.getString("body"), ssrHead(ssr)))
+            .map(ssr -> {
+                var body = ssr.getString("body");
+                var head = ssrHeadList(ssr);
+                storeSsrCache(json, body, head, ttlMillis);
+                return renderTemplate(page, json, body, ssrHead(ssr));
+            })
             .onFailure()
             .recoverWithItem(failure -> {
                 LOG.warnf(failure, "SSR render failed (async), falling back to client-side rendering");
+                metrics.recordSsrFallback();
                 return renderTemplate(page, json, null, null);
             });
     }
@@ -110,6 +208,7 @@ public class HtmlRenderer {
             .data("pageTitle", meta.get("title"))
             .data("dataPage", new RawString(SafeJsonEncoder.encodeForScript(json)))
             .data("dataPageAttr", new RawString(escapeHtmlAttribute(json)))
+            .data("cspNonce", currentNonce() != null ? currentNonce() : "")
             .data("ssrBody", ssrBody != null ? new RawString(ssrBody) : null)
             .data("ssrHead", ssrHead != null ? new RawString(ssrHead) : null);
         if (viewData != null) {
@@ -133,12 +232,13 @@ public class HtmlRenderer {
         pageTitle = escapeHtml(pageTitle);
         String ssrBodySafe = ssrBody != null ? ssrBody : "";
         String ssrHeadSafe = ssrHead != null ? ssrHead : "";
-        String rendered = template
-            .replace("__INERTIA_PAGE__", jsonRaw)
-            .replace("__INERTIA_PAGE_JSON__", jsonEscaped)
-            .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
-            .replace("__INERTIA_SSR_BODY__", ssrBodySafe)
-            .replace("__INERTIA_PAGE_TITLE__", pageTitle);
+          String rendered = template
+             .replace("__INERTIA_PAGE__", jsonRaw)
+             .replace("__INERTIA_PAGE_JSON__", jsonEscaped)
+              .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
+              .replace("__INERTIA_SSR_BODY__", ssrBodySafe)
+             .replace("__INERTIA_PAGE_TITLE__", pageTitle)
+             .replace("__INERTIA_CSP_NONCE__", nonceAttribute(currentNonce()));
 
         var viewData = getViewData();
         if (viewData != null && !viewData.isEmpty()) {
@@ -230,29 +330,32 @@ public class HtmlRenderer {
     }
 
     private String ssrHead(io.vertx.core.json.JsonObject ssr) {
+        var fragments = ssrHeadList(ssr);
+        if (fragments == null || fragments.isEmpty()) return null;
+        var sb = new StringBuilder();
+        fragments.forEach(fragment -> sb.append(fragment).append("\n"));
+        return sb.toString();
+    }
+
+    private java.util.List<String> ssrHeadList(io.vertx.core.json.JsonObject ssr) {
         var raw = ssr.getValue("head");
         if (raw == null) return null;
-        var sb = new StringBuilder();
+        var fragments = new java.util.ArrayList<String>();
+        java.util.function.Consumer<Object> add = item -> {
+            if (item instanceof String s) {
+                fragments.add(s);
+            } else if (item instanceof io.vertx.core.json.JsonArray node) {
+                fragments.add(renderHeadNode(node));
+            }
+        };
         if (raw instanceof io.vertx.core.json.JsonArray arr) {
-            for (var item : arr) {
-                if (item instanceof String s) {
-                    sb.append(s).append("\n");
-                } else if (item instanceof io.vertx.core.json.JsonArray node) {
-                    sb.append(renderHeadNode(node)).append("\n");
-                }
-            }
+            arr.forEach(add);
         } else if (raw instanceof java.util.List<?> list) {
-            for (var item : list) {
-                if (item instanceof String s) {
-                    sb.append(s).append("\n");
-                } else if (item instanceof io.vertx.core.json.JsonArray node) {
-                    sb.append(renderHeadNode(node)).append("\n");
-                }
-            }
+            list.forEach(add);
         } else if (raw instanceof String s) {
-            sb.append(s).append("\n");
+            fragments.add(s);
         }
-        return sb.isEmpty() ? null : sb.toString();
+        return fragments;
     }
 
     @SuppressWarnings("unchecked")

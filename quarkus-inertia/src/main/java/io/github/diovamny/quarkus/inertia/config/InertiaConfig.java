@@ -78,8 +78,101 @@ public interface InertiaConfig {
      *
      * @return the timeout, default {@code 10s}
      */
-    @WithDefault("10s")
-    java.time.Duration ssrReadTimeout();
+      @WithDefault("10s")
+     java.time.Duration ssrReadTimeout();
+
+    /**
+     * Consecutive SSR sidecar failures before the circuit breaker opens
+     * (fail-fast CSR fallback while open).
+     * <p>Property: {@code inertia.ssr-breaker-failure-threshold}.</p>
+     *
+     * @return the threshold, default {@code 5}
+     */
+    @WithName("ssr-breaker-failure-threshold")
+    @WithDefault("5")
+    int ssrBreakerFailureThreshold();
+
+    /**
+     * Cooldown before a half-open probe is allowed through an open breaker.
+     * <p>Property: {@code inertia.ssr-breaker-cooldown}.</p>
+     *
+     * @return the cooldown, default {@code 30s}
+     */
+    @WithName("ssr-breaker-cooldown")
+    @WithDefault("30s")
+    java.time.Duration ssrBreakerCooldown();
+
+    /**
+     * Cache SSR sidecar responses keyed by page hash (Rails
+     * {@code ssr_cache} parity).
+     * <p>Property: {@code inertia.ssr-cache-enabled}.</p>
+     *
+     * @return {@code true} to cache, default {@code false}
+     */
+    @WithName("ssr-cache-enabled")
+    @WithDefault("false")
+    boolean ssrCacheEnabled();
+
+    /**
+     * Default TTL for cached SSR responses (overridable per render via
+     * {@code enableSsrCache}).
+     * <p>Property: {@code inertia.ssr-cache-ttl}.</p>
+     *
+     * @return the TTL, default {@code 15m}
+     */
+    @WithName("ssr-cache-ttl")
+    @WithDefault("15m")
+    java.time.Duration ssrCacheTtl();
+
+    /**
+     * Supervise the Node.js SSR sidecar process (start, restart with
+     * backoff, stop on shutdown).
+     * <p>Property: {@code inertia.ssr-supervisor-enabled}.</p>
+     *
+     * @return {@code true} to supervise, default {@code false}
+     */
+    @WithName("ssr-supervisor-enabled")
+    @WithDefault("false")
+    boolean ssrSupervisorEnabled();
+
+    /**
+     * Sidecar executable for the supervisor.
+     * <p>Property: {@code inertia.ssr-supervisor-command}.</p>
+     *
+     * @return the command, default {@code node}
+     */
+    @WithName("ssr-supervisor-command")
+    @WithDefault("node")
+    String ssrSupervisorCommand();
+
+    /**
+     * Sidecar entry file for the supervisor.
+     * <p>Property: {@code inertia.ssr-supervisor-entry}.</p>
+     *
+     * @return the entry, default {@code dist-ssr/ssr.mjs}
+     */
+    @WithName("ssr-supervisor-entry")
+    @WithDefault("dist-ssr/ssr.mjs")
+    String ssrSupervisorEntry();
+
+    /**
+     * Working directory for the supervised sidecar (blank = JVM directory).
+     * <p>Property: {@code inertia.ssr-supervisor-workdir}.</p>
+     *
+     * @return the directory, empty by default
+     */
+    @WithName("ssr-supervisor-workdir")
+    java.util.Optional<String> ssrSupervisorWorkdir();
+
+    /**
+     * Restart attempts after the initial start before giving up.
+     * <p>Property: {@code inertia.ssr-supervisor-max-restarts}.</p>
+     *
+     * @return the attempts, default {@code 5}
+     */
+    @WithName("ssr-supervisor-max-restarts")
+    @WithDefault("5")
+    int ssrSupervisorMaxRestarts();
 
     /**
      * Strategy used to compute the asset version for cache-busting.
@@ -106,6 +199,49 @@ public interface InertiaConfig {
      */
     @WithDefault("false")
     boolean encryptHistory();
+
+    /**
+     * Whether the client must clear its history state (Spring parity).
+     * <p>Property: {@code inertia.clear-history}.</p>
+     *
+     * @return {@code true} to enable, default {@code false}
+     */
+    @WithDefault("false")
+    boolean clearHistory();
+
+    /**
+     * XSRF-TOKEN cookie refresh policy (Rails {@code :always} / {@code :lazy}
+     * parity). {@code always} re-emits {@code Set-Cookie} on every response;
+     * {@code lazy} skips re-emission on idempotent requests that already
+     * present a valid token, keeping responses cacheable by CDNs and reverse
+     * proxies.
+     * <p>Property: {@code inertia.csrf-refresh-policy}.</p>
+     *
+     * @return {@code always} or {@code lazy}, default {@code always}
+     */
+    @WithName("csrf-refresh-policy")
+    @WithDefault("always")
+    String csrfRefreshPolicy();
+
+    /**
+     * Publish collected server head tags as the {@code head} page prop.
+     * <p>Property: {@code inertia.server-head}.</p>
+     *
+     * @return {@code true} to emit, default {@code false}
+     */
+    @WithName("server-head")
+    @WithDefault("false")
+    boolean serverHead();
+
+    /**
+     * Title template applied by the head builder ({@code %s} is the title).
+     * <p>Property: {@code inertia.meta-title-template}.</p>
+     *
+     * @return the template, default {@code %s} (title as-is)
+     */
+    @WithName("meta-title-template")
+    @WithDefault("%s")
+    String metaTitleTemplate();
 
     /**
      * Whether prop keys are camelized (e.g. {@code first_name} ->

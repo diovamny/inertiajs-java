@@ -7,7 +7,7 @@ import java.util.Map;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import io.github.diovamny.spring.inertia.model.RawJson;
+import io.github.diovamny.inertia.core.model.RawJson;
 
 /**
  * Converts {@link RawJson} values into native structures before JSON

@@ -6,10 +6,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.springframework.core.io.ClassPathResource;
 
+import org.springframework.beans.factory.ObjectProvider;
+
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
-import io.github.diovamny.spring.inertia.model.PageObject;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
-import io.github.diovamny.spring.inertia.util.SafeJsonEncoder;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.NonceProvider;
+import io.github.diovamny.inertia.core.security.SafeJsonEncoder;
 
 /**
  * Renders the full HTML page for non-Inertia visits.
@@ -41,17 +44,87 @@ public class HtmlRenderer {
     public static final String SSR_HEAD_PLACEHOLDER = "__INERTIA_SSR_HEAD__";
     public static final String SSR_BODY_PLACEHOLDER = "__INERTIA_SSR_BODY__";
     public static final String VIEW_DATA_PLACEHOLDER_PREFIX = "__VIEW_";
+    public static final String CSP_NONCE_PLACEHOLDER = "__INERTIA_CSP_NONCE__";
 
     private final InertiaProperties properties;
     private final JsonProvider jsonProvider;
     private final SsrClient ssrClient;
+    private final ObjectProvider<NonceProvider> nonceProviders;
+    private io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.spring.inertia.metrics.InertiaMetrics.noop();
+    private SsrCachePolicy ssrCachePolicy;
+
+    /**
+     * Attach the metrics recorder (called by auto-configuration; defaults to
+     * a no-op so plain unit tests stay silent).
+     */
+    public void setMetrics(io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics) {
+        if (metrics != null) {
+            this.metrics = metrics;
+        }
+    }
+
+    /**
+     * Attach the per-request SSR cache policy (called by auto-configuration;
+     * may stay {@code null} in plain unit tests, disabling per-render TTLs).
+     */
+    public void setSsrCachePolicy(SsrCachePolicy ssrCachePolicy) {
+        this.ssrCachePolicy = ssrCachePolicy;
+    }
+
+    private final io.github.diovamny.inertia.core.ssr.SsrResponseCache ssrCache =
+        new io.github.diovamny.inertia.core.ssr.SsrResponseCache(200);
+
+    /**
+     * Effective SSR cache TTL in millis: per-render override first, then the
+     * global setting when caching is enabled, otherwise {@code null} (off).
+     */
+    Long ssrCacheTtlMillis() {
+        if (ssrCachePolicy != null && ssrCachePolicy.ttlMillis() != null) {
+            return ssrCachePolicy.ttlMillis();
+        }
+        if (properties.isSsrCacheEnabled()) {
+            var ttl = properties.getSsrCacheTtl();
+            return ttl != null ? ttl.toMillis() : null;
+        }
+        return null;
+    }
 
     private volatile String cachedTemplate;
 
     public HtmlRenderer(InertiaProperties properties, JsonProvider jsonProvider, SsrClient ssrClient) {
+        this(properties, jsonProvider, ssrClient, null);
+    }
+
+    public HtmlRenderer(InertiaProperties properties, JsonProvider jsonProvider, SsrClient ssrClient,
+            ObjectProvider<NonceProvider> nonceProviders) {
         this.properties = properties;
         this.jsonProvider = jsonProvider;
         this.ssrClient = ssrClient;
+        this.nonceProviders = nonceProviders;
+    }
+
+    /**
+     * The CSP nonce for the current render, or {@code null} when no
+     * {@link NonceProvider} is registered or none applies.
+     */
+    String currentNonce() {
+        if (nonceProviders == null) {
+            return null;
+        }
+        var provider = nonceProviders.getIfAvailable();
+        if (provider == null) {
+            return null;
+        }
+        var nonce = provider.nonce();
+        return nonce != null && !nonce.isBlank() ? nonce.trim() : null;
+    }
+
+    static String nonceAttribute(String nonce) {
+        if (nonce == null || nonce.isBlank()) {
+            return "";
+        }
+        return "nonce=\"" + nonce.replace("\"", "&quot;") + "\"";
     }
 
     /**
@@ -79,15 +152,32 @@ public class HtmlRenderer {
         String html = template.replace(PAGE_PLACEHOLDER, escapedJson);
 
         if (properties.isSsrEnabled() && !isSsrExcluded(page.url())) {
-            var ssr = ssrClient.render(page);
-            html = html.replace(SSR_HEAD_PLACEHOLDER, ssr.map(SsrClient.SsrResult::headHtml).orElse(""));
-            html = html.replace(SSR_BODY_PLACEHOLDER, ssr.map(SsrClient.SsrResult::body).orElse(""));
+            var ttlMillis = ssrCacheTtlMillis();
+            var cached = ttlMillis != null ? ssrCache.get(rawJson) : java.util.Optional
+                .<io.github.diovamny.inertia.core.ssr.SsrResponseCache.Entry>empty();
+            SsrClient.SsrResult ssr;
+            if (cached.isPresent()) {
+                var entry = cached.get();
+                ssr = new SsrClient.SsrResult(entry.head(), entry.body());
+            } else {
+                ssr = ssrClient.render(page).orElse(null);
+                if (ssr == null) {
+                    metrics.recordSsrFallback();
+                } else if (ttlMillis != null && ssr.body() != null) {
+                    ssrCache.put(rawJson, ssr.body(), ssr.head(), ttlMillis,
+                        java.util.concurrent.TimeUnit.MILLISECONDS);
+                }
+            }
+            var result = java.util.Optional.ofNullable(ssr);
+            html = html.replace(SSR_HEAD_PLACEHOLDER, result.map(SsrClient.SsrResult::headHtml).orElse(""));
+            html = html.replace(SSR_BODY_PLACEHOLDER, result.map(SsrClient.SsrResult::body).orElse(""));
         } else {
             html = html.replace(SSR_HEAD_PLACEHOLDER, "");
             html = html.replace(SSR_BODY_PLACEHOLDER, "");
         }
 
         html = html.replace(PAGE_JSON_PLACEHOLDER, SafeJsonEncoder.encodeForScript(rawJson));
+        html = html.replace(CSP_NONCE_PLACEHOLDER, nonceAttribute(currentNonce()));
 
         if (viewData != null && !viewData.isEmpty()) {
             for (var entry : viewData.entrySet()) {

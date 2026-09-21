@@ -43,6 +43,24 @@ class FlashIntegrationTest {
     }
 
     @Test
+    void renderFlashSurvivesIntoNextPage() throws Exception {
+        var session = new MockHttpSession();
+        mockMvc.perform(get("/render-flash")
+                .session(session)
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Version", "test-version"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/flash")
+                .session(session)
+                .header("X-Inertia", "true")
+                .header("X-Inertia-Version", "test-version"))
+            .andExpect(status().isOk())
+            .andExpect(inertia().prop("message", equalTo("Chained")))
+            .andExpect(inertia().flash("message", equalTo("Chained")));
+    }
+
+    @Test
     void flashIsOneTime() throws Exception {
         var session = new MockHttpSession();
         mockMvc.perform(post("/submit").session(session).header("X-Inertia", "true"))

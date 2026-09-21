@@ -8,7 +8,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 import io.github.diovamny.quarkus.inertia.vertx.ReactiveResponseWriter;
 
 import java.util.Map;

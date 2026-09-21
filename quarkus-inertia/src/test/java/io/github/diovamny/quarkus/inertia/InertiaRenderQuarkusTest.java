@@ -65,4 +65,37 @@ class InertiaRenderQuarkusTest {
     void shouldHandleErrorUsingMapperReturnUni() {
         assertThatCode(() -> inertia.handleErrorUsing(error -> null)).doesNotThrowAnyException();
     }
+
+    @Test
+    void shouldRenderReturnChainableRender() {
+        var result = inertia.render("Home", java.util.Map.of("name", "World"));
+        assertThat(result).isNotNull();
+        assertThat(result)
+            .isInstanceOf(io.github.diovamny.quarkus.inertia.api.InertiaRender.class);
+    }
+
+    @Test
+    void shouldRenderTypedPageResult() {
+        var result = inertia.render(
+            io.github.diovamny.inertia.core.result.InertiaPageResult.of("Home",
+                java.util.Map.of("name", "World")));
+        assertThat(result).isNotNull();
+        assertThat(result)
+            .isInstanceOf(io.github.diovamny.quarkus.inertia.api.InertiaRender.class);
+    }
+
+    @Test
+    void shouldRedirectTypedRedirectResult() {
+        var result = inertia.redirect(
+            io.github.diovamny.inertia.core.result.InertiaRedirectResult.to("/login"));
+        assertThat(result).isNotNull();
+        assertThat(result).isInstanceOf(io.github.diovamny.quarkus.inertia.api.InertiaRedirect.class);
+    }
+
+    @Test
+    void shouldLocateTypedLocationResult() {
+        var result = inertia.location(
+            io.github.diovamny.inertia.core.result.InertiaLocationResult.to("https://example.com"));
+        assertThat(result).isNotNull();
+    }
 }

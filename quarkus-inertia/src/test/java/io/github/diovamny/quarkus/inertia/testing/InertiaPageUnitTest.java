@@ -91,7 +91,7 @@ class InertiaPageUnitTest {
 
     @Test
     void shouldAssertAbsenceOfDeferredAndOnce() {
-        var page = InertiaPage.from(new io.github.diovamny.quarkus.inertia.model.PageObject(
+        var page = InertiaPage.from(new io.github.diovamny.inertia.core.model.PageObject(
             "Home", Map.of("user", "alice"), "/", "v1"));
         page.assertNoDeferredProps().assertNoOnceProps();
         assertThatThrownBy(() -> InertiaPage.fromJson(PAGE).assertNoDeferredProps())
@@ -162,7 +162,7 @@ class InertiaPageUnitTest {
 
     @Test
     void shouldAcceptPlainPageObject() {
-        var pageObject = new io.github.diovamny.quarkus.inertia.model.PageObject(
+        var pageObject = new io.github.diovamny.inertia.core.model.PageObject(
             "Home", Map.of("user", "alice"), "/", "v1");
         var page = InertiaPage.from(pageObject);
         assertThat(page.component()).isEqualTo("Home");
@@ -238,6 +238,62 @@ class InertiaPageUnitTest {
 
         var reloadedExcept = withExec.reloadExcept("missing");
         assertThat(reloadedExcept.hasProp("analytics")).isTrue();
+    }
+
+    private static InertiaPage nestedPage() {
+        return InertiaPage.fromJson("""
+            {"component":"Users/Index",
+             "props":{"users":{"total":50,"data":[{"name":"Alice"},{"name":"Bob"}]},
+                      "role":"admin","secret":"x"},
+             "url":"/users","version":"1.0.0"}
+            """);
+    }
+
+    @Test
+    void whereAssertsDeepPaths() {
+        var page = nestedPage();
+        page.where("users.total", 50);
+        page.where("users.data[0].name", "Alice");
+        page.where("users.data[1].name", "Bob");
+        assertThatThrownBy(() -> page.where("users.data[0].name", "Mallory"))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> page.where("users.missing", "x"))
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void hasAssertsDeepCounts() {
+        var page = nestedPage();
+        page.has("users.data", 2);
+        page.has("users", 2);
+        assertThatThrownBy(() -> page.has("users.data", 3))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> page.has("role", 1))
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void missingAssertsDeepAbsence() {
+        var page = nestedPage();
+        page.missing("users.data[0].age");
+        page.missing("nope.nothing");
+        assertThatThrownBy(() -> page.missing("role"))
+            .isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> page.missing("users.data[0].name"))
+            .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void dumpDiffPassesWhenEqualAndFailsWithDiff() {
+        var page = nestedPage();
+        page.dumpDiff(nestedPage());
+        var other = InertiaPage.fromJson("""
+            {"component":"Users/Index","props":{"users":{"total":51},"role":"admin"},
+             "url":"/users","version":"1.0.0"}
+            """);
+        assertThatThrownBy(() -> page.dumpDiff(other))
+            .isInstanceOf(AssertionError.class)
+            .hasMessageContaining("users.total");
     }
 
 }

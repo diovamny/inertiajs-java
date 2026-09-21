@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.github.diovamny.quarkus.inertia.model.RawJson;
+import io.github.diovamny.inertia.core.model.RawJson;
 
 /**
  * Converts {@link RawJson} values into native structures before JSON

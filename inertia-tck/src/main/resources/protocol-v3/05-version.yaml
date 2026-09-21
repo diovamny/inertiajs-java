@@ -1,0 +1,24 @@
+# Asset versioning: stale clients refetch the target URL.
+- id: version-mismatch-is-409
+  description: A stale X-Inertia-Version triggers 409 with the page URL and server version.
+  request:
+    method: GET
+    path: /tck/versioned
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Version: stale-version-for-tck
+  expect:
+    status: 409
+    xInertiaLocation: /tck/versioned
+    headersExist: [X-Inertia-Version]
+
+- id: current-visit-renders-200
+  description: A visit without a version header renders normally.
+  request:
+    method: GET
+    path: /tck/versioned
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/Versioned

@@ -17,9 +17,22 @@ class DefaultVersionProviderUnitTest {
             @Override public String ssrUrl() { return "http://localhost:13714"; }
             @Override public java.time.Duration ssrConnectTimeout() { return java.time.Duration.ofSeconds(5); }
             @Override public java.time.Duration ssrReadTimeout() { return java.time.Duration.ofSeconds(10); }
+            @Override public int ssrBreakerFailureThreshold() { return 5; }
+            @Override public java.time.Duration ssrBreakerCooldown() { return java.time.Duration.ofSeconds(30); }
+            @Override public boolean ssrCacheEnabled() { return false; }
+            @Override public java.time.Duration ssrCacheTtl() { return java.time.Duration.ofMinutes(15); }
+            @Override public boolean ssrSupervisorEnabled() { return false; }
+            @Override public String ssrSupervisorCommand() { return "node"; }
+            @Override public String ssrSupervisorEntry() { return "dist-ssr/ssr.mjs"; }
+            @Override public java.util.Optional<String> ssrSupervisorWorkdir() { return java.util.Optional.empty(); }
+            @Override public int ssrSupervisorMaxRestarts() { return 5; }
             @Override public String versionStrategy() { return versionStrategy; }
             @Override public Optional<String> versionCustom() { return versionCustom; }
             @Override public boolean encryptHistory() { return false; }
+            @Override public boolean clearHistory() { return false; }
+            @Override public String csrfRefreshPolicy() { return "always"; }
+            @Override public boolean serverHead() { return false; }
+            @Override public String metaTitleTemplate() { return "%s"; }
             @Override public boolean camelizeProps() { return false; }
             @Override public boolean csrfEnabled() { return true; }
             @Override public Optional<String> rootView() { return Optional.empty(); }

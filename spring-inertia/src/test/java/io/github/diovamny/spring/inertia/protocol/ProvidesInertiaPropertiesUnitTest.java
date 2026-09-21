@@ -14,7 +14,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import io.github.diovamny.spring.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.spring.inertia.api.RenderContext;
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
-import io.github.diovamny.spring.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

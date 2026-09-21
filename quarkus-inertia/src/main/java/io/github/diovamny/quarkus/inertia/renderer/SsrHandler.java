@@ -74,6 +74,34 @@ public class SsrHandler {
      * so callers can fall back to client-side rendering. Internal error
      * details are not exposed.
      */
+    @Inject
+    io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics.noop();
+
+    private volatile io.github.diovamny.inertia.core.ssr.SsrCircuitBreaker breaker;
+
+    private io.github.diovamny.inertia.core.ssr.SsrCircuitBreaker breaker() {
+        if (breaker == null) {
+            synchronized (this) {
+                if (breaker == null) {
+                    breaker = new io.github.diovamny.inertia.core.ssr.SsrCircuitBreaker(
+                        Math.max(1, config.ssrBreakerFailureThreshold()),
+                        config.ssrBreakerCooldown() != null
+                            ? config.ssrBreakerCooldown().toMillis() : 30_000L,
+                        java.util.concurrent.TimeUnit.MILLISECONDS);
+                }
+            }
+        }
+        return breaker;
+    }
+
+    /**
+     * The shared circuit breaker (exposed for health reporting).
+     */
+    public io.github.diovamny.inertia.core.ssr.SsrCircuitBreaker circuitBreaker() {
+        return breaker();
+    }
+
     public Uni<JsonObject> render(JsonObject page) {
         if (vertx == null) {
             return Uni.createFrom().failure(new IllegalStateException("SSR is not supported yet"));
@@ -82,11 +110,15 @@ public class SsrHandler {
         if (url == null || url.isBlank()) {
             return Uni.createFrom().failure(new IllegalStateException("ssr-url is not configured"));
         }
+        if (!breaker().allowRequest()) {
+            return Uni.createFrom().failure(new SsrCircuitOpenException());
+        }
 
         Duration connectTimeout = config.ssrConnectTimeout();
         Duration readTimeout = config.ssrReadTimeout();
 
         return Uni.createFrom().deferred(() -> {
+            metrics.recordSsrRequest();
             var totalMs = (connectTimeout != null ? connectTimeout.toMillis() : 5000)
                 + (readTimeout != null ? readTimeout.toMillis() : 10000);
             var client = vertx.createHttpClient(
@@ -96,13 +128,17 @@ public class SsrHandler {
             );
             return Uni.createFrom().emitter(emitter -> {
                 emitter.onTermination(client::close);
+                java.util.function.Consumer<Throwable> fail = cause -> {
+                    metrics.recordSsrFailure();
+                    emitter.fail(cause);
+                };
                 var options = new io.vertx.core.http.RequestOptions()
                     .setAbsoluteURI(url)
                     .setMethod(HttpMethod.POST)
                     .setTimeout(totalMs);
                 client.request(options, ar -> {
                     if (ar.failed()) {
-                        emitter.fail(ar.cause());
+                        fail.accept(ar.cause());
                         return;
                     }
                     var req = ar.result();
@@ -110,21 +146,22 @@ public class SsrHandler {
                     req.putHeader("X-Inertia", "true");
                     req.send(page.encode(), respAr -> {
                         if (respAr.failed()) {
-                            emitter.fail(respAr.cause());
+                            fail.accept(respAr.cause());
                             return;
                         }
                         var resp = respAr.result();
                         resp.body(bodyAr -> {
                             if (bodyAr.failed()) {
-                                emitter.fail(bodyAr.cause());
+                                fail.accept(bodyAr.cause());
                                 return;
                             }
                             var body = bodyAr.result().toString();
                             if (resp.statusCode() >= 400) {
-                                emitter.fail(new IllegalStateException(
+                                fail.accept(new IllegalStateException(
                                     "SSR server responded with " + resp.statusCode()));
                                 return;
                             }
+                            breaker().recordSuccess();
                             emitter.complete(new JsonObject(body));
                         });
                     });

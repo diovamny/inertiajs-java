@@ -1,6 +1,8 @@
 package io.github.diovamny.quarkus.inertia.api;
 
 import java.util.Map;
+import io.github.diovamny.inertia.core.result.InertiaLocationResult;
+import io.github.diovamny.inertia.core.result.InertiaRedirectResult;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.ws.rs.core.Response;
@@ -31,6 +33,22 @@ public interface InertiaRedirector {
      * @return a chainable redirect; resolves to the redirect response
      */
     InertiaRedirect redirect(String url);
+
+    /**
+     * Redirect from a typed redirect result.
+     *
+     * @param result the typed redirect request
+     * @return a chainable redirect; resolves to the redirect response
+     */
+    InertiaRedirect redirect(InertiaRedirectResult result);
+
+    /**
+     * Answer an external location from a typed location result.
+     *
+     * @param result the typed location request
+     * @return a Uni resolving to the response object
+     */
+    Uni<Object> location(InertiaLocationResult result);
 
     /**
      * Redirect to an internal URL, optionally forcing a full page load.

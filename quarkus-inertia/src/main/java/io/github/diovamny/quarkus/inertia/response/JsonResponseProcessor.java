@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Response;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
 
-import io.github.diovamny.quarkus.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.quarkus.inertia.qute.QuteSerializer;
 
 /**

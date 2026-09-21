@@ -590,6 +590,72 @@ public final class InertiaPage {
         return this;
     }
 
+    /**
+     * Assert a deep value using dot notation with optional list indexes
+     * ({@code users.data[0].name}), mirroring Laravel's {@code where()}.
+     *
+     * @param path     the deep path
+     * @param expected the expected value
+     * @return this
+     */
+    public InertiaPage where(String path, Object expected) {
+        var actual = io.github.diovamny.inertia.core.testing.PropPaths.navigate(props, path);
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected <" + path + "> to equal <" + expected + "> but was <" + actual + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Assert that the collection, map or array at a deep path has the
+     * expected element count ({@code users.data}, size 10).
+     *
+     * @param path         the deep path
+     * @param expectedSize expected number of items
+     * @return this
+     */
+    public InertiaPage has(String path, int expectedSize) {
+        var actualSize = io.github.diovamny.inertia.core.testing.PropPaths.sizeOf(props, path);
+        if (actualSize != expectedSize) {
+            throw new AssertionError("Expected <" + path + "> to have count <" + expectedSize + "> but was <" + actualSize + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Assert that no value exists at a deep path, matching Laravel's
+     * {@code missing()}.
+     *
+     * @param path the deep path
+     * @return this
+     */
+    public InertiaPage missing(String path) {
+        if (io.github.diovamny.inertia.core.testing.PropPaths.present(props, path)) {
+            throw new AssertionError("Expected <" + path + "> to be missing, but was <"
+                + io.github.diovamny.inertia.core.testing.PropPaths.navigate(props, path) + ">");
+        }
+        return this;
+    }
+
+    /**
+     * Assert prop equality, printing a recursive visual diff of both prop
+     * trees before failing.
+     *
+     * @param expected the expected page
+     * @return this
+     */
+    public InertiaPage dumpDiff(InertiaPage expected) {
+        var lines = io.github.diovamny.inertia.core.testing.PropPaths.diff(
+            expected != null ? expected.props() : null, props);
+        if (!lines.isEmpty()) {
+            var out = new StringBuilder("Page props differ:\n");
+            lines.forEach(line -> out.append("  ").append(line).append('\n'));
+            System.out.println(out);
+            throw new AssertionError(out.toString());
+        }
+        return this;
+    }
+
     public InertiaPage assertPropExists(String key) {
         if (!hasProp(key)) {
             throw new AssertionError("Expected prop <" + key + "> to exist");
@@ -656,6 +722,12 @@ public final class InertiaPage {
         return this;
     }
 
+    /**
+     * Assert that the listed props exist. Matching is partial: unspecified
+     * keys are ignored, which is the native equivalent of Laravel's
+     * {@code etc()} (use {@link #assertHasExactProps(Map)} for strict
+     * matching).
+     */
     public InertiaPage assertHasProps(String... keys) {
         for (String key : keys) {
             assertPropExists(key);
@@ -663,6 +735,11 @@ public final class InertiaPage {
         return this;
     }
 
+    /**
+     * Assert prop values with partial matching: unspecified keys are ignored,
+     * which is the native equivalent of Laravel's {@code etc()} (use
+     * {@link #assertHasExactProps(Map)} for strict matching).
+     */
     public InertiaPage assertHasProps(Map<String, Object> expected) {
         for (var entry : expected.entrySet()) {
             assertProp(entry.getKey(), entry.getValue());

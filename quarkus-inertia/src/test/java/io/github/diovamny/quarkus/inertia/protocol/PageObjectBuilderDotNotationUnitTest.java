@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
 
 class PageObjectBuilderDotNotationUnitTest {
@@ -129,7 +129,7 @@ class PageObjectBuilderDotNotationUnitTest {
         var ctx = vertx.getOrCreateContext();
         ctx.putLocal("inertia-reset", "contacts");
         var latch = new CountDownLatch(1);
-        var ref = new AtomicReference<io.github.diovamny.quarkus.inertia.model.PageObject>();
+        var ref = new AtomicReference<io.github.diovamny.inertia.core.model.PageObject>();
         ctx.runOnContext(v -> {
             try {
                 ref.set(builder.build("Users", Map.of(), false).await().indefinitely());

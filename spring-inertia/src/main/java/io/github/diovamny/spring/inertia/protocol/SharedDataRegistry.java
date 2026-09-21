@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.diovamny.spring.inertia.api.ProvidesInertiaProperties;
-import io.github.diovamny.spring.inertia.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
 
 /**
  * Request-scoped registry of shared and "always" props.

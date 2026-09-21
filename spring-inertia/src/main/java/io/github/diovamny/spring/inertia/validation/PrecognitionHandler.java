@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
 import io.github.diovamny.spring.inertia.protocol.InertiaHeaderExtractor;
 import io.github.diovamny.spring.inertia.protocol.PageObjectBuilder;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Handles request validation failures:

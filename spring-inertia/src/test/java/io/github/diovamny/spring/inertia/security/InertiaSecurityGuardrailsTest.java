@@ -56,6 +56,22 @@ class InertiaSecurityGuardrailsTest {
     }
 
     @Test
+    void invalidCsrfRefreshPolicyFailsFast() {
+        var properties = new InertiaProperties();
+        properties.setCsrfRefreshPolicy("sometimes");
+        assertThrows(IllegalArgumentException.class,
+            () -> new InertiaConfigValidator(properties, new MockEnvironment()));
+    }
+
+    @Test
+    void lazyCsrfRefreshPolicyIsAccepted() {
+        var properties = new InertiaProperties();
+        properties.setCsrfRefreshPolicy("lazy");
+        assertDoesNotThrow(
+            () -> new InertiaConfigValidator(properties, new MockEnvironment()));
+    }
+
+    @Test
     void relativeLoginUrlFailsFast() {
         var properties = new InertiaProperties();
         properties.getSecurity().setLoginUrl("login");

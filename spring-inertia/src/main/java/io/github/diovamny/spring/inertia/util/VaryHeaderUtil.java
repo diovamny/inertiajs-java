@@ -1,15 +1,15 @@
 package io.github.diovamny.spring.inertia.util;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
 import org.springframework.http.HttpHeaders;
+
+import io.github.diovamny.inertia.core.http.VaryHeaders;
 
 /**
  * Additive {@code Vary} header handling (Rails parity).
  *
- * <p>Never overwrites pre-existing {@code Vary} tokens (e.g.
- * {@code Accept-Encoding} set by proxies). Tokens are merged
- * case-insensitively, preserving first-seen order.</p>
+ * <p>Framework binding over {@link VaryHeaders}: merges {@code Vary} tokens
+ * on Spring and servlet header containers without dropping pre-existing
+ * values. Pure merge logic lives in {@code inertia-core}.</p>
  */
 public final class VaryHeaderUtil {
 
@@ -24,32 +24,7 @@ public final class VaryHeaderUtil {
      * @return merged header value
      */
     public static String merge(String existing, String... tokens) {
-        Set<String> current = new LinkedHashSet<>();
-        if (existing != null && !existing.isBlank()) {
-            for (String item : existing.split(",")) {
-                String trimmed = item.trim();
-                if (!trimmed.isEmpty()) {
-                    current.add(trimmed);
-                }
-            }
-        }
-        for (String token : tokens) {
-            if (token == null || token.isBlank()) {
-                continue;
-            }
-            String trimmed = token.trim();
-            boolean found = false;
-            for (String item : current) {
-                if (item.equalsIgnoreCase(trimmed)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                current.add(trimmed);
-            }
-        }
-        return String.join(", ", current);
+        return VaryHeaders.merge(existing, tokens);
     }
 
     /**

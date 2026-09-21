@@ -20,6 +20,27 @@ class RootViewQuarkusTest {
     }
 
     @Test
+    void nonceProviderStampsScriptTag() {
+        var html = given()
+            .when().get("/root-view/nonce")
+            .then()
+                .statusCode(200)
+                .extract().asString();
+        assertThat(html).contains("NONCE-ROOT-MARKER");
+        assertThat(html).contains("nonce=\"test-nonce-123\"");
+    }
+
+    @Test
+    void pagesWithoutNonceProviderStayUnchanged() {
+        var html = given()
+            .when().get("/root-view/default")
+            .then()
+                .statusCode(200)
+                .extract().asString();
+        assertThat(html).doesNotContain("nonce=");
+    }
+
+    @Test
     void rootViewOverrideIsPerRequest() {
         var html = given()
             .when().get("/root-view/default")

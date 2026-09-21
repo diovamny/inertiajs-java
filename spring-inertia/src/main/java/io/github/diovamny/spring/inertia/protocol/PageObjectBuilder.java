@@ -13,12 +13,12 @@ import io.github.diovamny.spring.inertia.api.RenderContext;
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
 import io.github.diovamny.spring.inertia.internal.LazyProp;
-import io.github.diovamny.spring.inertia.model.DeferredProp;
-import io.github.diovamny.spring.inertia.model.PageObject;
-import io.github.diovamny.spring.inertia.model.ScrollProp;
-import io.github.diovamny.spring.inertia.spi.ComponentTransformer;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
-import io.github.diovamny.spring.inertia.spi.UrlResolver;
+import io.github.diovamny.inertia.core.model.DeferredProp;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.model.ScrollProp;
+import io.github.diovamny.inertia.core.spi.ComponentTransformer;
+import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.UrlResolver;
 import io.github.diovamny.spring.inertia.version.VersionProvider;
 
 /**
@@ -59,6 +59,40 @@ public class PageObjectBuilder {
     private final VersionProvider versionProvider;
     private final ComponentTransformer componentTransformer;
     private final UrlResolver urlResolver;
+    private io.github.diovamny.inertia.core.head.HeadBuilder headBuilder;
+    private io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.spring.inertia.metrics.InertiaMetrics.noop();
+
+    /**
+     * Attach the request-scoped head builder (called by auto-configuration;
+     * may stay {@code null} in plain unit tests, which simply skip head
+     * emission).
+     */
+    public void setHeadBuilder(io.github.diovamny.inertia.core.head.HeadBuilder headBuilder) {
+        this.headBuilder = headBuilder;
+    }
+
+    /**
+     * Attach the metrics recorder (called by auto-configuration; defaults to
+     * a no-op so plain unit tests stay silent).
+     */
+    public void setMetrics(io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics) {
+        if (metrics != null) {
+            this.metrics = metrics;
+        }
+    }
+
+    /**
+     * Publish collected server head tags as the {@code head} prop when
+     * {@code inertia.server-head=true}. Never overwrites an explicit
+     * {@code head} prop.
+     */
+    private void applyServerHead(Map<String, Object> merged) {
+        if (headBuilder == null || !properties.isServerHead() || headBuilder.isEmpty()) {
+            return;
+        }
+        merged.putIfAbsent("head", headBuilder.toPropList());
+    }
 
     private String alwaysErrorsKey;
 
@@ -139,7 +173,10 @@ public class PageObjectBuilder {
             merged = partialReloadProcessor.filterProps(merged, partialReloadBaseProps(merged));
         }
 
+        var propsSample = metrics.startPropsResolution();
         merged = resolveLazyProps(merged);
+        metrics.stopPropsResolution(propsSample,
+            component != null ? component : "unknown");
         merged = unwrapOptionals(merged, partial);
 
         var rescued = rescuedKeys();
@@ -148,6 +185,7 @@ public class PageObjectBuilder {
             ? componentTransformer.transform(component)
             : component;
 
+        applyServerHead(merged);
         var page = new PageObject(resolvedComponent, merged, url, version,
             flash,
             deferredProps.isEmpty() || partial ? null : deferredProps,

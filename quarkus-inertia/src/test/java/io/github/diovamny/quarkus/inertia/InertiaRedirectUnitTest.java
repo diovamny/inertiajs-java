@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.github.diovamny.quarkus.inertia.protocol.RedirectProcessor;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 class InertiaRedirectUnitTest {
 

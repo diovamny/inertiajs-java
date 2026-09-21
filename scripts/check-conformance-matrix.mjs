@@ -13,7 +13,7 @@ const testNames = [...text.matchAll(/\|\s*\d+\s*\|.*?\|.*?\|.*?\|.*?\|.*?\|\s*([
   .filter((name) => /^[A-Za-z0-9_]+$/.test(name));
 
 const candidates = new Set();
-for (const dir of ['spring-inertia/src/test/java', 'quarkus-inertia/src/test/java']) {
+for (const dir of ['spring-inertia/src/test/java', 'quarkus-inertia/src/test/java', 'inertia-core/src/test/java']) {
   const fullDir = path.join(root, dir);
   if (!fs.existsSync(fullDir)) continue;
 

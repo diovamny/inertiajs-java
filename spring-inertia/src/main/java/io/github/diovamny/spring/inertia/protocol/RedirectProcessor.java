@@ -8,7 +8,7 @@ import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.diovamny.spring.inertia.api.InertiaRedirect;
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 /**
  * Builds the redirect responses of the visit:

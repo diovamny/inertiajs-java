@@ -1,0 +1,54 @@
+# Adapter-mode CSRF: cookie issuance and failure contract.
+- id: get-issues-xsrf-cookie
+  description: Responses carry the readable XSRF-TOKEN cookie.
+  request:
+    method: GET
+    path: /tck/page
+  expect:
+    status: 200
+    setsCookie: XSRF-TOKEN
+
+- id: inertia-post-without-token-is-rejected
+  description: A state-changing Inertia visit without any token never reaches the controller.
+  request:
+    method: POST
+    path: /tck/submit
+    headers:
+      X-Inertia: "true"
+    contentType: application/json
+    body: '{"name":"Acme"}'
+  expect:
+    status: 303
+    location: /
+  expect-quarkus:
+    status: 303
+    location: /
+
+- id: inertia-post-with-wrong-token-is-rejected
+  description: A forged token is rejected like a missing one.
+  request:
+    method: POST
+    path: /tck/submit
+    headers:
+      X-Inertia: "true"
+      X-XSRF-TOKEN: forged-token
+    contentType: application/json
+    body: '{"name":"Acme"}'
+  expect:
+    status: 303
+    location: /
+
+- id: plain-post-without-token-diverges
+  description: Non-Inertia state-changing requests are outside the Inertia contract.
+  request:
+    method: POST
+    path: /tck/submit
+    contentType: application/json
+    body: '{"name":"Acme"}'
+  expect:
+    status: 303
+  expect-spring:
+    status: 303
+    location: /tck/page
+  expect-quarkus:
+    status: 419

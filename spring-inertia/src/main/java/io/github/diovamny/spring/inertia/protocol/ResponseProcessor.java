@@ -12,9 +12,9 @@ import io.github.diovamny.spring.inertia.api.InertiaResponse;
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
 import io.github.diovamny.spring.inertia.internal.InertiaImpl;
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
-import io.github.diovamny.spring.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.spring.inertia.renderer.HtmlRenderer;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Turns a {@link PageObject} into the final HTTP response:
@@ -35,12 +35,25 @@ public class ResponseProcessor {
     private final HtmlRenderer htmlRenderer;
     private final InertiaProperties properties;
 
+    private io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.spring.inertia.metrics.InertiaMetrics.noop();
+
     public ResponseProcessor(PageObjectBuilder pageObjectBuilder, JsonProvider jsonProvider,
             HtmlRenderer htmlRenderer, InertiaProperties properties) {
         this.pageObjectBuilder = pageObjectBuilder;
         this.jsonProvider = jsonProvider;
         this.htmlRenderer = htmlRenderer;
         this.properties = properties;
+    }
+
+    /**
+     * Attach the metrics recorder (called by auto-configuration; defaults to
+     * a no-op so plain unit tests stay silent).
+     */
+    public void setMetrics(io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics) {
+        if (metrics != null) {
+            this.metrics = metrics;
+        }
     }
 
     /**
@@ -62,6 +75,16 @@ public class ResponseProcessor {
      * @return the final response
      */
     public ResponseEntity<String> process(PageObject page) {
+        var sample = metrics.startRender();
+        var type = InertiaRequestContext.isInertiaRequest() ? "json" : "html";
+        try {
+            return processInternal(page);
+        } finally {
+            metrics.stopRender(sample, page.component(), type);
+        }
+    }
+
+    private ResponseEntity<String> processInternal(PageObject page) {
         if (!InertiaRequestContext.isInertiaRequest()) {
             return renderHtml(page);
         }

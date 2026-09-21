@@ -7,7 +7,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import io.vertx.ext.web.RoutingContext;
 
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 /**
  * Default {@link FlashStore} implementation storing flash data inside the

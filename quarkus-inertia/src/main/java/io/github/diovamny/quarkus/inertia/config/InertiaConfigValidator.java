@@ -39,6 +39,14 @@ public class InertiaConfigValidator {
             );
         }
         validateSecurity();
+        validateCsrfRefreshPolicy(config.csrfRefreshPolicy());
+    }
+
+    private static void validateCsrfRefreshPolicy(String policy) {
+        if (policy == null || (!policy.equals("always") && !policy.equals("lazy"))) {
+            throw new IllegalArgumentException(
+                "inertia.csrf-refresh-policy must be 'always' or 'lazy', got: " + policy);
+        }
     }
 
     private void validateSecurity() {

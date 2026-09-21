@@ -5,7 +5,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import io.smallrye.mutiny.Uni;
-import io.github.diovamny.quarkus.inertia.model.RawJson;
+import io.github.diovamny.inertia.core.head.HeadBuilder;
+import io.github.diovamny.inertia.core.model.RawJson;
 
 /**
  * Specialized interface for property management in Quarkus Inertia.js responses.
@@ -316,4 +317,14 @@ public interface InertiaProps {
      * @param wrapper  the element (default {@code "data"}) that wraps the prop
      */
     void scroll(String key, Object value, Map<String, Object> metadata, String wrapper);
+
+    /**
+     * The per-request server head builder. Collect {@code title},
+     * {@code meta}, {@code property} and {@code link} tags here; when
+     * {@code inertia.server-head=true} they are published as the
+     * {@code head} page prop for the frontend {@code Head} component.
+     *
+     * @return the request-scoped head builder
+     */
+    HeadBuilder head();
 }

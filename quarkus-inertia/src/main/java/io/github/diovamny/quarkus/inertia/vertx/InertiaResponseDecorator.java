@@ -115,9 +115,20 @@ public class InertiaResponseDecorator {
         }
         if (!Boolean.TRUE.equals(handled)) return;
         var token = (String) tokenObj;
-        if (token != null) {
+        if (token != null && shouldEmitCsrfCookie(rc, token)) {
             headers.add("Set-Cookie", csrfService.cookieHeader(token));
         }
+    }
+
+    private boolean shouldEmitCsrfCookie(
+            io.vertx.ext.web.RoutingContext rc, String sessionToken) {
+        if (!csrfService.isLazyRefresh() || rc == null) {
+            return true;
+        }
+        var requestCookie = rc.request().getCookie("XSRF-TOKEN");
+        var presented = requestCookie != null ? requestCookie.getValue() : null;
+        return InertiaCsrfService.shouldEmitCookie(true,
+            rc.request().method().name(), presented, sessionToken);
     }
 
     private DecoratedResponse handleRedirect(RoutingContext rc, Context ctx, int status,

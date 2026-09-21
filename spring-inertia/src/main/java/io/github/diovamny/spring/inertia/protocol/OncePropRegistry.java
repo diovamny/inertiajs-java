@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
-import io.github.diovamny.spring.inertia.model.OnceProp;
+import io.github.diovamny.inertia.core.model.OnceProp;
 
 /**
  * Request-scoped registry of once-props: props the client renders only once

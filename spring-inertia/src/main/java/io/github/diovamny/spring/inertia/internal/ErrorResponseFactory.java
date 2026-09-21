@@ -7,10 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
-import io.github.diovamny.spring.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.spring.inertia.protocol.InertiaHeaderExtractor;
 import io.github.diovamny.spring.inertia.spi.ErrorMapper;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Produces the default error response for exceptions that reach the

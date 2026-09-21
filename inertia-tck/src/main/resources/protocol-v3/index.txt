@@ -1,0 +1,8 @@
+# Normative Inertia v3 protocol specs, executed in filename order.
+01-handshake.yaml
+02-partial.yaml
+03-deferred-once.yaml
+04-redirects.yaml
+05-version.yaml
+06-csrf.yaml
+07-validation.yaml

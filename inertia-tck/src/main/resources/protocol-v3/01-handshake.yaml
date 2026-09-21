@@ -1,0 +1,43 @@
+# Initial handshake: JSON visits vs plain HTML visits.
+- id: inertia-visit-returns-json-page
+  description: An X-Inertia visit receives the page object as JSON with protocol headers.
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    contentTypeContains: application/json
+    headers:
+      X-Inertia: "true"
+    component: Tck/Page
+    propsKeys: [a, b]
+    json:
+      props.a: A
+      props.b: B
+
+- id: plain-visit-returns-html-root
+  description: A visit without X-Inertia receives the HTML root view embedding the page.
+  request:
+    method: GET
+    path: /tck/page
+  expect:
+    status: 200
+    contentTypeContains: text/html
+    bodyContains: data-page
+    bodyContains: Tck/Page
+
+- id: partial-component-mismatch-renders-full-page
+  description: Partial headers for another component are ignored; the full page renders.
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Other/Component
+      X-Inertia-Partial-Data: a
+  expect:
+    status: 200
+    component: Tck/Page
+    propsKeys: [a, b]

@@ -1,7 +1,7 @@
 package io.github.diovamny.quarkus.inertia.protocol;
 
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.spi.ComponentTransformer;
+import io.github.diovamny.inertia.core.spi.ComponentTransformer;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

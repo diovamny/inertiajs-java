@@ -11,16 +11,17 @@ import org.springframework.web.context.annotation.RequestScope;
 
 import io.github.diovamny.spring.inertia.api.Inertia;
 import io.github.diovamny.spring.inertia.api.InertiaRedirect;
+import io.github.diovamny.spring.inertia.api.InertiaRender;
 import io.github.diovamny.spring.inertia.api.InertiaResponse;
 import io.github.diovamny.spring.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.spring.inertia.api.RenderContext;
 import io.github.diovamny.spring.inertia.cache.CachedPropStore;
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
-import io.github.diovamny.spring.inertia.model.AlwaysProp;
-import io.github.diovamny.spring.inertia.model.DeferredProp;
-import io.github.diovamny.spring.inertia.model.PageObject;
-import io.github.diovamny.spring.inertia.model.RawJson;
-import io.github.diovamny.spring.inertia.model.ScrollProp;
+import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.DeferredProp;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.model.RawJson;
+import io.github.diovamny.inertia.core.model.ScrollProp;
 import io.github.diovamny.spring.inertia.protocol.PageObjectBuilder;
 import io.github.diovamny.spring.inertia.protocol.PartialReloadProcessor;
 import io.github.diovamny.spring.inertia.protocol.RedirectProcessor;
@@ -28,7 +29,7 @@ import io.github.diovamny.spring.inertia.protocol.ResponseProcessor;
 import io.github.diovamny.spring.inertia.protocol.SharedDataRegistry;
 import io.github.diovamny.spring.inertia.protocol.OncePropRegistry;
 import io.github.diovamny.spring.inertia.spi.ErrorMapper;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 
 /**
  * Request-scoped implementation of {@link Inertia}: records every
@@ -49,6 +50,8 @@ public class InertiaImpl implements Inertia {
     private final ResponseProcessor responseProcessor;
     private final FlashStore flashStore;
     private final CachedPropStore cachedPropStore;
+    private final io.github.diovamny.inertia.core.head.HeadBuilder headBuilder;
+    private final io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy;
     private final String version;
 
     public InertiaImpl(InertiaProperties properties,
@@ -59,6 +62,8 @@ public class InertiaImpl implements Inertia {
             ResponseProcessor responseProcessor,
             FlashStore flashStore,
             CachedPropStore cachedPropStore,
+            io.github.diovamny.inertia.core.head.HeadBuilder headBuilder,
+            io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy,
             io.github.diovamny.spring.inertia.version.VersionProvider versionProvider) {
         this.properties = properties;
         this.sharedDataRegistry = sharedDataRegistry;
@@ -68,6 +73,8 @@ public class InertiaImpl implements Inertia {
         this.responseProcessor = responseProcessor;
         this.flashStore = flashStore;
         this.cachedPropStore = cachedPropStore;
+        this.headBuilder = headBuilder;
+        this.ssrCachePolicy = ssrCachePolicy;
         this.version = versionProvider != null ? versionProvider.version() : null;
     }
 
@@ -88,7 +95,11 @@ public class InertiaImpl implements Inertia {
 
     @Override
     public Object render(String component, Map<String, Object> props) {
-        return responseProcessor.process(component, props);
+        var result = responseProcessor.process(component, props);
+        if (result instanceof InertiaResponse response) {
+            return new InertiaRender(response, flashStore, ssrCachePolicy);
+        }
+        return result;
     }
 
     @Override
@@ -182,6 +193,26 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public Object render(io.github.diovamny.inertia.core.result.InertiaPageResult result) {
+        if (!result.meta().isEmpty()) {
+            InertiaRequestContext.set(PageObjectBuilder.CONTEXT_META, result.meta());
+        }
+        return render(result.component(), result.props());
+    }
+
+    @Override
+    public InertiaRedirect redirect(
+            io.github.diovamny.inertia.core.result.InertiaRedirectResult result) {
+        return redirect(result.url(), result.fullPage());
+    }
+
+    @Override
+    public InertiaRedirect location(
+            io.github.diovamny.inertia.core.result.InertiaLocationResult result) {
+        return location(result.url());
+    }
+
+    @Override
     public void flash(String key, Object value) {
         flashStore.put(key, value);
     }
@@ -217,6 +248,11 @@ public class InertiaImpl implements Inertia {
     @Override
     public void flushShared() {
         sharedDataRegistry.flushShared();
+    }
+
+    @Override
+    public io.github.diovamny.inertia.core.head.HeadBuilder head() {
+        return headBuilder;
     }
 
     @Override

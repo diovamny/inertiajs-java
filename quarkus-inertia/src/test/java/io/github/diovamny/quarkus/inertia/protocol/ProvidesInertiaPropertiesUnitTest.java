@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import io.github.diovamny.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.quarkus.inertia.api.RenderContext;
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
-import io.github.diovamny.quarkus.inertia.model.PageObject;
-import io.github.diovamny.quarkus.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
 
 class ProvidesInertiaPropertiesUnitTest {

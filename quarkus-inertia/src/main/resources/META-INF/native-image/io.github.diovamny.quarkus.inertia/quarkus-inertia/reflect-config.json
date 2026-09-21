@@ -1,6 +1,36 @@
 [
   {
-    "name": "io.github.diovamny.quarkus.inertia.model.PageObject",
+    "name": "io.github.diovamny.inertia.core.model.PageObject",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.github.diovamny.inertia.core.model.AlwaysProp",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.github.diovamny.inertia.core.model.DeferredProp",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.github.diovamny.inertia.core.model.OnceProp",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.github.diovamny.inertia.core.model.RawJson",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "io.github.diovamny.inertia.core.model.ScrollProp",
     "allDeclaredFields": true,
     "allDeclaredMethods": true,
     "allDeclaredConstructors": true

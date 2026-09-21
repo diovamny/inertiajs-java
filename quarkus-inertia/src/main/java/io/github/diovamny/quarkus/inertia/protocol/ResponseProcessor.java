@@ -10,7 +10,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 
-import io.github.diovamny.quarkus.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.quarkus.inertia.renderer.HtmlRenderer;
 import io.github.diovamny.quarkus.inertia.response.JsonResponseProcessor;
 import io.github.diovamny.quarkus.inertia.version.VersionProvider;
@@ -35,6 +35,10 @@ public class ResponseProcessor {
     private final ReactiveResponseWriter reactiveWriter;
 
     @Inject
+    io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics metrics
+        = io.github.diovamny.quarkus.inertia.metrics.InertiaMetrics.noop();
+
+    @Inject
     public ResponseProcessor(HtmlRenderer htmlRenderer, JsonResponseProcessor jsonProcessor,
                              CurrentVertxRequest currentVertxRequest,
                              VersionProvider versionProvider,
@@ -53,6 +57,13 @@ public class ResponseProcessor {
      * @return the HTTP response as a Uni
      */
     public Uni<Object> process(PageObject page) {
+        var sample = metrics.startRender();
+        var type = isInertiaRequest() ? "json" : "html";
+        return processInternal(page)
+            .onTermination().invoke(() -> metrics.stopRender(sample, page.component(), type));
+    }
+
+    private Uni<Object> processInternal(PageObject page) {
         if (isPrecognition()) {
             var rawErrors = page.props().get("errors");
             boolean hasErrors = rawErrors instanceof Map && !((Map<?, ?>) rawErrors).isEmpty();
@@ -120,6 +131,16 @@ public class ResponseProcessor {
      * @return the HTTP response
      */
     public Response processSync(PageObject page) {
+        var sample = metrics.startRender();
+        var type = isInertiaRequest() ? "json" : "html";
+        try {
+            return processSyncInternal(page);
+        } finally {
+            metrics.stopRender(sample, page.component(), type);
+        }
+    }
+
+    private Response processSyncInternal(PageObject page) {
         if (isPrecognition()) {
             var rawErrors = page.props().get("errors");
             boolean hasErrors = rawErrors instanceof Map && !((Map<?, ?>) rawErrors).isEmpty();

@@ -38,11 +38,11 @@ import io.github.diovamny.spring.inertia.protocol.SharedDataRegistry;
 import io.github.diovamny.spring.inertia.renderer.HtmlRenderer;
 import io.github.diovamny.spring.inertia.renderer.SsrClient;
 import io.github.diovamny.spring.inertia.security.InertiaCsrfService;
-import io.github.diovamny.spring.inertia.spi.ComponentTransformer;
-import io.github.diovamny.spring.inertia.spi.FlashStore;
+import io.github.diovamny.inertia.core.spi.ComponentTransformer;
+import io.github.diovamny.inertia.core.spi.FlashStore;
 import io.github.diovamny.spring.inertia.spi.InertiaSharedDataContributor;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
-import io.github.diovamny.spring.inertia.spi.UrlResolver;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
+import io.github.diovamny.inertia.core.spi.UrlResolver;
 import io.github.diovamny.spring.inertia.validation.InertiaValidationHandler;
 import io.github.diovamny.spring.inertia.validation.PrecognitionHandler;
 import io.github.diovamny.spring.inertia.version.ManifestVersionProvider;
@@ -153,31 +153,65 @@ public class InertiaAutoConfiguration {
             FlashStore flashStore,
             VersionProvider versionProvider,
             ObjectProvider<ComponentTransformer> componentTransformer,
-            ObjectProvider<UrlResolver> urlResolver) {
-        return new PageObjectBuilder(properties, sharedDataRegistry, oncePropRegistry,
+            ObjectProvider<UrlResolver> urlResolver,
+            ObjectProvider<io.github.diovamny.inertia.core.head.HeadBuilder> headBuilder,
+            ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistry) {
+        var builder = new PageObjectBuilder(properties, sharedDataRegistry, oncePropRegistry,
             partialReloadProcessor, mergePropProcessor, flashStore, versionProvider,
             componentTransformer.getIfAvailable(), urlResolver.getIfAvailable());
+        builder.setHeadBuilder(headBuilder.getIfAvailable());
+        builder.setMetrics(inertiaMetrics(meterRegistry));
+        return builder;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public io.github.diovamny.spring.inertia.metrics.InertiaMetrics inertiaMetrics(
+            ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistry) {
+        return new io.github.diovamny.spring.inertia.metrics.InertiaMetrics(
+            meterRegistry.getIfAvailable());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @org.springframework.web.context.annotation.RequestScope
+    public io.github.diovamny.inertia.core.head.HeadBuilder headBuilder(
+            InertiaProperties properties) {
+        return new io.github.diovamny.inertia.core.head.HeadBuilder()
+            .titleTemplate(properties.getMetaTitleTemplate());
     }
 
     @Bean
     @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public ResponseProcessor responseProcessor(PageObjectBuilder pageObjectBuilder,
-            JsonProvider jsonProvider, HtmlRenderer htmlRenderer, InertiaProperties properties) {
-        return new ResponseProcessor(pageObjectBuilder, jsonProvider, htmlRenderer, properties);
+            JsonProvider jsonProvider, HtmlRenderer htmlRenderer, InertiaProperties properties,
+            io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics) {
+        var processor = new ResponseProcessor(pageObjectBuilder, jsonProvider, htmlRenderer, properties);
+        processor.setMetrics(metrics);
+        return processor;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SsrClient ssrClient(InertiaProperties properties, JsonProvider jsonProvider) {
-        return new SsrClient(properties, jsonProvider);
+    public SsrClient ssrClient(InertiaProperties properties, JsonProvider jsonProvider,
+            io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics) {
+        var client = new SsrClient(properties, jsonProvider);
+        client.setMetrics(metrics);
+        return client;
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public HtmlRenderer htmlRenderer(InertiaProperties properties, JsonProvider jsonProvider,
-            SsrClient ssrClient) {
-        return new HtmlRenderer(properties, jsonProvider, ssrClient);
-    }
+      @ConditionalOnMissingBean
+      public HtmlRenderer htmlRenderer(InertiaProperties properties, JsonProvider jsonProvider,
+            SsrClient ssrClient,
+            org.springframework.beans.factory.ObjectProvider<io.github.diovamny.inertia.core.spi.NonceProvider> nonceProviders,
+            io.github.diovamny.spring.inertia.metrics.InertiaMetrics metrics,
+            io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy) {
+          var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient, nonceProviders);
+          renderer.setMetrics(metrics);
+          renderer.setSsrCachePolicy(ssrCachePolicy);
+          return renderer;
+      }
 
     @Bean
     @ConditionalOnMissingBean
@@ -191,10 +225,39 @@ public class InertiaAutoConfiguration {
     public Inertia inertia(InertiaProperties properties, SharedDataRegistry sharedDataRegistry,
             OncePropRegistry oncePropRegistry, PartialReloadProcessor partialReloadProcessor,
             RedirectProcessor redirectProcessor, ResponseProcessor responseProcessor,
-            FlashStore flashStore, CachedPropStore cachedPropStore, VersionProvider versionProvider) {
+            FlashStore flashStore, CachedPropStore cachedPropStore,
+            io.github.diovamny.inertia.core.head.HeadBuilder headBuilder,
+            io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy,
+            VersionProvider versionProvider) {
         return new InertiaImpl(properties, sharedDataRegistry, oncePropRegistry,
             partialReloadProcessor, redirectProcessor, responseProcessor, flashStore,
-            cachedPropStore, versionProvider);
+            cachedPropStore, headBuilder, ssrCachePolicy, versionProvider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @org.springframework.web.context.annotation.RequestScope
+    public io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy() {
+        return new io.github.diovamny.spring.inertia.renderer.SsrCachePolicy();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        prefix = "inertia", name = "ssr-supervisor-enabled", havingValue = "true")
+    public io.github.diovamny.spring.inertia.ssr.SsrSupervisorLifecycle ssrSupervisorLifecycle(
+            InertiaProperties properties) {
+        return new io.github.diovamny.spring.inertia.ssr.SsrSupervisorLifecycle(properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public io.github.diovamny.spring.inertia.ssr.SsrHealthBean ssrHealthBean(
+            InertiaProperties properties,
+            io.github.diovamny.spring.inertia.renderer.SsrClient ssrClient,
+            ObjectProvider<io.github.diovamny.spring.inertia.ssr.SsrSupervisorLifecycle> supervisorLifecycle) {
+        return new io.github.diovamny.spring.inertia.ssr.SsrHealthBean(
+            properties, ssrClient, supervisorLifecycle);
     }
 
     @Bean
@@ -228,8 +291,9 @@ public class InertiaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public InertiaReturnValueHandler inertiaReturnValueHandler(ResponseProcessor responseProcessor) {
-        return new InertiaReturnValueHandler(responseProcessor);
+    public InertiaReturnValueHandler inertiaReturnValueHandler(ResponseProcessor responseProcessor,
+            io.github.diovamny.spring.inertia.protocol.RedirectProcessor redirectProcessor) {
+        return new InertiaReturnValueHandler(responseProcessor, redirectProcessor);
     }
 
     @Bean

@@ -3,9 +3,9 @@ package io.github.diovamny.spring.inertia.api;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import io.github.diovamny.spring.inertia.model.DeferredProp;
-import io.github.diovamny.spring.inertia.model.PageObject;
+import io.github.diovamny.inertia.core.head.HeadBuilder;
+import io.github.diovamny.inertia.core.model.DeferredProp;
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.spring.inertia.spi.ErrorMapper;
 
 /**
@@ -234,6 +234,40 @@ public interface Inertia {
      * "Always" props are preserved.
      */
     void flushShared();
+
+    /**
+     * Render a typed page result through the regular pipeline.
+     *
+     * @param result the typed page request
+     * @return the render response (chainable when JSON)
+     */
+    Object render(io.github.diovamny.inertia.core.result.InertiaPageResult result);
+
+    /**
+     * Redirect from a typed redirect result.
+     *
+     * @param result the typed redirect request
+     * @return the redirect response
+     */
+    InertiaRedirect redirect(io.github.diovamny.inertia.core.result.InertiaRedirectResult result);
+
+    /**
+     * Answer an external location from a typed location result.
+     *
+     * @param result the typed location request
+     * @return the location response
+     */
+    InertiaRedirect location(io.github.diovamny.inertia.core.result.InertiaLocationResult result);
+
+    /**
+     * The per-request server head builder. Collect {@code title},
+     * {@code meta}, {@code property} and {@code link} tags here; when
+     * {@code inertia.server-head=true} they are published as the
+     * {@code head} page prop for the frontend {@code Head} component.
+     *
+     * @return the request-scoped head builder
+     */
+    HeadBuilder head();
 
     /**
      * Register an "always" prop: included in every page, immune to partial

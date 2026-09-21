@@ -2,8 +2,8 @@ package io.github.diovamny.spring.inertia.internal;
 
 import tools.jackson.databind.ObjectMapper;
 
-import io.github.diovamny.spring.inertia.model.RawJson;
-import io.github.diovamny.spring.inertia.spi.JsonProvider;
+import io.github.diovamny.inertia.core.model.RawJson;
+import io.github.diovamny.inertia.core.spi.JsonProvider;
 
 /**
  * Jackson-backed {@link JsonProvider} over the {@code ObjectMapper} managed

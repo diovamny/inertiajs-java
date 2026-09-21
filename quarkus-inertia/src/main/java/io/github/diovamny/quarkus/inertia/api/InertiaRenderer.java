@@ -1,15 +1,16 @@
 package io.github.diovamny.quarkus.inertia.api;
 
 import java.util.Map;
-import io.smallrye.mutiny.Uni;
+import io.github.diovamny.inertia.core.result.InertiaPageResult;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.ws.rs.core.Response;
 
 /**
  * Specialized rendering interface for Inertia.js responses in Quarkus.
  *
- * <p>Provides reactive (Mutiny {@link Uni}), synchronous JAX-RS ({@link Response}),
- * and Vert.x web route ({@link RoutingContext}) rendering APIs.</p>
+ * <p>Provides reactive (chainable {@link InertiaRender}, a Mutiny {@code Uni}),
+ * synchronous JAX-RS ({@link Response}), and Vert.x web route
+ * ({@link RoutingContext}) rendering APIs.</p>
  */
 public interface InertiaRenderer {
 
@@ -20,60 +21,60 @@ public interface InertiaRenderer {
     /**
      * Render an Inertia page auto-resolving the component name by convention.
      *
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render();
+    InertiaRender render();
 
     /**
      * Render an Inertia page with props, auto-resolving the component name by convention.
      *
      * @param props the page props
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(Map<String, Object> props);
+    InertiaRender render(Map<String, Object> props);
 
     /**
      * Render an Inertia page with props from a {@link ProvidesInertiaProperties} instance,
      * auto-resolving the component name by convention.
      *
      * @param provider the provider whose inertia properties will be rendered
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(ProvidesInertiaProperties provider);
+    InertiaRender render(ProvidesInertiaProperties provider);
 
     /**
      * Render an Inertia page for the given component with the given props.
      *
      * @param component the frontend component name, e.g. {@code "Contacts/Index"}
      * @param props     the page props; merged with shared and flash data
-     * @return a Uni resolving to the response object (JSON page or HTML)
+     * @return a chainable render resolving to the response object (JSON page or HTML)
      */
-    Uni<Object> render(String component, Map<String, Object> props);
+    InertiaRender render(String component, Map<String, Object> props);
 
     /**
      * Render an Inertia page for the given component with props from a {@link ProvidesInertiaProperties} instance.
      *
      * @param component the frontend component name
      * @param provider  the provider whose inertia properties will be rendered
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(String component, ProvidesInertiaProperties provider);
+    InertiaRender render(String component, ProvidesInertiaProperties provider);
 
     /**
      * Render an Inertia page with no props.
      *
      * @param component the frontend component name
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(String component);
+    InertiaRender render(String component);
 
     /**
      * Render an Inertia page whose component name comes from an enum constant.
      *
      * @param component the enum constant
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(Enum<?> component);
+    InertiaRender render(Enum<?> component);
 
     /**
      * Render an Inertia page whose component name comes from an enum constant,
@@ -81,9 +82,9 @@ public interface InertiaRenderer {
      *
      * @param component the enum constant
      * @param props     the page props
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(Enum<?> component, Map<String, Object> props);
+    InertiaRender render(Enum<?> component, Map<String, Object> props);
 
     /**
      * Render an Inertia page with the given props and an explicit HTTP status code.
@@ -91,37 +92,45 @@ public interface InertiaRenderer {
      * @param component the frontend component name
      * @param props     the page props
      * @param status    the HTTP status of the response
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(String component, Map<String, Object> props, int status);
+    InertiaRender render(String component, Map<String, Object> props, int status);
 
     /**
      * Render an Inertia page with no props and an explicit HTTP status.
      *
      * @param component the frontend component name
      * @param status    the HTTP status of the response
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(String component, int status);
+    InertiaRender render(String component, int status);
 
     /**
      * Render an Inertia page whose component name comes from an enum constant, with an explicit HTTP status.
      *
      * @param component the enum constant
      * @param status    the HTTP status of the response
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(Enum<?> component, int status);
+    InertiaRender render(Enum<?> component, int status);
 
     /**
      * Render an Inertia page whose component name comes from an enum constant, with the given props and an explicit HTTP status.
      *
-     * @param component the enum constant
+     * @param component the frontend component name
      * @param props     the page props
      * @param status    the HTTP status of the response
-     * @return a Uni resolving to the response object
+     * @return a chainable render resolving to the response object
      */
-    Uni<Object> render(Enum<?> component, Map<String, Object> props, int status);
+    InertiaRender render(Enum<?> component, Map<String, Object> props, int status);
+
+    /**
+     * Render a typed page result through the regular pipeline.
+     *
+     * @param result the typed page request
+     * @return a chainable render resolving to the response object
+     */
+    InertiaRender render(InertiaPageResult result);
 
     // ---------------------------------------------------------------------
     // Synchronous JAX-RS Response API
