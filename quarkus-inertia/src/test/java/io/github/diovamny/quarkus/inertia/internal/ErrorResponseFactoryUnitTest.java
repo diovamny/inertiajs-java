@@ -46,6 +46,7 @@ class ErrorResponseFactoryUnitTest {
             @Override public int errorStatus() { return errorStatus; }
             @Override public String errorComponent() { return errorComponent; }
             @Override public boolean lazyEtagEnabled() { return true; }
+            @Override public long maxPageBytes() { return 33554432L; }
             @Override public java.util.Optional<java.util.List<String>> ssrExcludePaths() { return java.util.Optional.empty(); }
             @Override public boolean useQute() { return false; }
             @Override public boolean errorDetailsEnabled() { return true; }

@@ -36,7 +36,8 @@ root templates and app-owned layouts; `toPropList()` is the prop payload.
 
 ## CSP nonces
 
-The bootstrap needs no nonce by default (inert `data-page` markup, like
-Laravel). When executable inline scripts require one, register a
+The bootstrap needs no nonce by default (v3-pure: `<div id="app">` with no
+payload plus a data-only `<script type="application/json" data-page="app">`).
+When executable inline scripts require one, register a
 `NonceProvider`: Qute templates receive `{cspNonce}`, placeholder
 templates may use `__INERTIA_CSP_NONCE__`.

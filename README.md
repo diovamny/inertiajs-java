@@ -11,6 +11,32 @@ Single-page Vue, React and Svelte apps powered by Spring Boot and Quarkus contro
 Visit [inertiajs.com](https://inertiajs.com/) to learn the protocol. This is a community
 project and is not officially maintained by the Inertia.js team.
 
+## Supported / Tested / Not supported
+
+Legend: ✅ = Tested in CI · 🔄 = In progress · ⚠️ = Stabilizing · ❌ = Not supported.
+Full evidence: [protocol compatibility](docs/protocol-compatibility.md) (generated,
+**58/59 verified**), [what is not supported](docs/NOT_SUPPORTED.md).
+
+| Feature                        | Spring MVC | Quarkus REST | Quarkus Reactive | E2E |
+|-------------------------------|:---:|:---:|:---:|:---:|
+| Initial page (HTML + JSON)    | ✅  | ✅  | ✅  | ✅  |
+| Partial reloads               | ✅  | ✅  | ✅  | ✅  |
+| Deferred props                | ✅  | ✅  | ✅  | 🔄  |
+| Once props (key/expiry/combos)| ✅  | ✅  | ✅  | 🔄  |
+| Merge / prepend / deepMerge   | ✅  | ✅  | ✅  | 🔄  |
+| Infinite scroll               | ✅  | ✅  | ✅  | 🔄  |
+| Error bags                    | ✅  | ✅  | ✅  | 🔄  |
+| File uploads                  | ✅  | ✅  | ✅  | 🔄  |
+| SSR con sidecar               | ✅  | ✅  | ✅  | 🔄  |
+| encryptHistory / clearHistory | ✅  | ✅  | ✅  | ✅  |
+| CSRF 303 + flash              | ✅  | ✅  | ✅  | ✅  |
+| Native Image (GraalVM)        | ✅  | ✅  | ✅  | ✅  |
+| Quarkus Reactive (estabiliz.) | ⚠️  | —   | ⚠️  | 🔄  |
+
+| inertiajs-java | Inertia.js client | Spring Boot | Quarkus | Java | Node.js (SSR) |
+|---|---|---|---|---|---|
+| 0.0.4 | 2.x / 3.x | 4.1.x | 3.39.x | 21+ | 20+ |
+
 ## Your controllers. Your routes. Modern components.
 
 One router on the server, props to the page — like `inertia-rails`, but with
@@ -134,6 +160,13 @@ public class ContactsRouter {
 > `@Blocking` to a method if your database access is not reactive (classic JPA,
 > JDBC, Panache blocking); with a reactive client (Hibernate Reactive,
 > MongoDB reactive, REST calls) leave it off.
+>
+> > ⚠️ **Reactive Routes: stabilization in course (0.0.4).** The G-17
+> > request-context isolation fix ships with a permanent concurrency regression
+> > suite (`InertiaContextLocalsTest`, including 20×100 isolation), but the
+> > reactive transport has less than one release cycle of bake-in. Prefer
+> > Spring MVC or Quarkus REST for production until a full cycle passes
+> > without regressions of this class.
 
 Every route returns `Uni<Object>` (Quarkus) or `Object` (Spring): an HTML shell
 with the page object on the first visit, the JSON page object on Inertia
@@ -315,7 +348,7 @@ sessions and validation on the server.
 <dependency>
       <groupId>io.github.diovamny.spring.inertia</groupId>
       <artifactId>spring-inertia</artifactId>
-      <version>0.0.3</version>
+      <version>0.0.4</version>
 </dependency>
 ```
 
@@ -323,7 +356,7 @@ sessions and validation on the server.
 <dependency>
       <groupId>io.github.diovamny.quarkus.inertia</groupId>
       <artifactId>quarkus-inertia</artifactId>
-      <version>0.0.3</version>
+      <version>0.0.4</version>
 </dependency>
 ```
 
@@ -362,7 +395,7 @@ React 19, TypeScript, Vite, tests and an optional native `Dockerfile`:
 
 | Starter | Command |
 |---|---|
-| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.3 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
+| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.4 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
 | Spring Boot + React 19 | Same with `-DarchetypeArtifactId=inertia-spring-react-archetype` |
 | Spring Boot + Svelte 5 | Same with `-DarchetypeArtifactId=inertia-spring-svelte-archetype` |
 | Quarkus + Vue 3 | Same with `-DarchetypeArtifactId=inertia-quarkus-vue-archetype` |

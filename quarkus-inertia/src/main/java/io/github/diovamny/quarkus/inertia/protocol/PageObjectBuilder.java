@@ -135,6 +135,16 @@ public class PageObjectBuilder {
         if (oncePropRegistry.hasProps()) {
             var onceValues = oncePropRegistry.drain(exceptOnceKeys);
             allProps.putAll(mergePropProcessor.merge(allProps, onceValues));
+            // Eager once values passed explicitly to render() must honor
+            // Except-Once-Props too (parity with Spring's applyOnceProps
+            // removal): the drain above only withholds registry values.
+            var suppressed = new java.util.HashSet<>(exceptOnceKeys);
+            for (var entry : onceMetadata.entrySet()) {
+                if (suppressed.contains(entry.getKey()) && entry.getValue() != null
+                        && entry.getValue().prop() != null) {
+                    allProps.remove(entry.getValue().prop());
+                }
+            }
         }
 
         wrapScrollPropValues(allProps);
@@ -278,6 +288,14 @@ public class PageObjectBuilder {
         if (oncePropRegistry.hasProps()) {
             var onceValues = oncePropRegistry.drain(exceptOnceKeys);
             allProps.putAll(mergePropProcessor.merge(allProps, onceValues));
+            // Same Except-Once suppression for eager values as the async path above.
+            var suppressed = new java.util.HashSet<>(exceptOnceKeys);
+            for (var entry : onceMetadata.entrySet()) {
+                if (suppressed.contains(entry.getKey()) && entry.getValue() != null
+                        && entry.getValue().prop() != null) {
+                    allProps.remove(entry.getValue().prop());
+                }
+            }
         }
 
         wrapScrollPropValues(allProps);

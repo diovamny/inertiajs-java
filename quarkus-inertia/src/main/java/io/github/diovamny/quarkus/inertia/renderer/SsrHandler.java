@@ -27,6 +27,8 @@ import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
 @ApplicationScoped
 public class SsrHandler {
 
+    private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(SsrHandler.class);
+
     private final InertiaConfig config;
     private final CurrentVertxRequest currentVertxRequest;
     private final Vertx vertx;
@@ -129,6 +131,11 @@ public class SsrHandler {
             return Uni.createFrom().emitter(emitter -> {
                 emitter.onTermination(client::close);
                 java.util.function.Consumer<Throwable> fail = cause -> {
+                    // Structured server-side classification (H13); details never
+                    // reach the client, the renderer falls back to CSR.
+                    var classified =
+                        io.github.diovamny.inertia.core.ssr.SsrFailureClassifier.classify(cause);
+                    LOG.warnf("SSR fallback (type=%s, hint=%s)", classified.type(), classified.hint());
                     metrics.recordSsrFailure();
                     emitter.fail(cause);
                 };

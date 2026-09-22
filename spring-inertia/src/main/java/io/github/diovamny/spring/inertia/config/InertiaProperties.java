@@ -37,6 +37,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   always-include-errors: true
  *   error-status: 500
  *   error-component: ErrorPage
+ *   max-page-bytes: 33554432
  *   lazy-etag-enabled: true
  *   root-view: null
  *   convention-routing-enabled: false
@@ -287,6 +288,9 @@ public class InertiaProperties {
 
     /** Component used for error pages. */
     private String errorComponent = "ErrorPage";
+
+    /** Max serialized page size in bytes (413 beyond it; negative disables). */
+    private long maxPageBytes = 33554432L;
 
     /** Whether to include exception details in error responses. */
     private boolean errorDetailsEnabled = false;
@@ -572,6 +576,14 @@ public class InertiaProperties {
 
     public void setErrorComponent(String errorComponent) {
         this.errorComponent = errorComponent;
+    }
+
+    public long getMaxPageBytes() {
+        return maxPageBytes;
+    }
+
+    public void setMaxPageBytes(long maxPageBytes) {
+        this.maxPageBytes = maxPageBytes;
     }
 
     public boolean isErrorDetailsEnabled() {

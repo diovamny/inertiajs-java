@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.diovamny</groupId>
   <artifactId>inertia-parent</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.4</version>
   <packaging>pom</packaging>
   <name>Inertia.js Java Ecosystem</name>
   <description>Server-side Inertia.js v3 adapters for Spring Boot 4.1 and Quarkus</description>
@@ -199,9 +199,12 @@
             </dependencies>
             <configuration>
               <skip>${skipMutationAnalysis}</skip>
+              <failWhenNoMutations>false</failWhenNoMutations>
               <targetClasses>
                 <param>io.github.diovamny.spring.inertia.*</param>
                 <param>io.github.diovamny.quarkus.inertia.*</param>
+                <param>io.github.diovamny.inertia.core.*</param>
+                <param>io.github.diovamny.inertia.tck.*</param>
               </targetClasses>
               <targetTests>
                 <param>io.github.diovamny.*Test</param>
@@ -297,6 +300,56 @@
       <modules>
         <module>examples</module>
       </modules>
+    </profile>
+    <profile>
+      <!-- JMH benchmarks (H20). Never in the default reactor nor the
+           release: mvn -Pbenchmarks -pl benchmarks -am clean package -->
+      <id>benchmarks</id>
+      <modules>
+        <module>benchmarks</module>
+      </modules>
+    </profile>
+    <profile>
+      <!-- Binary-compatibility diff vs the previous release (3.23). Report
+           only on 0.x (breaking changes are announced in docs/migration.md);
+           flip breakBuildOnBinaryIncompatibleModifications to true at 1.0. -->
+      <id>apicheck</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.siom79.japicmp</groupId>
+            <artifactId>japicmp-maven-plugin</artifactId>
+            <version>0.23.1</version>
+            <executions>
+              <execution>
+                <id>api-diff</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>cmp</goal>
+                </goals>
+                <configuration>
+                  <oldVersion>
+                    <dependency>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>${project.artifactId}</artifactId>
+                      <version>0.0.3</version>
+                      <type>jar</type>
+                    </dependency>
+                  </oldVersion>
+                  <newVersion>
+                    <file>
+                      <path>${project.build.directory}/${project.build.finalName}.jar</path>
+                    </file>
+                  </newVersion>
+                  <breakBuildOnBinaryIncompatibleModifications>false</breakBuildOnBinaryIncompatibleModifications>
+                  <skipXmlReport>false</skipXmlReport>
+                  <skipHtmlReport>true</skipHtmlReport>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>archetypes</id>

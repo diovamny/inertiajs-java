@@ -17,6 +17,7 @@ public class InertiaConfigValidator {
             org.springframework.core.env.Environment environment) {
         validateVersionStrategy(properties.getVersionStrategy());
         validateStatus(properties.getErrorStatus());
+        validateMaxPageBytes(properties.getMaxPageBytes());
         validateRootTemplate(properties.getRootTemplate());
         validateRootView(properties.getRootView());
         validateCsrfRefreshPolicy(properties.getCsrfRefreshPolicy());
@@ -110,6 +111,14 @@ public class InertiaConfigValidator {
         }
         throw new IllegalArgumentException(
             "inertia.version-strategy must be one of " + String.join(", ", STRATEGIES) + ", got: " + strategy);
+    }
+
+    private static void validateMaxPageBytes(long maxPageBytes) {
+        if (maxPageBytes != -1 && maxPageBytes <= 0) {
+            throw new IllegalArgumentException(
+                "inertia.max-page-bytes must be -1 (disable) or a positive byte count, got: "
+                    + maxPageBytes);
+        }
     }
 
     private static void validateStatus(int status) {

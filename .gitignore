@@ -8,6 +8,7 @@ target/
 node_modules/
 node/
 dist/
+.vitepress/
 
 # Built frontend assets (built from webui/)
 **/resources/META-INF/resources/assets/

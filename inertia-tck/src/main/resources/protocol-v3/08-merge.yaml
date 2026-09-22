@@ -1,0 +1,52 @@
+# Modern merge: merge / prepend / deepMerge metadata, matchPropsOn, reset.
+- id: merge-metadata-emitted
+  description: Merge, prepend, deepMerge and matchPropsOn metadata are emitted.
+  request:
+    method: GET
+    path: /tck/merge
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/Merge
+    json:
+      props.items[0].id: 1
+      props.config.theme: dark
+    jsonContains:
+      mergeProps: items
+      prependProps: tags
+      deepMergeProps: config
+      matchPropsOn: items.id
+
+- id: merge-reset-clears-metadata
+  description: X-Inertia-Reset drops the reset keys from merge metadata only.
+  request:
+    method: GET
+    path: /tck/merge
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Reset: items
+  expect:
+    status: 200
+    jsonMissing:
+      mergeProps: items
+      matchPropsOn: items.id
+    jsonContains:
+      prependProps: tags
+      deepMergeProps: config
+
+- id: merge-partial-keeps-metadata
+  description: Partial reloads merge only what arrives; metadata follows.
+  request:
+    method: GET
+    path: /tck/merge
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/Merge
+      X-Inertia-Partial-Data: items
+  expect:
+    status: 200
+    json:
+      props.items[0].id: 1
+    jsonContains:
+      mergeProps: items

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       publish_mode:
-        description: "auto = upload and publish; draft = upload only, publish by hand in the portal"
+        description: "kept for explicitness; releases are always draft (publish by hand in the portal)"
         type: choice
-        default: auto
+        default: draft
         options: [auto, draft]
   push:
     tags: [ 'v*' ]
@@ -33,8 +33,12 @@ jobs:
           server-username: ${{ secrets.CENTRAL_USERNAME }}
           server-password: ${{ secrets.CENTRAL_PASSWORD }}
 
-      - name: Run full test suite
-        run: mvn clean test -T 1C
+      - name: Run tests and blocking quality gates
+        # Releases fail when ANY gate fails: unit/integration suites,
+        # Checkstyle, SpotBugs and PIT mutation testing (thresholds in the
+        # root pom). OWASP stays in its conditional step below (needs
+        # NVD_API_KEY). Skip flags are for local development only.
+        run: mvn clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=false -DskipDependencyCheck=true
 
       - name: Diagnose Central server wiring (lengths only, values stay masked)
         # Prints whether the `central` server entry exists and the LENGTH of
@@ -135,14 +139,18 @@ jobs:
           print('settings.xml now carries the central server entry')
           EOF
 
-      - name: Build, sign and publish to Sonatype Central Portal
+      - name: Build, sign and upload to Sonatype Central Portal (draft only)
         # maven-gpg-plugin reads MAVEN_GPG_PASSPHRASE directly from the
         # environment, bypassing the settings.xml decryption path that fails
         # without settings-security.xml on fresh runners. The `archetypes`
         # profile adds the 6 starter archetypes to the release reactor.
+        # Policy: releases are ALWAYS draft (autoPublish=false); a human
+        # publishes the deployment by hand in the Central Portal after
+        # verifying artifacts, javadoc and the SBOM. The workflow input
+        # below is kept for explicitness but no longer switches the mode.
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=${{ inputs.publish_mode == 'draft' && 'false' || 'true' }}
+        run: mvn clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=false
 
       - name: Generate aggregate SBOM (outside the parallel reactor)
         # makeAggregateBom is a reactor aggregator and must NOT run inside

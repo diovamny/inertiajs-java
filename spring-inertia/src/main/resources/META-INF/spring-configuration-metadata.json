@@ -83,6 +83,12 @@
       "description": "Component used for error pages."
     },
     {
+      "name": "inertia.max-page-bytes",
+      "type": "java.lang.Long",
+      "defaultValue": 33554432,
+      "description": "Max serialized page size in bytes (413 beyond it; -1 disables)."
+    },
+    {
       "name": "inertia.lazy-etag-enabled",
       "type": "java.lang.Boolean",
       "defaultValue": true,

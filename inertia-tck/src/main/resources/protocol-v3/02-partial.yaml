@@ -42,3 +42,35 @@
     status: 200
     propsKeys: [a]
     propsAbsent: [b]
+
+- id: shared-props-included-on-full-visit
+  description: Shared props ride every full visit with an explicit field.
+  request:
+    method: GET
+    path: /tck/shared
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/Shared
+    json:
+      props.a: A
+      props.tckShared: "yes"
+      props.tckAlways: "always-yes"
+    jsonContains:
+      sharedProps: tckShared
+
+- id: shared-props-survive-partial-base
+  description: Always props (not plain shared) stay in the base of partial reloads.
+  request:
+    method: GET
+    path: /tck/shared
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/Shared
+      X-Inertia-Partial-Data: a
+  expect:
+    status: 200
+    json:
+      props.tckAlways: "always-yes"
+    propsAbsent: [tckShared]

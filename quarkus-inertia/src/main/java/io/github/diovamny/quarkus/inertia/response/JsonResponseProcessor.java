@@ -19,10 +19,13 @@ import io.github.diovamny.quarkus.inertia.qute.QuteSerializer;
 public class JsonResponseProcessor {
 
     private final QuteSerializer serializer;
+    private final io.github.diovamny.quarkus.inertia.config.InertiaConfig config;
 
     @Inject
-    public JsonResponseProcessor(QuteSerializer serializer) {
+    public JsonResponseProcessor(QuteSerializer serializer,
+            io.github.diovamny.quarkus.inertia.config.InertiaConfig config) {
         this.serializer = serializer;
+        this.config = config;
     }
 
     /**
@@ -54,6 +57,8 @@ public class JsonResponseProcessor {
      */
     public Uni<Response> write(PageObject page, int status) {
         return serialize(page)
+            .map(json -> io.github.diovamny.inertia.core.security.PageSizeGuard.check(
+                json, config.maxPageBytes()))
             .map(json -> {
                 var builder = (status != 200)
                     ? Response.status(status).entity(json).type(MediaType.APPLICATION_JSON)
@@ -80,7 +85,8 @@ public class JsonResponseProcessor {
      * @return the HTTP response
      */
     public Response writeSync(PageObject page, int status) {
-        String json = serializeSync(page);
+        String json = io.github.diovamny.inertia.core.security.PageSizeGuard.check(
+            serializeSync(page), config.maxPageBytes());
         var builder = (status != 200)
             ? Response.status(status).entity(json).type(MediaType.APPLICATION_JSON)
             : Response.ok(json, MediaType.APPLICATION_JSON);

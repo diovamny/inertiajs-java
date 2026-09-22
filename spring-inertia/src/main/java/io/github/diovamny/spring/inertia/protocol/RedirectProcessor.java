@@ -40,6 +40,11 @@ public class RedirectProcessor {
      * @return the redirect response
      */
     public InertiaRedirect redirect(String url, boolean fullPage) {
+        try {
+            url = io.github.diovamny.inertia.core.security.RedirectTargets.check(url);
+        } catch (IllegalArgumentException rejected) {
+            return rejected();
+        }
         var status = isGet() ? 302 : 303;
         if (!fullPage && isInertiaRequest() && !isPrefetch() && url != null && url.contains("#")) {
             var headers = new HttpHeaders();
@@ -99,6 +104,11 @@ public class RedirectProcessor {
      * @return the redirect response
      */
     public InertiaRedirect location(String url) {
+        try {
+            url = io.github.diovamny.inertia.core.security.RedirectTargets.check(url);
+        } catch (IllegalArgumentException rejected) {
+            return rejected();
+        }
         var headers = new HttpHeaders();
         headers.set("X-Inertia-Location", url);
         return isInertiaRequest()
@@ -109,6 +119,11 @@ public class RedirectProcessor {
     private InertiaRedirect back(int status, Map<String, String> headers, String url, boolean fullPage) {
         if (url == null || url.isBlank()) {
             url = "/";
+        }
+        try {
+            url = io.github.diovamny.inertia.core.security.RedirectTargets.check(url);
+        } catch (IllegalArgumentException rejected) {
+            return rejected();
         }
         var httpHeaders = new HttpHeaders();
         headers.forEach(httpHeaders::set);
@@ -122,6 +137,15 @@ public class RedirectProcessor {
         }
         httpHeaders.set("Location", url);
         return new InertiaRedirect(HttpStatusCode.valueOf(status), httpHeaders, null, flashStore);
+    }
+
+    /**
+     * Fail-closed rejection for malicious redirect targets: {@code 400} with
+     * no {@code Location} header ever emitted (Quarkus reaches the same
+     * outcome via {@code ErrorResponseFactory#statusFor}).
+     */
+    private InertiaRedirect rejected() {
+        return new InertiaRedirect(HttpStatus.BAD_REQUEST, new HttpHeaders(), null, flashStore);
     }
 
     private static String refererOrDefault(String fallback) {

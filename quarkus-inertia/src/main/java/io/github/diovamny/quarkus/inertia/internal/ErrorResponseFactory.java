@@ -69,6 +69,9 @@ public class ErrorResponseFactory {
             return config.errorStatus();
         }
         var cause = unwrapCause(error);
+        if (cause instanceof io.github.diovamny.inertia.core.security.PageTooLargeException) {
+            return 413;
+        }
         if (cause instanceof IllegalArgumentException) {
             return Response.Status.BAD_REQUEST.getStatusCode();
         }

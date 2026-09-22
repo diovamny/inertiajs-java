@@ -1,14 +1,23 @@
 package io.github.diovamny.quarkus.inertia.tck;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import io.smallrye.mutiny.Uni;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import io.github.diovamny.quarkus.inertia.api.Inertia;
 
@@ -86,5 +95,92 @@ public class TckTestResource {
     @Path("/versioned")
     public Uni<Object> versioned() {
         return inertia.render("Tck/Versioned", Map.of());
+    }
+
+    @GET
+    @Path("/redirect-to")
+    public Uni<Object> redirectTo(
+            @jakarta.ws.rs.QueryParam("target") String target) {
+        return inertia.redirect(target);
+    }
+
+    @GET
+    @Path("/big-page")
+    public Uni<Object> bigPage() {
+        return inertia.render("Tck/Big", Map.of("bulk", "x".repeat(100_000)));
+    }
+
+    @GET
+    @Path("/once-keyed")
+    public Uni<Object> onceKeyed() {
+        inertia.once("notice", "Keyed", "tckNotice");
+        return inertia.render("Tck/OnceKeyed", Map.of("notice", "Keyed"));
+    }
+
+    @GET
+    @Path("/once-mixed")
+    public Uni<Object> onceMixed() {
+        inertia.once("live", "Live", "tckLive");
+        inertia.once("stale", () -> Uni.createFrom().item((Object) "Stale"),
+            "tckStale", Instant.now().minusSeconds(3600));
+        return inertia.render("Tck/OnceMixed", Map.of("live", "Live"));
+    }
+
+    @GET
+    @Path("/merge")
+    public Uni<Object> merge() {
+        inertia.merge("items", List.of(Map.of("id", 1, "name", "One")), false, "id");
+        inertia.prepend("tags", List.of("a", "b"));
+        inertia.merge("config", Map.of("theme", "dark"), true);
+        return inertia.render("Tck/Merge", Map.of(
+            "items", List.of(Map.of("id", 1, "name", "One")),
+            "tags", List.of("a", "b"),
+            "config", Map.of("theme", "dark")));
+    }
+
+    @GET
+    @Path("/scroll")
+    public Uni<Object> scroll() {
+        inertia.scroll("items", List.of(Map.of("id", 1), Map.of("id", 2)),
+            Map.of("currentPage", 1, "nextPage", 2, "pageName", "page"));
+        return inertia.render("Tck/Scroll", Map.of());
+    }
+
+    @GET
+    @Path("/shared")
+    public Uni<Object> shared() {
+        inertia.share("tckShared", "yes");
+        inertia.always("tckAlways", "always-yes");
+        return inertia.render("Tck/Shared", Map.of("a", "A"));
+    }
+
+    @GET
+    @Path("/once-combos")
+    public Uni<Object> onceCombos() {
+        inertia.merge("combo", List.of("a"), false);
+        inertia.once("combo", List.of("a"), "tckCombo");
+        inertia.optional("comboOpt", () -> Uni.createFrom().item((Object) "CO"));
+        inertia.deferred("slow", "comboDef", () -> Uni.createFrom().item((Object) "CD"));
+        return inertia.render("Tck/OnceCombos", Map.of("combo", List.of("a")));
+    }
+
+    public record TckNameForm(@NotBlank String name) {
+    }
+
+    @POST
+    @Path("/submit-valid")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Object> submitValid(@Valid TckNameForm form) {
+        return inertia.redirect("/tck/page");
+    }
+
+    @POST
+    @Path("/upload")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Uni<Object> upload(@RestForm("file") FileUpload file) {
+        if (file == null || file.fileName() == null) {
+            return Uni.createFrom().item((Object) Response.status(400).build());
+        }
+        return inertia.redirect("/tck/page");
     }
 }

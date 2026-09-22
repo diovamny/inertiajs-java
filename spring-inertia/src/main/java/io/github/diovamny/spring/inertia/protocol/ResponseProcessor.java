@@ -122,7 +122,8 @@ public class ResponseProcessor {
             "X-Inertia", "X-Inertia-Version", "X-Inertia-Partial-Component",
             "X-Inertia-Partial-Data", "X-Inertia-Partial-Except");
         applyCustomHeaders(headers);
-        var body = jsonProvider.toJson(page);
+        var body = io.github.diovamny.inertia.core.security.PageSizeGuard.check(
+            jsonProvider.toJson(page), properties.getMaxPageBytes());
         return new InertiaResponse(HttpStatusCode.valueOf(status), headers, body);
     }
 

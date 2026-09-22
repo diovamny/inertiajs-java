@@ -1,0 +1,19 @@
+# Multipart uploads: a file POST flows through CSRF and redirects like Inertia.
+- id: multipart-upload-redirects
+  description: A multipart Inertia POST with a valid token redirects (303).
+  request:
+    method: POST
+    path: /tck/upload
+    headers:
+      X-Inertia: "true"
+    multipart:
+      boundary: tckboundary
+      parts:
+        - name: file
+          filename: hello.txt
+          contentType: text/plain
+          content: hello-tck
+  expect:
+    status: 303
+    location: /tck/page
+    withCsrfToken: true

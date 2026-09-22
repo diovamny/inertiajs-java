@@ -6,3 +6,6 @@
 05-version.yaml
 06-csrf.yaml
 07-validation.yaml
+08-merge.yaml
+09-scroll.yaml
+10-uploads.yaml

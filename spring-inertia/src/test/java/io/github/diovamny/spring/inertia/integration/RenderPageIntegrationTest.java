@@ -46,7 +46,9 @@ class RenderPageIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
             .andExpect(header().string("Vary", "X-Inertia"))
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("data-page=")))
+            // v3-pure: div without data-page, payload exactly once in the script tag.
+            .andExpect(content().string(org.hamcrest.Matchers.not(
+                org.hamcrest.Matchers.containsString("<div id=\"app\" data-page"))))
             .andExpect(content().string(org.hamcrest.Matchers.containsString(
                 "type=\"application/json\" data-page=\"app\"")))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("\"component\":\"Dashboard\"")))

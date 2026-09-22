@@ -58,3 +58,12 @@ integrations, the TCK, demos and archetypes).
   (`central-publishing-maven-plugin`), GitHub release with artifacts.
 - The release manager verifies the Central Portal deployment and the
   `CHANGELOG.md` entry before announcing.
+
+## Release candidates and external review
+
+- A release candidate is not promoted as stable without at least one
+  **documented external review** (early user, Quarkus/Spring community,
+  `inertia-rails` contributor): the review, its findings and their
+  resolution are recorded in the release audit file (`AUDIT_FASE_*`).
+- Stars/forks are never inflated; credibility comes from reproducible
+  evidence (green TCK, generated matrix, signed artifacts, SBOM).

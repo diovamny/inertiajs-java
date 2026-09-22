@@ -40,6 +40,15 @@ public class InertiaConfigValidator {
         }
         validateSecurity();
         validateCsrfRefreshPolicy(config.csrfRefreshPolicy());
+        validateMaxPageBytes(config.maxPageBytes());
+    }
+
+    private static void validateMaxPageBytes(long maxPageBytes) {
+        if (maxPageBytes != -1 && maxPageBytes <= 0) {
+            throw new IllegalArgumentException(
+                "inertia.max-page-bytes must be -1 (disable) or a positive byte count, got: "
+                    + maxPageBytes);
+        }
     }
 
     private static void validateCsrfRefreshPolicy(String policy) {

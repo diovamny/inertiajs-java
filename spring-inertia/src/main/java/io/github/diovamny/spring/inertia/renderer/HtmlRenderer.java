@@ -15,23 +15,24 @@ import io.github.diovamny.inertia.core.spi.NonceProvider;
 import io.github.diovamny.inertia.core.security.SafeJsonEncoder;
 
 /**
- * Renders the full HTML page for non-Inertia visits.
+ * Renders the full HTML page for non-Inertia visits (Inertia v3 pure bootstrap).
  *
  * <p>The root template ({@code inertia.root-template}, default
  * {@code templates/index.html}) is resolved from the classpath and must
- * contain the placeholder {@code __INERTIA_PAGE__} inside the
- * {@code data-page} attribute of the app element, plus the placeholder
- * {@code __INERTIA_PAGE_JSON__} inside a {@code data-page} script tag that
- * the Inertia v3 client reads on boot:</p>
+ * contain the placeholder {@code __INERTIA_PAGE_JSON__} inside a
+ * {@code data-page} script tag that the Inertia v3 client reads on boot.
+ * The app element carries no payload:</p>
  *
  * <pre>{@code
- * <div id="app" data-page="__INERTIA_PAGE__"></div>
+ * <div id="app">__INERTIA_SSR_BODY__</div>
  * <script type="application/json" data-page="app">__INERTIA_PAGE_JSON__</script>
  * }</pre>
  *
- * <p>The attribute value is injected HTML-escaped while the script tag
- * receives the raw JSON. When SSR is enabled and the visit matches, the
- * optional placeholders {@code __INERTIA_SSR_HEAD__} and
+ * <p>The page object travels exactly once (script tag, script-safe JSON).
+ * The legacy {@code __INERTIA_PAGE__} placeholder (v1/v2 {@code data-page}
+ * attribute) is no longer supported: if still present it is replaced with an
+ * empty string so no payload leaks into markup. When SSR is enabled and the
+ * visit matches, the optional placeholders {@code __INERTIA_SSR_HEAD__} and
  * {@code __INERTIA_SSR_BODY__} are replaced with the SSR payload.</p>
  *
  * <p>Custom view-only data passed via {@code inertia.viewData(key, val)} is
@@ -39,6 +40,15 @@ import io.github.diovamny.inertia.core.security.SafeJsonEncoder;
  */
 public class HtmlRenderer {
 
+    /**
+     * Legacy v1/v2 placeholder for the {@code data-page} attribute.
+     * Kept as a constant so custom templates referencing it fail visibly
+     * (replaced with an empty string) instead of leaking placeholders.
+     * New templates must use {@link #PAGE_JSON_PLACEHOLDER} only.
+     *
+     * @deprecated since 0.0.4: v3-pure bootstrap carries no {@code data-page} attribute.
+     */
+    @Deprecated(since = "0.0.4", forRemoval = false)
     public static final String PAGE_PLACEHOLDER = "__INERTIA_PAGE__";
     public static final String PAGE_JSON_PLACEHOLDER = "__INERTIA_PAGE_JSON__";
     public static final String SSR_HEAD_PLACEHOLDER = "__INERTIA_SSR_HEAD__";
@@ -146,10 +156,13 @@ public class HtmlRenderer {
      */
     public String render(PageObject page, Map<String, Object> viewData) {
         var template = loadTemplate();
-        var rawJson = jsonProvider.toJson(page);
-        var escapedJson = escapeForHtmlAttribute(rawJson);
+        var rawJson = io.github.diovamny.inertia.core.security.PageSizeGuard.check(
+            jsonProvider.toJson(page), properties.getMaxPageBytes());
 
-        String html = template.replace(PAGE_PLACEHOLDER, escapedJson);
+        // v3-pure: the page object lives only in the script tag. A legacy
+        // __INERTIA_PAGE__ placeholder (v1/v2 data-page attribute) is blanked
+        // so no payload is duplicated into markup.
+        String html = template.replace(PAGE_PLACEHOLDER, "");
 
         if (properties.isSsrEnabled() && !isSsrExcluded(page.url())) {
             var ttlMillis = ssrCacheTtlMillis();

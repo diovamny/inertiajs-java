@@ -52,3 +52,69 @@
     status: 200
     json:
       props.notice: null
+
+- id: once-keyed-custom-tracking-key
+  description: Once props support an explicit client tracking key.
+  request:
+    method: GET
+    path: /tck/once-keyed
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/OnceKeyed
+    json:
+      props.notice: Keyed
+    jsonContains:
+      onceProps: tckNotice
+
+- id: once-keyed-suppressed-by-custom-key
+  description: Except-Once-Props suppresses by tracking key, metadata stays.
+  request:
+    method: GET
+    path: /tck/once-keyed
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Except-Once-Props: tckNotice
+  expect:
+    status: 200
+    json:
+      props.notice: null
+    jsonContains:
+      onceProps: tckNotice
+
+- id: once-expired-excluded-from-metadata
+  description: Expired once entries vanish from metadata but live ones stay.
+  request:
+    method: GET
+    path: /tck/once-mixed
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/OnceMixed
+    json:
+      props.live: Live
+    jsonContains:
+      onceProps: tckLive
+    jsonMissing:
+      onceProps: tckStale
+
+- id: once-combos-full-visit
+  description: Once composes with merge metadata; optional/deferred stay lazy beside it.
+  request:
+    method: GET
+    path: /tck/once-combos
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/OnceCombos
+    json:
+      props.combo[0]: a
+      props.comboOpt: null
+      props.comboDef: null
+    jsonContains:
+      onceProps: tckCombo
+      mergeProps: combo
+      deferredProps: slow
