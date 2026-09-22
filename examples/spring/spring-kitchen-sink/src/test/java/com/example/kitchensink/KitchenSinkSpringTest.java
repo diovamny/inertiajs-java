@@ -50,7 +50,7 @@ class KitchenSinkSpringTest {
         mockMvc.perform(get("/login"))
             .andExpect(status().isOk())
             .andExpect(content().contentTypeCompatibleWith(TEXT_HTML))
-            .andExpect(content().string(Matchers.containsString("Auth/Login")));
+            .andExpect(content().string(Matchers.containsString("Auth\\/Login")));
     }
 
     @Test
@@ -131,7 +131,7 @@ class KitchenSinkSpringTest {
     void loginPageRendersWhenAuthenticated() throws Exception {
         mockMvc.perform(get("/login").session(session))
             .andExpect(status().isOk())
-            .andExpect(content().string(Matchers.containsString("Auth/Login")));
+            .andExpect(content().string(Matchers.containsString("Auth\\/Login")));
     }
 
     @Test

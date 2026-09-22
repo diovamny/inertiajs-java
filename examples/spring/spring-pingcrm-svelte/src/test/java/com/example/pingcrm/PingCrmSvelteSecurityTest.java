@@ -79,7 +79,7 @@ class PingCrmSvelteSecurityTest {
         mockMvc.perform(get("/login"))
             .andExpect(status().isOk())
             .andExpect(cookie().exists("XSRF-TOKEN"))
-            .andExpect(content().string(Matchers.containsString("Auth/Login")));
+            .andExpect(content().string(Matchers.containsString("Auth\\/Login")));
     }
 
     @Test

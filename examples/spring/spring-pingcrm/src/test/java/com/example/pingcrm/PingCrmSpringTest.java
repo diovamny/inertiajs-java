@@ -64,7 +64,7 @@ class PingCrmSpringTest {
         mockMvc.perform(get("/login"))
             .andExpect(status().isOk())
             .andExpect(content().contentTypeCompatibleWith(TEXT_HTML))
-            .andExpect(content().string(Matchers.containsString("Auth/Login")));
+            .andExpect(content().string(Matchers.containsString("Auth\\/Login")));
     }
 
     @Test
