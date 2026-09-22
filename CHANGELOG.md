@@ -42,7 +42,7 @@
 - Fase 5 (RC 0.0.4): perfil `apicheck` (japicmp 0.0.3→0.0.4: core MINOR,
   spring MINOR, quarkus MAJOR por `maxPageBytes` y ctor interno, ambos
   anunciados en `docs/migration.md`); RFC/deprecación en CONTRIBUTING;
-  revisión externa en GOVERNANCE; checklist RC en `AUDIT_FASE_5_RELEASE_004.md`.
+  revisión externa en GOVERNANCE.
 - Fase 3 (PLAN_MEJORA v4, H15/H20): release bloqueante con quality gates
   (`mvn clean verify -Pquality-gates`, PIT activado, OWASP condicional a
   `NVD_API_KEY`); guards compartidos `RedirectTargets` (CRLF/schemes →

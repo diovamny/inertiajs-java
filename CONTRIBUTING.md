@@ -72,8 +72,7 @@ Document user-facing changes in `CHANGELOG.md` (Keep a Changelog, English).
 - Deprecations ship as `@Deprecated(since = "...")` with a documented
   replacement and survive at least one minor release before removal.
 - Since the `1.0.0` API freeze, `japicmp` diffs every PR against the last
-  release and blocks unannounced binary incompatibilities
-  (see `AUDIT_FASE_5_RELEASE_004.md`).
+  release and blocks unannounced binary incompatibilities.
 
 ## Reporting issues
 

@@ -64,6 +64,6 @@ integrations, the TCK, demos and archetypes).
 - A release candidate is not promoted as stable without at least one
   **documented external review** (early user, Quarkus/Spring community,
   `inertia-rails` contributor): the review, its findings and their
-  resolution are recorded in the release audit file (`AUDIT_FASE_*`).
+  resolution are recorded in the release notes.
 - Stars/forks are never inflated; credibility comes from reproducible
   evidence (green TCK, generated matrix, signed artifacts, SBOM).
