@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24.21.0
 
       - name: Install adapters and archetypes
         run: mvn -B -q -DskipTests clean install -P archetypes
@@ -111,7 +111,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24.21.0
 
       - name: Install Mandrel 25 (native-image toolchain)
         # setup-java's graalvm distribution lags (23.1); Spring Boot 4.1 needs
