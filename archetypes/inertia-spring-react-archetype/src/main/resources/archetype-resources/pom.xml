@@ -18,7 +18,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>${frameworkVersion}</spring-boot.version>
         <inertia-adapter.version>${inertiaAdapterVersion}</inertia-adapter.version>
-        <node.version>v22.14.0</node.version>
+        <node.version>v24.21.0</node.version>
         <npm.version>10.9.2</npm.version>
         <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
     </properties>
