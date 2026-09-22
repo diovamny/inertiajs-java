@@ -39,7 +39,8 @@ Use the standard Thymeleaf variable syntax:
     <meta name="description" th:content="${viewData['description']}">
 </head>
 <body>
-    <div id="app" th:attr="data-page=${page}"></div>
+    <div id="app"></div>
+    <script type="application/json" data-page="app" th:utext="${pageJson}"></script>
     <script type="module" src="/resources/js/app.js"></script>
 </body>
 </html>
@@ -57,7 +58,8 @@ If you use a static HTML file (e.g. for Vite-generated templates), use `__VIEW_<
     <meta name="description" content="__VIEW_DESCRIPTION__">
 </head>
 <body>
-    <div id="app" data-page="{{ page }}"></div>
+    <div id="app"></div>
+    <script type="application/json" data-page="app">__INERTIA_PAGE_JSON__</script>
 </body>
 </html>
 ```
@@ -96,7 +98,8 @@ Quarkus uses Qute templates. View data is passed as template variables:
     <meta name="description" content="{description}">
 </head>
 <body>
-    <div id="app" data-page="{page}"></div>
+    <div id="app"></div>
+    <script type="application/json" data-page="app">{dataPage}</script>
     <script type="module" src="/resources/js/app.js"></script>
 </body>
 </html>

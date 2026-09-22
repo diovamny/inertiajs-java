@@ -37,6 +37,17 @@ jobs:
         # Fails when a documented test class does not exist or is not executed.
         run: node scripts/check-conformance-matrix.mjs
 
+      - name: Verify single-source version
+        # Fails when version.properties, poms, README, CHANGELOG or ROADMAP disagree.
+        run: node scripts/check-versions.mjs
+
+      - name: Verify generated compliance matrix
+        # Regenerates docs/protocol-compatibility.md from the YAML source of
+        # truth and fails on any diff (the markdown is a build artifact).
+        run: |
+          node scripts/generate-compatibility-matrix.mjs
+          git diff --exit-code docs/protocol-compatibility.md
+
       - name: Run Maven unit/integration tests
         run: mvn clean test -T 1C
 
@@ -117,12 +128,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.3
+          -DarchetypeVersion=0.0.4
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.3
+          -DinertiaAdapterVersion=0.0.4
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp

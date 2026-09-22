@@ -74,7 +74,8 @@ public final class InertiaTckRunner {
             if (ids != null && !ids.contains(test.id())) {
                 continue;
             }
-            var errors = execute(client, baseUri, pathMapper.apply(test.path()), test, stack);
+            var errors = execute(client, baseUri, pathMapper.apply(test.path()), test, stack,
+                pathMapper);
             if (errors.isEmpty()) {
                 report.pass(test.id());
             } else {
@@ -97,7 +98,7 @@ public final class InertiaTckRunner {
     }
 
     private static List<String> execute(HttpClient client, String baseUri, String path,
-            TckCase test, String stack) {
+            TckCase test, String stack, java.util.function.UnaryOperator<String> pathMapper) {
         var errors = new ArrayList<String>();
         var headers = new java.util.LinkedHashMap<String, String>();
         // Real browsers always send the serving origin (including a
@@ -106,7 +107,7 @@ public final class InertiaTckRunner {
         test.headers().forEach((name, value) ->
             headers.put(name, value.replace("${baseUri}", baseUri)));
         if (Boolean.TRUE.equals(test.expectFor(stack).get("withCsrfToken"))) {
-            var token = fetchCsrfToken(client, baseUri, test, stack, errors);
+            var token = fetchCsrfToken(client, baseUri, test, stack, pathMapper, errors);
             if (token == null) {
                 return errors;
             }
@@ -117,7 +118,12 @@ public final class InertiaTckRunner {
             var builder = HttpRequest.newBuilder(URI.create(baseUri + path))
                 .timeout(Duration.ofSeconds(10));
             headers.forEach(builder::header);
-            if (test.body() != null) {
+            if (test.multipart() != null) {
+                var boundary = String.valueOf(test.multipart().getOrDefault("boundary", "tckboundary"));
+                builder.header("Content-Type", "multipart/form-data; boundary=" + boundary);
+                builder.method(test.method(),
+                    HttpRequest.BodyPublishers.ofString(buildMultipart(test.multipart(), boundary)));
+            } else if (test.body() != null) {
                 if (test.contentType() != null) {
                     builder.header("Content-Type", test.contentType());
                 }
@@ -140,10 +146,10 @@ public final class InertiaTckRunner {
     }
 
     private static String fetchCsrfToken(HttpClient client, String baseUri, TckCase test,
-            String stack, List<String> errors) {
+            String stack, java.util.function.UnaryOperator<String> pathMapper, List<String> errors) {
         try {
-            var tokenPath = String.valueOf(
-                test.expectFor(stack).getOrDefault("csrfTokenPath", "/tck/page"));
+            var tokenPath = pathMapper.apply(String.valueOf(
+                test.expectFor(stack).getOrDefault("csrfTokenPath", "/tck/page")));
             var tokenResponse = client.send(
                 HttpRequest.newBuilder(URI.create(baseUri + tokenPath))
                     .timeout(Duration.ofSeconds(10)).GET().build(),
@@ -248,9 +254,13 @@ public final class InertiaTckRunner {
         var component = expect.get("component");
         var jsonPaths = asMap(expect.get("json"));
         var jsonAbsent = asList(expect.get("jsonAbsent"));
+        var jsonContains = asMap(expect.get("jsonContains"));
+        var jsonMissing = asMap(expect.get("jsonMissing"));
+        var jsonKeys = asList(expect.get("jsonKeys"));
         var propsKeys = asList(expect.get("propsKeys"));
         var propsAbsent = asList(expect.get("propsAbsent"));
         if (component == null && jsonPaths.isEmpty() && jsonAbsent.isEmpty()
+                && jsonContains.isEmpty() && jsonMissing.isEmpty() && jsonKeys.isEmpty()
                 && propsKeys.isEmpty() && propsAbsent.isEmpty()) {
             return;
         }
@@ -279,6 +289,54 @@ public final class InertiaTckRunner {
                 errors.add("json '" + path + "' expected absent but was <" + node + ">");
             }
         });
+        jsonContains.forEach((path, expected) -> {
+            var node = navigate(root, String.valueOf(path));
+            if (node != null && node.isArray()) {
+                var found = false;
+                for (var item : node) {
+                    if (scalarEquals(expected, item)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    errors.add("json '" + path + "' expected to contain <" + expected + "> but was <"
+                        + node + ">");
+                }
+            } else if (node != null && node.isObject()) {
+                if (!node.has(String.valueOf(expected))) {
+                    errors.add("json '" + path + "' expected to have field <" + expected + "> but was <"
+                        + node + ">");
+                }
+            } else if (!scalarEquals(expected, node)) {
+                errors.add("json '" + path + "': expected <" + expected + "> but was <" + node + ">");
+            }
+        });
+        jsonMissing.forEach((path, unexpected) -> {
+            var node = navigate(root, String.valueOf(path));
+            if (node != null && node.isArray()) {
+                for (var item : node) {
+                    if (scalarEquals(unexpected, item)) {
+                        errors.add("json '" + path + "' must not contain <" + unexpected + "> but was <"
+                            + node + ">");
+                        break;
+                    }
+                }
+            } else if (node != null && node.isObject()) {
+                if (node.has(String.valueOf(unexpected))) {
+                    errors.add("json '" + path + "' must not have field <" + unexpected + "> but was <"
+                        + node + ">");
+                }
+            } else if (scalarEquals(unexpected, node)) {
+                errors.add("json '" + path + "' must not equal <" + unexpected + "> but was <" + node
+                    + ">");
+            }
+        });
+        for (var key : jsonKeys) {
+            if (!root.has(String.valueOf(key))) {
+                errors.add("json: expected top-level key '" + key + "' missing");
+            }
+        }
         var props = root.path("props");
         for (var key : propsKeys) {
             if (!props.has(String.valueOf(key))) {
@@ -349,6 +407,33 @@ public final class InertiaTckRunner {
     @SuppressWarnings("unchecked")
     private static List<Object> asList(Object value) {
         return value instanceof List ? (List<Object>) value : List.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    static String buildMultipart(Map<String, Object> spec, String boundary) {
+        var out = new StringBuilder();
+        var parts = spec.get("parts");
+        var list = parts instanceof List ? (List<Object>) parts : List.of();
+        for (var raw : list) {
+            if (!(raw instanceof Map)) {
+                continue;
+            }
+            var part = (Map<String, Object>) raw;
+            out.append("--").append(boundary).append("\r\n");
+            out.append("Content-Disposition: form-data; name=\"").append(part.get("name")).append("\"");
+            if (part.get("filename") != null) {
+                out.append("; filename=\"").append(part.get("filename")).append("\"");
+            }
+            out.append("\r\n");
+            if (part.get("contentType") != null) {
+                out.append("Content-Type: ").append(part.get("contentType")).append("\r\n");
+            }
+            out.append("\r\n");
+            out.append(part.getOrDefault("content", ""));
+            out.append("\r\n");
+        }
+        out.append("--").append(boundary).append("--\r\n");
+        return out.toString();
     }
 
     private static String preview(String body) {

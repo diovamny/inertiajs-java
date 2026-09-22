@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.diovamny.spring.inertia.api.Inertia;
@@ -153,5 +154,15 @@ public class TestController {
     }
 
     public record UserForm(@NotBlank String name, @Email String email) {
+    }
+
+    @GetMapping("/redirect-to")
+    public Object redirectTo(@RequestParam("url") String url) {
+        return inertia.redirect(url);
+    }
+
+    @GetMapping("/big-page")
+    public Object bigPage() {
+        return inertia.render("BigPage", Map.of("bulk", "x".repeat(100_000)));
     }
 }

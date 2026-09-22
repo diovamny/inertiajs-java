@@ -5,7 +5,9 @@ const root = process.cwd();
 const matrixPath = path.join(root, 'docs', 'protocol-compatibility.md');
 const text = fs.readFileSync(matrixPath, 'utf8');
 
-const testNames = [...text.matchAll(/\|\s*\d+\s*\|.*?\|.*?\|.*?\|.*?\|.*?\|\s*([^|]+?)\s*\|/g)]
+// Table layout: # | Category | Requirement | Source | Status | Spring | Quarkus | Test | Notes
+// (generated from specs/inertia-v3-compliance.yaml; Test is the 7th cell after #).
+const testNames = [...text.matchAll(/\|\s*\d+\s*\|(?:[^|]*\|){6}\s*([^|]+?)\s*\|/g)]
   .map((match) => match[1])
   .flatMap((cell) => cell.split(',').map((part) => part.trim()))
   .map((name) => name.replace(/\s*\(.*?\)\s*$/, '').trim())

@@ -17,8 +17,14 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 3. Run the verification suite before pushing:
    ```bash
    mvn clean test -T 1C
+   node scripts/generate-compatibility-matrix.mjs
+   git diff --exit-code docs/protocol-compatibility.md
    node scripts/check-conformance-matrix.mjs
+   node scripts/check-versions.mjs
    ```
+   New protocol behavior needs a row in
+   [`specs/inertia-v3-compliance.yaml`](specs/inertia-v3-compliance.yaml)
+   (never edit `docs/protocol-compatibility.md` by hand).
 4. Open a Pull Request using the template. Reference related issues.
 
 ## Project layout
@@ -40,7 +46,7 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 - New behavior must be covered by unit and/or MockMvc/Quarkus integration tests.
 - Javadoc on public API members.
 - Artifact coordinates: `io.github.diovamny.quarkus.inertia:quarkus-inertia` and
-  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.3`).
+  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.4`).
 
 ## Versioning and releases
 
@@ -53,6 +59,21 @@ mvn clean deploy -Prelease -DskipTests
 ```
 
 Document user-facing changes in `CHANGELOG.md` (Keep a Changelog, English).
+
+## RFC process and deprecation policy
+
+- Public API changes (`Inertia` facade, SPIs, `inertia.*` properties,
+  protocol behavior) start as an **issue (RFC)**: Laravel/Rails parity
+  reference, proposed signatures, migration sketch. Silence for 14 days
+  means consent (see `GOVERNANCE.md`).
+- Breaking changes require a minor-version bump proposal, a
+  `docs/migration.md` note, and a matrix row update in
+  `specs/inertia-v3-compliance.yaml` — never a silent wire change.
+- Deprecations ship as `@Deprecated(since = "...")` with a documented
+  replacement and survive at least one minor release before removal.
+- Since the `1.0.0` API freeze, `japicmp` diffs every PR against the last
+  release and blocks unannounced binary incompatibilities
+  (see `AUDIT_FASE_5_RELEASE_004.md`).
 
 ## Reporting issues
 

@@ -21,7 +21,21 @@ class TckReactiveTest {
         "partial-except-filters-props",
         "internal-redirect-on-get-visit",
         "external-redirect-is-409-challenge",
-        "plain-external-redirect-is-302");
+        "plain-external-redirect-is-302",
+        "shared-props-included-on-full-visit",
+        "shared-props-survive-partial-base",
+        "once-keyed-custom-tracking-key",
+        "once-keyed-suppressed-by-custom-key",
+        "once-expired-excluded-from-metadata",
+        "merge-metadata-emitted",
+        "merge-reset-clears-metadata",
+        "merge-partial-keeps-metadata",
+        "scroll-metadata-emitted",
+        "scroll-prepend-intent",
+        "named-bag-submit-redirects-back",
+        "named-bag-errors-nested-on-reload",
+        "multipart-upload-redirects",
+        "once-combos-full-visit");
 
     @Test
     void normativeProtocolSubsetIsGreenOnReactiveRoutes() {

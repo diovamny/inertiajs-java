@@ -5,12 +5,11 @@ package io.github.diovamny.inertia.core.spi;
  * Inertia bootstrap payload.
  *
  * <h2>Why no nonce is needed by default</h2>
- * <p>The default bootstrap ({@code <div id="app" data-page="...">}, like
- * Laravel's) carries the page object as inert markup: the browser never
- * executes it, so a strict {@code script-src} policy without
- * {@code 'unsafe-inline'} stays green with no nonce. The JSON companion tag
- * ({@code <script type="application/json">}) is data, not executable script,
- * for the same reason.</p>
+ * <p>The default bootstrap (v3-pure: {@code <div id="app">} with no payload
+ * plus {@code <script type="application/json" data-page="app">}) carries the
+ * page object as data, not executable script: the browser never executes it,
+ * so a strict {@code script-src} policy without {@code 'unsafe-inline'} stays
+ * green with no nonce.</p>
  *
  * <p>A nonce becomes necessary only when the application serves executable
  * inline scripts (its own bundles, analytics snippets) or switches the

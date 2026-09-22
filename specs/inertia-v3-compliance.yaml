@@ -1,0 +1,486 @@
+# Inertia.js v3 protocol compliance — single source of truth (PLAN v4 §3.5 / H5).
+# docs/protocol-compatibility.md is GENERATED from this file by
+# scripts/generate-compatibility-matrix.mjs. Do not edit the markdown by hand.
+# Statuses: IMPLEMENTED | TESTED | E2E_VERIFIED | NOT_SUPPORTED | NOT_APPLICABLE
+# CI fails on IMPLEMENTED without test_ref (enforced by the generator).
+version: 1
+updated: 2026-09-22
+entries:
+  - id: PROTO-001
+    section: "Detection"
+    description: "X-Inertia header present on Inertia visits"
+    reference: "https://inertiajs.com/docs/v3/core-concepts/the-protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaHeaderExtractorTest, ReactiveRouteInertiaTest"
+    notes: "Both set X-Inertia:true in response"
+  - id: PROTO-002
+    section: "Detection"
+    description: "X-Inertia-Version header present"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "FeatureMetadataIntegrationTest, InertiaRedirectQuarkusTest"
+    notes: "Version included in page responses"
+  - id: PROTO-003
+    section: "Detection"
+    description: "HTTP method detected from request"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaHeaderExtractorTest, InertiaResponseFilterUnitTest"
+    notes: "GET/POST/PUT/PATCH/DELETE"
+  - id: PROTO-004
+    section: "Detection"
+    description: "Partial reload headers parsed"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PartialReloadProcessorTest, PartialReloadProcessorUnitTest"
+    notes: "X-Inertia-Partial-Component/Data/Except/Reset"
+  - id: PROTO-005
+    section: "Response"
+    description: "X-Inertia:true header on JSON responses"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RenderPageIntegrationTest, ReactiveRouteInertiaTest"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "JSON page responses include header; Playwright e2e on Spring/Quarkus demos"
+  - id: PROTO-006
+    section: "Response"
+    description: "Component, props, URL, version in JSON"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaPageTest (both), PageObjectUnitTest (core)"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "Full page object serialized; Playwright e2e asserts component/url/version/props"
+  - id: PROTO-007
+    section: "Response"
+    description: "clearHistory boolean in page object"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PageObjectUnitTest (core), InertiaPageTest"
+    notes: "Configurable via properties and API"
+  - id: PROTO-008
+    section: "Response"
+    description: "encryptHistory boolean in page object"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PageObjectUnitTest (core), InertiaPageTest"
+    notes: "Configurable via properties and API"
+  - id: PROTO-009
+    section: "Response"
+    description: "preserveFragment boolean in page object"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaPageTest (both)"
+    notes: "Inertia.preserveFragment() API"
+  - id: PROTO-010
+    section: "Version"
+    description: "Asset version match returns normal response"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RenderPageIntegrationTest, ReactiveRouteInertiaTest"
+    notes: "Same version -> 200 JSON"
+  - id: PROTO-011
+    section: "Version"
+    description: "Version mismatch returns 409 + X-Inertia-Location"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "FeatureMetadataIntegrationTest (both)"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "Different version -> 409; Playwright e2e asserts 409 + x-inertia-location"
+  - id: PROTO-012
+    section: "Version"
+    description: "X-Inertia-Version sent in 409 response"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "FeatureMetadataIntegrationTest (both)"
+    notes: "Header included"
+  - id: PROTO-013
+    section: "Version"
+    description: "Vary header includes version"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RedirectProcessorTest, InertiaResponseFilterUnitTest"
+    notes: "X-Inertia-Version in Vary"
+  - id: PROTO-014
+    section: "Version"
+    description: "Configurable version strategy"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "DefaultVersionProviderUnitTest (Quarkus), FeatureMetadataIntegrationTest (Spring)"
+    notes: "sha256, vite-manifest, custom"
+  - id: PROTO-015
+    section: "Redirect"
+    description: "GET redirect -> 302"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RedirectProcessorTest (both)"
+    notes: "Standard redirect"
+  - id: PROTO-016
+    section: "Redirect"
+    description: "POST redirect -> 303 See Other"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RedirectProcessorTest, InertiaRedirectQuarkusTest"
+    notes: "State-changing -> 303"
+  - id: PROTO-017
+    section: "Redirect"
+    description: "External URL -> 409 + X-Inertia-Location"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RedirectProcessorTest, InertiaRedirectQuarkusTest"
+    notes: "External detected"
+  - id: PROTO-018
+    section: "Redirect"
+    description: "Vary header preserved on redirects"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RedirectProcessorTest, InertiaResponseFilterUnitTest"
+    notes: "X-Inertia in Vary"
+  - id: PROTO-019
+    section: "Redirect"
+    description: "303 only for redirect objects, not rendered pages"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RedirectIntegrationTest, InertiaRedirectQuarkusTest"
+    notes: "POST rendering page -> 200, redirect -> 303"
+  - id: PROTO-020
+    section: "Partial"
+    description: "X-Inertia-Partial-Component header"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PartialReloadProcessorTest, PartialReloadProcessorUnitTest"
+    notes: "Component match detection"
+  - id: PROTO-021
+    section: "Partial"
+    description: "only (X-Inertia-Partial-Data) filters props"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PartialReloadProcessorTest, PartialReloadProcessorUnitTest"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "Dot notation supported; Playwright e2e asserts partial-data filtering"
+  - id: PROTO-022
+    section: "Partial"
+    description: "except (X-Inertia-Partial-Except) excludes props"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PartialReloadProcessorTest, PartialReloadProcessorUnitTest"
+    notes: "Dot notation supported"
+  - id: PROTO-023
+    section: "Partial"
+    description: "Structural dot notation filtering"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PartialReloadProcessorTest (both)"
+    notes: "auth.user -> selective nested"
+  - id: PROTO-024
+    section: "Partial"
+    description: "Reset clears merge metadata"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "PartialReloadProcessorTest, PartialReloadProcessorUnitTest"
+    notes: "Resets merge/prepend/deepMerge"
+  - id: PROTO-025
+    section: "Special"
+    description: "always props survive partial reloads"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RenderPageIntegrationTest, InertiaPageUnitTest"
+    notes: "Always included"
+  - id: PROTO-026
+    section: "Special"
+    description: "optional resolved only on partial with only/except"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "OptionalPropsIntegrationTest, OptionalPropsUnitTest"
+    notes: "Not on full visits"
+  - id: PROTO-027
+    section: "Special"
+    description: "deferred excluded until group requested"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "DeferredPropsIntegrationTest (Spring), OnceLazyShareOnceUnitTest (Quarkus)"
+    notes: "Resolved on partial"
+  - id: PROTO-028
+    section: "Special"
+    description: "once props tracked via X-Inertia-Except-Once-Props header"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "OncePropRegistryTest (both), OncePropsIntegrationTest"
+    notes: "Header-based, not session"
+  - id: PROTO-029
+    section: "Special"
+    description: "once explicit partial request overrides Except-Once"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "OncePropRegistryTest (Spring), OnceLazyShareOnceUnitTest (Quarkus)"
+    notes: "only:notice -> always returns notice"
+  - id: PROTO-030
+    section: "Special"
+    description: "merge/prepend/deepMerge metadata"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "MergePropProcessorTest (both)"
+    notes: "Client-side merge"
+  - id: PROTO-031
+    section: "Special"
+    description: "scroll props metadata"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaPageTest (both)"
+    notes: "Scroll metadata preserved"
+  - id: PROTO-032
+    section: "Special"
+    description: "rescue marks failed deferred/cached props"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "DeferredPropsIntegrationTest, SharedDataRegistryUnitTest"
+    notes: "rescuedProps metadata"
+  - id: PROTO-033
+    section: "State"
+    description: "clearHistory configurable per-request"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "Inertia.setClearHistory() (Spring), Inertia.clearHistory() (Quarkus)"
+    notes: "API + properties"
+  - id: PROTO-034
+    section: "State"
+    description: "encryptHistory configurable per-request"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "Inertia.setEncryptHistory() (both)"
+    notes: "API + properties"
+  - id: PROTO-035
+    section: "State"
+    description: "preserveFragment configurable per-request"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "Inertia.preserveFragment() (both)"
+    notes: "API"
+  - id: PROTO-036
+    section: "CSRF"
+    description: "XSRF-TOKEN cookie on all responses"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaCsrfFilterTest (Spring), CsrfQuarkusTest (Quarkus)"
+    notes: "Cookie emitted always, validated on mutating"
+  - id: PROTO-037
+    section: "CSRF"
+    description: "Validation only on mutating Inertia requests"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaCsrfFilterTest (Spring), CsrfQuarkusTest (Quarkus)"
+    notes: "POST/PUT/PATCH/DELETE with X-Inertia"
+  - id: PROTO-038
+    section: "CSRF"
+    description: "303 + flash on missing/invalid token (Inertia visits)"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "CsrfIntegrationTest (Spring), CsrfQuarkusTest (Quarkus)"
+    notes: "303 + Location + flash on Inertia visits in both adapters; 419 only for non-Inertia requests in the Quarkus reactive pre-handler (Spring adapter passes non-Inertia through); never X-Inertia-Location on CSRF"
+  - id: PROTO-039
+    section: "HTML"
+    description: "Safe JSON encoding in script context"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "SafeJsonEncoderTest (both)"
+    notes: "Escapes <, >, &, U+2028, U+2029"
+  - id: PROTO-040
+    section: "HTML"
+    description: "SSR timeout configurable"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "HtmlRendererTest, SsrHandlerUnitTest"
+    notes: "ssrConnectTimeout + ssrReadTimeout"
+  - id: PROTO-041
+    section: "HTML"
+    description: "Error details hidden by default"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "ErrorResponseFactoryUnitTest (Quarkus)"
+    notes: "errorDetailsEnabled=false default"
+  - id: PROTO-042
+    section: "HTML"
+    description: "SSR error does not leak response body"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "SsrHandlerUnitTest (Quarkus)"
+    notes: "Returns fallback on error"
+  - id: PROTO-043
+    section: "HTTP"
+    description: "Vary header on JSON responses"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RenderPageIntegrationTest, InertiaResponseFilterUnitTest"
+    notes: "X-Inertia, Version, Partial-*, Except"
+  - id: PROTO-044
+    section: "HTTP"
+    description: "ETag support with If-None-Match"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "EtagQuarkusTest"
+    notes: "Supports wildcard, comma lists"
+  - id: PROTO-045
+    section: "HTTP"
+    description: "Default status 200 when none specified"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RenderPageIntegrationTest, InertiaRenderQuarkusTest"
+    notes: "Null-safe default"
+  - id: PROTO-046
+    section: "Shared"
+    description: "Shared props included on full visits"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "RenderPageIntegrationTest, InertiaPageUnitTest"
+    notes: "putIfAbsent semantics"
+  - id: PROTO-047
+    section: "Shared"
+    description: "Shared props included as base in partial reloads"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "SharedPropsIntegrationTest, SharedDataRegistryUnitTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    notes: "Laravel parity: only always props survive the only/except filter; plain shared props are filtered (shared-props-survive-partial-base)"
+  - id: PROTO-048
+    section: "Asset"
+    description: "Version strategy: custom > vite-manifest > sha256 > fallback"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "FeatureMetadataIntegrationTest, DefaultVersionProviderUnitTest"
+    notes: "Deterministic precedence"
+  - id: PROTO-049
+    section: "Asset"
+    description: "SHA-256 hash of static assets"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "DefaultVersionProviderUnitTest, FeatureMetadataIntegrationTest"
+    notes: "Path + content hash"
+  - id: PROTO-050
+    section: "Asset"
+    description: "JAR resource enumeration"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "DefaultVersionProviderUnitTest, FeatureMetadataIntegrationTest"
+    notes: "ZIP entry fallback"
+  - id: PROTO-051
+    section: "TCK"
+    description: "Handshake, partial only/except, deferred, once"
+    reference: "01-handshake.yaml, 02-partial.yaml, 03-deferred-once.yaml"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    notes: "inertia-tck, same cases on 3 stacks"
+  - id: PROTO-052
+    section: "TCK"
+    description: "Redirects 302/303/409, versioning, adapter CSRF, validation"
+    reference: "04-redirects.yaml, 05-version.yaml, 06-csrf.yaml, 07-validation.yaml"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "TckSpringTest, TckQuarkusTest"
+    notes: "per-stack overrides where contracts diverge"
+  - id: PROTO-053
+    section: "Validation"
+    description: "X-Inertia-Error-Bag default + named bags, multiple messages per field"
+    reference: "https://inertiajs.com/docs/v3/forms/validation"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationQuarkusTest, ValidationIntegrationTest"
+    notes: "Default + named bags via 07-validation.yaml on 3 transports (redirect 303 + nested flash); wire shape is one message per field"
+  - id: PROTO-054
+    section: "Special"
+    description: "append() and matchOn()/matchPropsOn in merge"
+    reference: "https://inertiajs.com/docs/v3/data-loading/merging-props"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: IMPLEMENTED
+    test_ref: "MergePropProcessorTest (both)"
+    notes: "No explicit append() API; append intent covered via mergeProps + scroll merge-intent; matchPropsOn emitted; dedicated TCK in Fase 2 (H7)"
+  - id: PROTO-055
+    section: "Special"
+    description: "X-Inertia-Infinite-Scroll-Merge-Intent honored"
+    reference: "https://inertiajs.com/docs/v3/data-loading/infinite-scrolling"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaPageTest (both), InertiaHeaderExtractorTest"
+    notes: "Header extracted; scrollProps metadata; dedicated infinite-scroll TCK in Fase 2 (H8)"
+  - id: PROTO-056
+    section: "Special"
+    description: "once key, fresh and expiry semantics"
+    reference: "https://inertiajs.com/docs/v3/data-loading/once-props"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "OncePropRegistryTest (both), OncePropsIntegrationTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    notes: "customKey + expiry (Duration/Instant) + once+merge/optional/deferred combos via 03-deferred-once.yaml on 3 transports; fresh is server-internal with no wire effect"
+  - id: PROTO-057
+    section: "Shared"
+    description: "sharedProps field present in page object"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "InertiaPageTest (both)"
+    notes: "Explicit sharedProps field in PageObject, omitted when empty; instant-visits population verified in Fase 2 (H12)"
+  - id: PROTO-058
+    section: "HTML"
+    description: "SSR failure uses structured error contract"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "SsrFailureClassifierTest, SsrHandlerUnitTest"
+    notes: "Failures classify as unreachable/timeout/error-status/unknown with hints (server-side only, CSR fallback); sidecar-reported browserApi/sourceLocation travel in render payloads"
+  - id: PROTO-059
+    section: "HTML"
+    description: "Bootstrap v3 structural: payload once in script, div without data-page"
+    reference: "https://inertiajs.com/docs/v3/core-concepts/the-protocol"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "HtmlRendererTest, RenderPageIntegrationTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "v3-pure since 0.0.4 (59% smaller bootstrap); legacy data-page attribute not supported; Playwright e2e parses the script JSON on Spring/Quarkus demos"
+...[truncated 2085 chars]

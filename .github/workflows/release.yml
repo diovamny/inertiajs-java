@@ -33,8 +33,12 @@ jobs:
           server-username: ${{ secrets.CENTRAL_USERNAME }}
           server-password: ${{ secrets.CENTRAL_PASSWORD }}
 
-      - name: Run full test suite
-        run: mvn clean test -T 1C
+      - name: Run tests and blocking quality gates
+        # Releases fail when ANY gate fails: unit/integration suites,
+        # Checkstyle, SpotBugs and PIT mutation testing (thresholds in the
+        # root pom). OWASP stays in its conditional step below (needs
+        # NVD_API_KEY). Skip flags are for local development only.
+        run: mvn clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=false -DskipDependencyCheck=true
 
       - name: Diagnose Central server wiring (lengths only, values stay masked)
         # Prints whether the `central` server entry exists and the LENGTH of

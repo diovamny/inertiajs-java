@@ -18,13 +18,14 @@ each property.
 | `inertia.encrypt-history` | `false` | ✅ | ✅ | The client must encrypt history state. |
 | `inertia.clear-history` | `false` | ✅ | ➖ | Clear the client history on the next visit (Spring only). |
 | `inertia.camelize-props` | `false` | ✅ | ✅ | Convert snake_case prop keys to camelCase (`first_name` → `firstName`). |
-| `inertia.csrf-enabled` | `true` | ✅ | ✅ | XSRF-TOKEN cookie synchronization (+ `419` on invalid mutating visits). |
+| `inertia.csrf-enabled` | `true` | ✅ | ✅ | XSRF-TOKEN cookie synchronization. Invalid Inertia visits fail with `303` + `Location` + flash (same default in Spring and Quarkus); non-Inertia requests pass through in the Spring adapter and keep legacy `419` in the Quarkus reactive pre-handler. |
 | `inertia.root-view` | _(unset)_ | ✅ | ✅ | Explicit view name for the root view; defaults to `root-template`. |
 | `inertia.flash-keys` | _(empty)_ | ✅ | ✅ | Comma-separated session keys flashed with every page. |
 | `inertia.always-include-errors` | `true` | ✅ | ✅ | Always inject validation `errors` into props (Laravel-compatible). |
 | `inertia.error-status` | `500` | ✅ | ✅ | HTTP status used for error pages. |
 | `inertia.error-component` | `ErrorPage` | ✅ | ✅ | Component rendered for error pages. |
 | `inertia.error-details-enabled` | `false` | ✅ | ✅ | Include exception details in error responses (development only). |
+| `inertia.max-page-bytes` | `33554432` (32 MiB) | ✅ | ✅ | Max serialized page size; larger pages fail closed with `413` (`-1` disables). |
 | `inertia.lazy-etag-enabled` | `true` | ✅ | ✅ | ETag / `304` handling. |
 | `inertia.use-qute` | `false` | ➖ | ✅ | Quarkus only: render the root template with Qute (needs `quarkus-qute`). |
 | `inertia.convention-routing-enabled` | `false` | ✅ | ✅ | Auto-resolve component names by convention. |

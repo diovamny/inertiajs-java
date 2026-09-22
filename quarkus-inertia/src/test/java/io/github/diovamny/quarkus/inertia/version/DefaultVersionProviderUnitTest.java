@@ -41,6 +41,7 @@ class DefaultVersionProviderUnitTest {
             @Override public int errorStatus() { return 500; }
             @Override public String errorComponent() { return "ErrorPage"; }
             @Override public boolean lazyEtagEnabled() { return true; }
+            @Override public long maxPageBytes() { return 33554432L; }
             @Override public Optional<java.util.List<String>> ssrExcludePaths() { return Optional.empty(); }
             @Override public boolean useQute() { return false; }
             @Override public boolean errorDetailsEnabled() { return false; }

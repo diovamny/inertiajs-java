@@ -61,23 +61,85 @@ node bootstrap/ssr/ssr.js
 
 ## Vite SSR Build
 
-In `vite.config.js`, add an SSR entry point:
+Add an SSR entry point (`resources/js/ssr.js`) next to your client entry.
+Vue 3:
 
 ```js
+// vite.config.js (Vue 3 + Spring Boot or Quarkus)
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+
 export default defineConfig({
-    plugins: [laravel({ input: 'resources/js/app.js' })],
-    ssr: {
-        input: 'resources/js/ssr.js',
+    plugins: [vue()],
+    build: {
+        manifest: true,
+        outDir: '../java-static/assets',
+        rollupOptions: { input: 'resources/js/app.js' },
+    },
+    ssr: { noExternal: ['@inertiajs/vue3'] },
+});
+```
+
+```js
+// resources/js/ssr.js (Vue 3)
+import { createSSRApp, h } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import { createInertiaApp } from '@inertiajs/vue3';
+
+export async function render(page) {
+    const app = await createInertiaApp({
+        page,
+        render: renderToString,
+        resolve: (name) => import(`./pages/${name}.vue`),
+        setup: ({ App, props, plugin }) => createSSRApp({ render: () => h(App, props) }).use(plugin),
+    });
+    return app;
+}
+```
+
+React 18:
+
+```js
+// vite.config.js (React 18)
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+    plugins: [react()],
+    build: {
+        manifest: true,
+        outDir: '../java-static/assets',
+        rollupOptions: { input: 'resources/js/app.jsx' },
     },
 });
 ```
 
-Build the SSR bundle:
+Svelte 5:
+
+```js
+// vite.config.js (Svelte 5)
+import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+export default defineConfig({
+    plugins: [svelte()],
+    build: {
+        manifest: true,
+        outDir: '../java-static/assets',
+        rollupOptions: { input: 'resources/js/app.js' },
+    },
+});
+```
+
+Build the bundles:
 
 ```bash
-npm run build        # client bundle
-npm run build -- --ssr  # SSR bundle
+npm run build          # client bundle (reads vite.config.js)
+vite build --ssr resources/js/ssr.js --outDir bootstrap/ssr  # SSR bundle (Vue/React)
 ```
+
+Point the adapter at the sidecar (`inertia.ssr-enabled=true`,
+`inertia.ssr-url=http://localhost:13714`) as described below.
 
 ---
 
@@ -163,6 +225,21 @@ public class SsrHealthIndicator implements HealthIndicator {
 ```
 
 ---
+
+## Trust boundary
+
+The Node.js sidecar is a **trust boundary**:
+
+- Bind it to `localhost` (or a Unix socket) — never expose it to the network.
+  It receives the full page object (including server props) and returns raw
+  HTML that the adapter injects without sanitization.
+- Connection/read timeouts apply (`inertia.ssr-connect-timeout`,
+  `inertia.ssr-read-timeout`); failures fall back to client-side rendering
+  and are logged server-side as structured `unreachable / timeout /
+  error-status / unknown` events — never rendered to the client.
+- Cap the sidecar response size at the reverse proxy; on the adapter side,
+  `inertia.max-page-bytes` bounds every served page with `413`.
+- Never point `inertia.ssr-url` at a remote host without explicit validation.
 
 ## Production Tips
 

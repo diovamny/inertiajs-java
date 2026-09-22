@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.0.4
+
+- Fase 0 (PLAN_MEJORA v4, H1–H5): versión única `0.0.4` con fuente central
+  `version.properties` y `node scripts/check-versions.mjs` en CI; CSRF canónico
+  `303 + flash` en visitas Inertia en Spring y Quarkus (fila 38 de la matriz
+  corregida: `419` solo fuera de Inertia en Quarkus / pass-through en Spring);
+  plantilla raíz v3 pura — `<div id="app">` sin `data-page`, page object solo en
+  `<script type="application/json" data-page="app">` (ver nota de bytes abajo);
+  `ROADMAP.md` regenerado desde el release actual; `docs/ssr-setup.md` sin
+  ejemplo `laravel-vite-plugin`.
+- Plantilla raíz v3: el payload JSON viaja una sola vez (antes dos veces:
+  atributo `data-page` escapado + script). Medición del bootstrap
+  (`<div id="app">` + `<script data-page="app">`, página de ejemplo de 299 B):
+  antes 930 B → ahora 378 B, ahorro de 552 B (**59%**); el ahorro crece con el
+  tamaño del page object porque se elimina la copia completa del atributo.
+  Breaking change anunciado: el atributo `data-page` heredado (v1/v2) no se
+  soporta ni como opción.
+- Módulo reactivo Quarkus en estabilización: regresión de concurrencia G-17
+  permanente en CI; README/docs lo marcan como estabilización en curso hasta un
+  ciclo sin regresiones.
+- Fase 1 (PLAN_MEJORA v4, H5): `specs/inertia-v3-compliance.yaml` como fuente
+  única (59 requisitos PROTO-001–059 con status y test_ref) y
+  `docs/protocol-compatibility.md` generado por
+  `scripts/generate-compatibility-matrix.mjs` (gate en CI: regenera y falla
+  ante cualquier diff; falla con IMPLEMENTED sin test_ref). Métrica:
+  **Protocol 57/59 verified (5 con E2E Playwright)**. Filas nuevas: error bags,
+  append/matchOn, infinite-scroll intent, once key/fresh/expiry, sharedProps,
+  error estructurado SSR, bootstrap v3.
+- Fase 2 (PLAN_MEJORA v4, H6–H13): TCK ejecutable ampliado a 39 casos
+  (Spring/JAX-RS) y 21 (Reactive): once con key/expiry/combos, merge moderno +
+  reset, infinite scroll con intent, error bags con nombre, uploads multipart
+  (nuevo DSL `multipart` con CRLF), sharedProps; `BootstrapHtmlContractTest`
+  en ambos adapters (8 fixtures §5); `SsrFailureClassifier` en core con
+  logging en ambos handlers; fixes de paridad (supresión once eager en
+  Quarkus, purge de vencidos en Spring, `always` vs `share` en partials).
+  Matriz: **58/59 verified**.
+- Fase 4 (PLAN_MEJORA v4, H14/H16/H18): `docs/NOT_SUPPORTED.md`; tabla
+  Supported/Tested + matriz de versiones en README; sitio VitePress
+  `docs-site/` (21 páginas) con deploy a Pages (`docs.yml`).
+- Fase 5 (RC 0.0.4): perfil `apicheck` (japicmp 0.0.3→0.0.4: core MINOR,
+  spring MINOR, quarkus MAJOR por `maxPageBytes` y ctor interno, ambos
+  anunciados en `docs/migration.md`); RFC/deprecación en CONTRIBUTING;
+  revisión externa en GOVERNANCE; checklist RC en `AUDIT_FASE_5_RELEASE_004.md`.
+- Fase 3 (PLAN_MEJORA v4, H15/H20): release bloqueante con quality gates
+  (`mvn clean verify -Pquality-gates`, PIT activado, OWASP condicional a
+  `NVD_API_KEY`); guards compartidos `RedirectTargets` (CRLF/schemes →
+  400/400 sin emitir cabecera) y `PageSizeGuard` (`inertia.max-page-bytes`,
+  32 MiB, → 413) con suites de seguridad en ambos adapters; frontera de
+  confianza SSR documentada; `native-tests.yml` en tags `v*`; módulo JMH
+  `benchmarks/` (531k/103k/171 ops/s en small/medium/large).
+
 ## 0.0.3
 
 - Security, framework-first: `spring-inertia-security` and

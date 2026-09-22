@@ -161,9 +161,10 @@ public class RedirectProcessor {
 
     private Uni<Object> back0(String fallback, int forcedStatus, Map<String, String> headers) {
         var referer = getRefererUrl();
-        var url = (referer != null && !referer.isBlank())
-            ? referer
-            : (fallback != null && !fallback.isBlank()) ? fallback : "/";
+        final var url = io.github.diovamny.inertia.core.security.RedirectTargets.check(
+            (referer != null && !referer.isBlank())
+                ? referer
+                : (fallback != null && !fallback.isBlank()) ? fallback : "/");
         if (forcedStatus > 0) {
             return Uni.createFrom().deferred(() -> {
                 var builder = Response.status(forcedStatus)
@@ -288,9 +289,10 @@ public class RedirectProcessor {
 
     private Response back0Sync(String fallback, int forcedStatus, Map<String, String> headers) {
         var referer = getRefererUrl();
-        var url = (referer != null && !referer.isBlank())
-            ? referer
-            : (fallback != null && !fallback.isBlank()) ? fallback : "/";
+        final var url = io.github.diovamny.inertia.core.security.RedirectTargets.check(
+            (referer != null && !referer.isBlank())
+                ? referer
+                : (fallback != null && !fallback.isBlank()) ? fallback : "/");
         if (forcedStatus > 0) {
             var builder = Response.status(forcedStatus)
                 .header("Location", url)
@@ -302,6 +304,7 @@ public class RedirectProcessor {
     }
 
     private Response buildRedirect(String url, boolean nonGet, Map<String, String> headers) {
+        url = io.github.diovamny.inertia.core.security.RedirectTargets.check(url);
         if (isPrecognitionValidateOnly()) {
             flashStore.drain();
             return Response.status(Response.Status.NO_CONTENT)
@@ -333,6 +336,7 @@ public class RedirectProcessor {
     }
 
     private Response buildConflict(String url, Map<String, String> headers) {
+        url = io.github.diovamny.inertia.core.security.RedirectTargets.check(url);
         var builder = Response.status(Response.Status.CONFLICT)
             .header("X-Inertia-Location", url)
             .header("Vary", "X-Inertia");

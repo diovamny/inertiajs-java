@@ -81,7 +81,12 @@ public class SsrClient {
             breaker.recordSuccess();
             return Optional.ofNullable(body);
         } catch (Exception e) {
-            // Log the error but don't expose details to the client
+            // Structured server-side classification (H13); details never reach
+            // the client, the renderer falls back to CSR.
+            var classified =
+                io.github.diovamny.inertia.core.ssr.SsrFailureClassifier.classify(e);
+            org.slf4j.LoggerFactory.getLogger(SsrClient.class)
+                .warn("SSR fallback (type={}, hint={})", classified.type(), classified.hint());
             breaker.recordFailure();
             metrics.recordSsrFailure();
             return Optional.empty();

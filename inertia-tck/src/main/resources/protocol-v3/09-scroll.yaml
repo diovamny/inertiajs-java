@@ -1,0 +1,32 @@
+# Infinite scroll: scrollProps metadata and merge-intent handling.
+- id: scroll-metadata-emitted
+  description: Scroll props carry pagination metadata and append by default.
+  request:
+    method: GET
+    path: /tck/scroll
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/Scroll
+    jsonKeys: [scrollProps]
+    json:
+      props.items[0].id: 1
+      props.items[1].id: 2
+    jsonContains:
+      mergeProps: items.data
+
+- id: scroll-prepend-intent
+  description: X-Inertia-Infinite-Scroll-Merge-Intent prepend switches the merge side.
+  request:
+    method: GET
+    path: /tck/scroll
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Infinite-Scroll-Merge-Intent: prepend
+  expect:
+    status: 200
+    jsonContains:
+      prependProps: items.data
+    jsonMissing:
+      mergeProps: items.data

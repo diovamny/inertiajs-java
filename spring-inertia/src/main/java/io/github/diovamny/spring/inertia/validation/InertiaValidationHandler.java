@@ -1,11 +1,14 @@
 package io.github.diovamny.spring.inertia.validation;
 
 import jakarta.validation.ValidationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import io.github.diovamny.inertia.core.security.PageTooLargeException;
 import io.github.diovamny.spring.inertia.internal.ErrorResponseFactory;
 
 /**
@@ -36,6 +39,21 @@ public class InertiaValidationHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<String> handleMissingResource(NoResourceFoundException ex) {
         return errorResponseFactory.notFound(ex);
+    }
+
+    /**
+     * Oversized pages fail closed with {@code 413}: an Inertia error page for
+     * X-Inertia visits, an empty 413 otherwise. Never OOMs serving them.
+     */
+    @ExceptionHandler(PageTooLargeException.class)
+    public ResponseEntity<String> handlePageTooLarge(PageTooLargeException ex) {
+        if (errorResponseFactory.isErrorResponseExpected()) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponseFactory.createErrorPage(
+                    HttpStatus.PAYLOAD_TOO_LARGE.value(), "Page response too large"));
+        }
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).build();
     }
 
     @ExceptionHandler(Exception.class)

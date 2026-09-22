@@ -7,9 +7,15 @@
     "test:headed": "npx playwright test --headed",
     "test:ui": "npx playwright test --ui",
     "test:e2e": "npx playwright test",
-    "verify:matrix": "node scripts/check-conformance-matrix.mjs"
+    "verify:matrix": "node scripts/check-conformance-matrix.mjs",
+    "verify:versions": "node scripts/check-versions.mjs",
+    "verify:compliance": "node scripts/generate-compatibility-matrix.mjs",
+    "docs:build": "node scripts/build-docs-site.mjs",
+    "docs:dev": "vitepress dev docs-site",
+    "docs:preview": "vitepress preview docs-site"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1"
+    "@playwright/test": "^1.62.1",
+    "vitepress": "^1.6.4"
   }
 }

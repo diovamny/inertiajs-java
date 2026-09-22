@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 class HtmlRendererTest {
 
     @Test
-    void rendersHtmlWithPageAndSafeJson() {
+    void rendersV3PureBootstrapWithSinglePayload() {
         var properties = new InertiaProperties();
         var jsonProvider = new JacksonJsonProvider(new ObjectMapper());
         var ssrClient = new SsrClient(properties, jsonProvider);
@@ -28,8 +28,13 @@ class HtmlRendererTest {
         var html = renderer.render(page);
 
         assertNotNull(html);
-        assertTrue(html.contains("data-page="));
+        // v3-pure: the div carries no payload.
+        assertFalse(html.contains("<div id=\"app\" data-page"));
+        // The page object travels exactly once, in the script tag.
+        assertTrue(html.contains("type=\"application/json\" data-page=\"app\""));
         assertTrue(html.contains("Home"));
+        var occurrences = html.split("data-page=\"app\"", -1).length - 1;
+        assertTrue(occurrences == 1, "page payload must appear exactly once, found " + occurrences);
     }
 
     @Test

@@ -22,7 +22,9 @@ import io.github.diovamny.inertia.core.security.SafeJsonEncoder;
 
 /**
  * Renders the full HTML document for non-Inertia requests by injecting the
- * serialized page object into the root template.
+ * serialized page object into the root template (Inertia v3 pure bootstrap:
+ * {@code <div id="app">} carries no payload; the page object travels exactly
+ * once in {@code <script type="application/json" data-page="app">}).
  * Default implementation uses fast placeholder replacement (no Qute required).
  * Qute support is optional and enabled via {@code inertia.use-qute=true}.
  */
@@ -31,7 +33,8 @@ public class HtmlRenderer {
 
     private static final Logger LOG = Logger.getLogger(HtmlRenderer.class);
 
-    private static final String DEFAULT_TEMPLATE = "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>__INERTIA_PAGE_TITLE__</title>\n    @vite('resources/js/app.ts')\n    __INERTIA_SSR_HEAD__\n</head>\n<body>\n    <div id=\"app\" data-page=\"__INERTIA_PAGE_JSON__\">__INERTIA_SSR_BODY__</div>\n    <script type=\"application/json\" id=\"inertia-page\" __INERTIA_CSP_NONCE__>__INERTIA_PAGE__</script>\n</body>\n</html>";
+    // v3-pure fallback: payload travels exactly once, in the script tag.
+    private static final String DEFAULT_TEMPLATE = "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>__INERTIA_PAGE_TITLE__</title>\n    @vite('resources/js/app.ts')\n    __INERTIA_SSR_HEAD__\n</head>\n<body>\n    <div id=\"app\">__INERTIA_SSR_BODY__</div>\n    <script type=\"application/json\" data-page=\"app\" __INERTIA_CSP_NONCE__>__INERTIA_PAGE_JSON__</script>\n</body>\n</html>";
 
     private static final String DEFAULT_TEMPLATE_PATH = "templates/index.html";
 
@@ -192,6 +195,7 @@ java.time.Duration.ofSeconds(10);
     }
 
     private String renderTemplate(PageObject page, String json, String ssrBody, String ssrHead) {
+        io.github.diovamny.inertia.core.security.PageSizeGuard.check(json, config.maxPageBytes());
         if (useQute()) {
             return renderWithQute(page, json, ssrBody, ssrHead);
         }
@@ -222,7 +226,9 @@ java.time.Duration.ofSeconds(10);
 
     private String renderWithPlaceholders(PageObject page, String json, String ssrBody, String ssrHead) {
         String template = getTemplateForCurrentRequest();
-        String jsonEscaped = escapeHtmlAttribute(json);
+        // v3-pure: the page object travels exactly once, in the script tag.
+        // The legacy __INERTIA_PAGE__ placeholder (v1/v2 data-page attribute)
+        // is blanked, exactly like the Spring adapter does.
         String jsonRaw = SafeJsonEncoder.encodeForScript(json);
         String pageTitle = "Inertia App";
         var meta = page.meta();
@@ -233,8 +239,8 @@ java.time.Duration.ofSeconds(10);
         String ssrBodySafe = ssrBody != null ? ssrBody : "";
         String ssrHeadSafe = ssrHead != null ? ssrHead : "";
           String rendered = template
-             .replace("__INERTIA_PAGE__", jsonRaw)
-             .replace("__INERTIA_PAGE_JSON__", jsonEscaped)
+             .replace("__INERTIA_PAGE_JSON__", jsonRaw)
+             .replace("__INERTIA_PAGE__", "")
               .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
               .replace("__INERTIA_SSR_BODY__", ssrBodySafe)
              .replace("__INERTIA_PAGE_TITLE__", pageTitle)

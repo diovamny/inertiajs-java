@@ -57,11 +57,15 @@ public class OncePropRegistry {
     }
 
     /**
-     * All once-prop metadata registered for the current page.
+     * All once-prop metadata registered for the current page, excluding
+     * entries whose TTL already elapsed (parity with the Quarkus registry,
+     * which purges expired entries before emitting metadata).
      *
-     * @return the entries
+     * @return the live entries
      */
     public Map<String, OnceProp> metadata() {
+        var now = System.currentTimeMillis();
+        metadata.values().removeIf(prop -> prop.expiresAt() != null && prop.expiresAt() <= now);
         return metadata;
     }
 

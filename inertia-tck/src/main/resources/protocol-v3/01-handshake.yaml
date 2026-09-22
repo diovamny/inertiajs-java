@@ -18,15 +18,19 @@
       props.b: B
 
 - id: plain-visit-returns-html-root
-  description: A visit without X-Inertia receives the HTML root view embedding the page.
+  description: A visit without X-Inertia receives the v3-pure HTML root view (payload once in script, div without data-page).
   request:
     method: GET
     path: /tck/page
   expect:
     status: 200
     contentTypeContains: text/html
-    bodyContains: data-page
-    bodyContains: Tck/Page
+    bodyContains:
+      - type="application/json" data-page="app"
+      - '"component"'
+      - Tck
+    bodyAbsent:
+      - <div id="app" data-page
 
 - id: partial-component-mismatch-renders-full-page
   description: Partial headers for another component are ignored; the full page renders.

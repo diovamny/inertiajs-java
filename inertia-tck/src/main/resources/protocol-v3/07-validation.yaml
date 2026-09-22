@@ -25,3 +25,32 @@
     status: 200
     json:
       props.errors.name: required
+
+- id: named-bag-submit-redirects-back
+  description: Bean validation failures honor X-Inertia-Error-Bag with a 303.
+  request:
+    method: POST
+    path: /tck/submit-valid
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Error-Bag: loginForm
+      Referer: ${baseUri}/tck/form
+    contentType: application/json
+    body: '{"name":""}'
+  expect:
+    status: 303
+    locationEndsWith: /tck/form
+    withCsrfToken: true
+
+- id: named-bag-errors-nested-on-reload
+  description: Named-bag errors surface nested under the bag (runs after named-bag-submit-redirects-back).
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    jsonContains:
+      # Field presence (not the message text: validator messages are locale-dependent).
+      props.errors.loginForm: name

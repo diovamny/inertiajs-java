@@ -20,6 +20,7 @@ public final class TckCase {
     private final Map<String, String> headers;
     private final String body;
     private final String contentType;
+    private final Map<String, Object> multipart;
     private final Map<String, Object> expect;
     private final Map<String, Object> expectSpring;
     private final Map<String, Object> expectQuarkus;
@@ -35,6 +36,7 @@ public final class TckCase {
         var rawBody = request.get("body");
         this.body = rawBody != null ? String.valueOf(rawBody) : null;
         this.contentType = (String) request.get("contentType");
+        this.multipart = (Map<String, Object>) request.get("multipart");
         this.expect = (Map<String, Object>) raw.getOrDefault("expect", Map.of());
         this.expectSpring = (Map<String, Object>) raw.get("expect-spring");
         this.expectQuarkus = (Map<String, Object>) raw.get("expect-quarkus");
@@ -84,6 +86,15 @@ public final class TckCase {
 
     public String contentType() {
         return contentType;
+    }
+
+    /**
+     * Multipart spec ({@code boundary} + {@code parts} list), or {@code null}
+     * for a plain body. When present the runner builds a CRLF-correct
+     * {@code multipart/form-data} payload.
+     */
+    public Map<String, Object> multipart() {
+        return multipart;
     }
 
     /**

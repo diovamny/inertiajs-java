@@ -471,6 +471,17 @@ public interface InertiaConfig {
     boolean errorDetailsEnabled();
 
     /**
+     * Max serialized page size in bytes; larger pages fail with {@code 413}.
+     * Negative disables the check.
+     * <p>Property: {@code inertia.max-page-bytes}.</p>
+     *
+     * @return the limit in bytes, default {@code 33554432} (32 MiB)
+     */
+    @WithName("max-page-bytes")
+    @WithDefault("33554432")
+    long maxPageBytes();
+
+    /**
      * Whether the ETag lazy-response optimization is enabled.
      * <p>Property: {@code inertia.lazy-etag-enabled}.</p>
      *
