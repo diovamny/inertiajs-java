@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.5 (release-0.0.5, in progress)
+
+- M0 (P100-01): v3-only policy (`docs/COMPATIBILITY_POLICY.md`, frozen snapshot
+  `specs/inertia-v3-baseline-2026-09-23.yaml`); honest matrix (PROTO-053 split
+  bags vs multi-message, PROTO-054 wire vs explicit `append()`, PROTO-057
+  serialization vs instant-visit behavior; Reactive as stable target, no
+  experimental label at the end of the release); README/ROADMAP/NOT_SUPPORTED
+  without `2.x` or `58/59`-as-certification claims; version `0.0.5` single source.
+- M1–M8 (planned in this branch, no deferrals): Maven Wrapper + locked versions +
+  clean-clone CI; `ValidationErrors` multi-message; `MergePlan` explicit append +
+  nested routes; `SsrEndpointPolicy` fail-fast; Reactive parity (full TCK +
+  `reactive-stress` + 9-cell E2E Vue/React/Svelte x 3 transports); blocking
+  PIT/SCA fail-closed (Dependency-Check 12.1.0) + SBOM per release + RC review.
+
 ## 0.0.4
 
 - Fase 0 (PLAN_MEJORA v4, H1–H5): versión única `0.0.4` con fuente central

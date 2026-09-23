@@ -10,10 +10,16 @@ const outPath = path.join(root, 'docs', 'protocol-compatibility.md');
 
 const STATUSES = new Set([
   'IMPLEMENTED',
+  'IMPLEMENTADO',
   'TESTED',
+  'TCK_VERIFICADO',
   'E2E_VERIFIED',
+  'E2E_VERIFICADO',
   'NOT_SUPPORTED',
   'NOT_APPLICABLE',
+  'NO_APLICA',
+  'PARCIAL',
+  'NO_EVALUADO',
 ]);
 
 function parseFlowList(value) {
@@ -63,8 +69,8 @@ for (const e of entries) {
   if (seen.has(e.id)) failures.push(`duplicate id ${e.id}`);
   seen.add(e.id);
   if (!STATUSES.has(e.status)) failures.push(`${e.id}: unknown status ${e.status}`);
-  if (e.status === 'IMPLEMENTED' && !e.test_ref) {
-    failures.push(`${e.id}: IMPLEMENTED without test_ref`);
+  if ((e.status === 'IMPLEMENTED' || e.status === 'IMPLEMENTADO') && !e.test_ref) {
+    failures.push(`${e.id}: IMPLEMENTADO without test_ref`);
   }
   if (!e.description || !e.section) failures.push(`${e.id}: missing description/section`);
 }
@@ -74,20 +80,26 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-const applicable = entries.filter((e) => e.status !== 'NOT_APPLICABLE');
-const verified = entries.filter((e) => e.status === 'TESTED' || e.status === 'E2E_VERIFIED');
+const applicable = entries.filter((e) => e.status !== 'NOT_APPLICABLE' && e.status !== 'NO_APLICA');
+const verified = entries.filter((e) => e.status === 'TESTED' || e.status === 'TCK_VERIFICADO' || e.status === 'E2E_VERIFIED' || e.status === 'E2E_VERIFICADO');
 const e2e = entries.filter((e) => Array.isArray(e.e2e_verified) && e.e2e_verified.length > 0);
 
 function cell(status) {
   switch (status) {
     case 'TESTED':
+    case 'TCK_VERIFICADO':
     case 'E2E_VERIFIED':
+    case 'E2E_VERIFICADO':
       return '✅';
     case 'IMPLEMENTED':
+    case 'IMPLEMENTADO':
+    case 'PARCIAL':
       return '🔄';
     case 'NOT_SUPPORTED':
+    case 'NO_EVALUADO':
       return '❌';
     case 'NOT_APPLICABLE':
+    case 'NO_APLICA':
       return 'N/A';
     default:
       return '❓';
@@ -95,8 +107,8 @@ function cell(status) {
 }
 
 function statusLabel(e) {
-  if (e.status === 'TESTED' && Array.isArray(e.e2e_verified) && e.e2e_verified.length > 0) {
-    return `TESTED (+E2E ${e.e2e_verified.join(', ')})`;
+  if ((e.status === 'TESTED' || e.status === 'TCK_VERIFICADO') && Array.isArray(e.e2e_verified) && e.e2e_verified.length > 0) {
+    return `${e.status} (+E2E ${e.e2e_verified.join(', ')})`;
   }
   return e.status;
 }

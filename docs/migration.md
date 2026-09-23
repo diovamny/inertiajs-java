@@ -13,6 +13,16 @@ Artifacts are published to Maven Central as `io.github.diovamny.spring.inertia`
 and `io.github.diovamny.quarkus.inertia` (group `io.github.diovamny`). Bump the version
 in your `pom.xml`; no code changes are needed for patch releases.
 
+## 0.0.4 → 0.0.5
+
+- v3-only reaffirmed: no `2.x` client row, no legacy `<div data-page>` mode and
+  no legacy API flag (see `COMPATIBILITY_POLICY.md`).
+- New files: `docs/COMPATIBILITY_POLICY.md`,
+  `specs/inertia-v3-baseline-2026-09-23.yaml`; split rows `PROTO-053B/054B/057B`
+  start as `PARCIAL`/`IMPLEMENTADO` and close inside `0.0.5` (M2/M3/M4).
+- Build now via Maven Wrapper (`./mvnw` / `.\mvnw.cmd`); clean-clone CI on
+  Windows + Linux (M1). M2/M3 API migration notes land with the code.
+
 ## 0.0.3 → 0.0.4 (breaking)
 
 - **Root template**: delete the `data-page` attribute from

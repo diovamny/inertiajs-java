@@ -13,7 +13,7 @@ hero:
       link: /guide/quarkus
 features:
   - title: Protocol-first
-    details: 58/59 normative requirements verified by an executable TCK on Spring MVC, Quarkus REST and Reactive Routes.
+    details: Executable TCK on Spring MVC, Quarkus REST and Reactive Routes (v3 only, no legacy mode). Evidence in the generated compatibility matrix.
   - title: v3-pure bootstrap
     details: The page object travels once, in a script tag. 59% smaller initial HTML than the legacy double payload.
   - title: Native-ready
@@ -28,7 +28,7 @@ features:
 <dependency>
   <groupId>io.github.diovamny.spring.inertia</groupId>
   <artifactId>spring-inertia</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ features:
 <dependency>
   <groupId>io.github.diovamny.quarkus.inertia</groupId>
   <artifactId>quarkus-inertia</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
 </dependency>
 ```
 
@@ -64,7 +64,7 @@ Or generate a working app (Vue 3 / React 19 / Svelte 5 starters):
 mvn -B archetype:generate \
   -DarchetypeGroupId=io.github.diovamny \
   -DarchetypeArtifactId=inertia-spring-vue-archetype \
-  -DarchetypeVersion=0.0.4 \
+  -DarchetypeVersion=0.0.5 \
   -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello
 ```
 
