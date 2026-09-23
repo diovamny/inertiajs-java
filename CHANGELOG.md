@@ -44,7 +44,8 @@
   anunciados en `docs/migration.md`); RFC/deprecación en CONTRIBUTING;
   revisión externa en GOVERNANCE.
 - Fase 3 (PLAN_MEJORA v4, H15/H20): release bloqueante con quality gates
-  (`mvn clean verify -Pquality-gates`, PIT activado, OWASP condicional a
+  (`mvn clean verify -Pquality-gates`, PIT en modo informe — el minion de
+  pitest 1.16.3 aborta en JDK 21, ver `release.yml` —, OWASP condicional a
   `NVD_API_KEY`); guards compartidos `RedirectTargets` (CRLF/schemes →
   400/400 sin emitir cabecera) y `PageSizeGuard` (`inertia.max-page-bytes`,
   32 MiB, → 413) con suites de seguridad en ambos adapters; frontera de

@@ -35,10 +35,20 @@ jobs:
 
       - name: Run tests and blocking quality gates
         # Releases fail when ANY gate fails: unit/integration suites,
-        # Checkstyle, SpotBugs and PIT mutation testing (thresholds in the
-        # root pom). OWASP stays in its conditional step below (needs
-        # NVD_API_KEY). Skip flags are for local development only.
-        run: mvn clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=false -DskipDependencyCheck=true
+        # Checkstyle and SpotBugs (thresholds in the root pom). OWASP stays
+        # in its conditional step below (needs NVD_API_KEY). Skip flags are
+        # for local development only.
+        run: mvn clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=true -DskipDependencyCheck=true
+
+      - name: PIT mutation testing (report only)
+        # NOT blocking: the pitest 1.16.3 coverage minion aborts with
+        # UNKNOWN_ERROR on JDK 21 (reproduced on Linux CI and Windows, with
+        # and without JaCoCo, serial and parallel) before running a single
+        # mutant — a toolchain bug, not a code-quality signal. The report is
+        # still published for review. Follow-up: retry with pitest >= 1.17
+        # and/or an isolated argLine, then flip this step back to blocking.
+        continue-on-error: true
+        run: mvn verify -Pquality-gates -DskipStaticAnalysis=true -DskipMutationAnalysis=false -DskipDependencyCheck=true
 
       - name: Diagnose Central server wiring (lengths only, values stay masked)
         # Prints whether the `central` server entry exists and the LENGTH of
