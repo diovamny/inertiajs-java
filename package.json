@@ -10,9 +10,15 @@
     "verify:matrix": "node scripts/check-conformance-matrix.mjs",
     "verify:versions": "node scripts/check-versions.mjs",
     "verify:compliance": "node scripts/generate-compatibility-matrix.mjs",
+    "verify:metadata": "node scripts/check-versions.mjs && node scripts/generate-compatibility-matrix.mjs && node scripts/check-conformance-matrix.mjs",
+    "verify:all": "npm run verify:metadata",
     "docs:build": "node scripts/build-docs-site.mjs",
     "docs:dev": "vitepress dev docs-site",
     "docs:preview": "vitepress preview docs-site"
+  },
+  "engines": {
+    "node": "24.21.0",
+    "npm": "11.17.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

@@ -14,14 +14,18 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 1. **Fork** the repository and create a branch from `main`:
    `git checkout -b feat/my-change`
 2. Make your changes following the conventions below.
-3. Run the verification suite before pushing:
-   ```bash
-   mvn clean test -T 1C
-   node scripts/generate-compatibility-matrix.mjs
-   git diff --exit-code docs/protocol-compatibility.md
-   node scripts/check-conformance-matrix.mjs
-   node scripts/check-versions.mjs
-   ```
+3. Run the verification suite before pushing (Maven Wrapper only, no global `mvn`):
+    ```bash
+    npm ci
+    npm run verify:metadata
+    git diff --exit-code docs/protocol-compatibility.md
+    ./mvnw -B clean test -T 1C            # Windows: .\mvnw.cmd -B clean test -T 1C
+    ./mvnw -B verify -Pquality-gates
+    npm run test:e2e
+    ```
+    Unique commands: `npm ci`, `npm run verify:metadata`, `./mvnw -B clean test`,
+    `./mvnw -B verify -Pquality-gates`, `npm run test:e2e`. `npm run verify:all`
+    runs the metadata gates and propagates the first failure.
    New protocol behavior needs a row in
    [`specs/inertia-v3-compliance.yaml`](specs/inertia-v3-compliance.yaml)
    (never edit `docs/protocol-compatibility.md` by hand).
@@ -46,7 +50,9 @@ you agree to abide by it. Report unacceptable behavior to diovamny@gmail.com.
 - New behavior must be covered by unit and/or MockMvc/Quarkus integration tests.
 - Javadoc on public API members.
 - Artifact coordinates: `io.github.diovamny.quarkus.inertia:quarkus-inertia` and
-  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.4`).
+  `io.github.diovamny.spring.inertia:spring-inertia` (version `0.0.5`).
+  Toolchain: Java 21+, Maven 3.9.11 via Wrapper, Node 24.21.0 + npm 11.17.0
+  (`engines` + `.nvmrc`).
 
 ## Versioning and releases
 
@@ -55,7 +61,7 @@ evolves, `1.0.0` for a stable API with a green contractual suite. The `release`
 Maven profile signs artifacts (GPG) and publishes to Maven Central:
 
 ```bash
-mvn clean deploy -Prelease -DskipTests
+./mvnw clean deploy -Prelease -DskipTests
 ```
 
 Document user-facing changes in `CHANGELOG.md` (Keep a Changelog, English).

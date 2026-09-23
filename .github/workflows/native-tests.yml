@@ -33,20 +33,20 @@ jobs:
           node-version: 24.21.0
 
       - name: Install adapters and archetypes
-        run: mvn -B -q -DskipTests clean install -P archetypes
+        run: ./mvnw -B -q -DskipTests clean install -P archetypes
 
       - name: Generate Quarkus starter
         run: >
-          mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=inertia-quarkus-vue-archetype
-          -DarchetypeVersion=0.0.4
+          -DarchetypeVersion=0.0.5
           -DgroupId=com.acme
           -DartifactId=native-quarkus
           -Dpackage=com.acme.nq
           -DappName="Native Quarkus"
-          -DinertiaAdapterVersion=0.0.4
+          -DinertiaAdapterVersion=0.0.5
           -DjavaVersion=21
           -DframeworkVersion=3.39.2
         working-directory: /tmp
@@ -123,20 +123,20 @@ jobs:
           /tmp/mandrel/mandrel-java25-25.0.4.1-Final/bin/native-image --version
 
       - name: Install adapters and archetypes
-        run: mvn -B -q -DskipTests clean install -P archetypes
+        run: ./mvnw -B -q -DskipTests clean install -P archetypes
 
       - name: Generate Spring starter
         run: >
-          mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeArtifactId=inertia-spring-vue-archetype
           -DarchetypeGroupId=io.github.diovamny
-          -DarchetypeVersion=0.0.4
+          -DarchetypeVersion=0.0.5
           -DgroupId=com.acme
           -DartifactId=native-spring
           -Dpackage=com.acme.ns
           -DappName="Native Spring"
-          -DinertiaAdapterVersion=0.0.4
+          -DinertiaAdapterVersion=0.0.5
           -DjavaVersion=21
           -DframeworkVersion=4.1.0
         working-directory: /tmp

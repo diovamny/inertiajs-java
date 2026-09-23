@@ -1,0 +1,63 @@
+# E2E compliance matrix — generated-source companion (release-0.0.5, P100-03).
+# Maps every E2E scenario to client x transport x fixture x Playwright spec.
+# 9 cells in 0.0.5: Vue/React/Svelte x Spring MVC / Quarkus REST / Quarkus Reactive.
+# Status ladder: NO_EVALUADO | PARCIAL | IMPLEMENTADO | TCK_VERIFICADO | E2E_VERIFICADO | NO_APLICA.
+version: 1
+updated: 2026-09-23
+clients: [vue, react, svelte]
+transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+fixtures:
+  vue: examples/vue-fixture (kitchen-sink route, @inertiajs/vue3 v3 pinned)
+  react: examples/react-fixture (kitchen-sink route, @inertiajs/react v3 pinned)
+  svelte: examples/svelte-fixture (kitchen-sink route, @inertiajs/svelte v3 pinned)
+scenarios:
+  - id: E2E-01-bootstrap
+    description: "v3 script JSON parses once, app mounts, zero console errors"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: PARCIAL
+  - id: E2E-02-navigation-version
+    description: "Inertia visit, Vary, 409 on stale version + correct reload"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: PARCIAL
+  - id: E2E-03-partials
+    description: "only/except/dot-paths/always/reset update only expected state"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: PARCIAL
+  - id: E2E-04-forms
+    description: "303 + flash, default/named bags, multi-message, Precognition"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: NO_EVALUADO
+  - id: E2E-05-modern-props
+    description: "deferred/once/rescue/merge/append/prepend/deep-merge/matchOn/scroll"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: NO_EVALUADO
+  - id: E2E-06-instant-visits
+    description: "sharedProps persist/update/exclude/collision (PROTO-057B)"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: NO_EVALUADO
+  - id: E2E-07-redirects
+    description: "GET/POST redirects, external URL, preserved fragments"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: PARCIAL
+  - id: E2E-08-upload
+    description: "Real multipart file input + error handling"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: NO_EVALUADO
+  - id: E2E-09-ssr
+    description: "Sidecar HTML + hydration without mismatch + CSR fallback"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: NO_EVALUADO
+  - id: E2E-10-security
+    description: "No script breakout, no SSR leak, CSRF contract denied as documented"
+    spec: "e2e/inertia-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: PARCIAL

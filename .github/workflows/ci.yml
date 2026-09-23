@@ -49,12 +49,12 @@ jobs:
           git diff --exit-code docs/protocol-compatibility.md
 
       - name: Run Maven unit/integration tests
-        run: mvn clean test -T 1C
+        run: ./mvnw clean test -T 1C
 
       - name: Run quality gates
         # Static analysis (Checkstyle/SpotBugs) executes and reports; OWASP stays
         # skipped here (it needs NVD_API_KEY) and runs in the release workflow.
-        run: mvn verify -Pquality-gates -DskipDependencyCheck=true -DskipStaticAnalysis=false
+        run: ./mvnw verify -Pquality-gates -DskipDependencyCheck=true -DskipStaticAnalysis=false
 
   examples:
     name: Demo smoke tests
@@ -76,13 +76,13 @@ jobs:
         # module (core, both adapters, both security integrations and the
         # TCK): the demos need the security artifacts and the adapters'
         # test classpath needs the TCK, none of which is published yet.
-        run: mvn -B -q -DskipTests install
+        run: ./mvnw -B -q -DskipTests install
 
       - name: Spring demo smoke
-        run: mvn clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-kitchen-sink -Pexamples
+        run: ./mvnw clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-kitchen-sink -Pexamples
 
       - name: Quarkus demo smoke
-        run: mvn clean test -pl examples/quarkus/pingcrm,examples/quarkus/kitchen-sink -Pexamples
+        run: ./mvnw clean test -pl examples/quarkus/pingcrm,examples/quarkus/kitchen-sink -Pexamples
 
   archetypes:
     name: Archetype ${{ matrix.archetype }}
@@ -120,26 +120,26 @@ jobs:
           node-version: 24.21.0
 
       - name: Install adapters and archetypes
-        run: mvn -B -q -DskipTests clean install -P archetypes
+        run: ./mvnw -B -q -DskipTests clean install -P archetypes
 
       - name: Generate starter from archetype
         run: >
-          mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.4
+          -DarchetypeVersion=0.0.5
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.4
+          -DinertiaAdapterVersion=0.0.5
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp
 
       - name: Build and test generated starter (Java + frontend)
-        run: mvn -B test
+        run: ./mvnw -B test
         working-directory: /tmp/hello-inertia
 
       - name: Upload starter test reports
@@ -195,7 +195,7 @@ jobs:
         run: npm ci && npx playwright install --with-deps chromium
 
       - name: Package demo
-        run: mvn -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
+        run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
 
       - name: Start demo
         working-directory: ${{ matrix.module }}
@@ -239,4 +239,51 @@ jobs:
           path: |
             e2e/test-results/
             e2e-app.log
+          if-no-files-found: ignore
+
+  clean-checkout:
+    name: Clean checkout (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Verify versions + matrices (no Maven needed)
+        run: |
+          node scripts/check-versions.mjs
+          node scripts/generate-compatibility-matrix.mjs
+          git diff --exit-code docs/protocol-compatibility.md
+          node scripts/check-conformance-matrix.mjs
+
+      - name: Unit/integration via Maven Wrapper (no global Maven)
+        run: ./mvnw -B clean test -T 1C
+        shell: bash
+
+      - name: Upload Surefire evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: clean-checkout-${{ matrix.os }}-surefire
+          path: |
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
           if-no-files-found: ignore

@@ -134,6 +134,31 @@
       </plugins>
     </pluginManagement>
     <plugins>
+      <!-- Minimum toolchain: Java 21+, Maven 3.9+ (use ./mvnw / .\mvnw.cmd). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.2</version>
+        <executions>
+          <execution>
+            <id>enforce-toolchain</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[21,)</version>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.9,)</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Every published JAR carries META-INF/LICENSE (MIT). -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
