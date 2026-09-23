@@ -40,6 +40,7 @@ class InertiaConfigUnitTest {
             @Override public Optional<String> rootView() { return rootView; }
             @Override public Optional<java.util.List<String>> flashKeys() { return Optional.empty(); }
             @Override public boolean alwaysIncludeErrors() { return true; }
+            @Override public boolean validationAllErrors() { return false; }
             @Override public int errorStatus() { return 500; }
             @Override public String errorComponent() { return "ErrorPage"; }
             @Override public boolean lazyEtagEnabled() { return true; }

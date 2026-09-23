@@ -61,6 +61,12 @@ public class TckTestResource {
         return inertia.redirect("/tck/page");
     }
 
+    @POST
+    @Path("/submit-multi")
+    public Uni<Object> submitMulti() {
+        return inertia.back().withErrorMessages(Map.of("name", List.of("required", "must be valid")));
+    }
+
     @GET
     @Path("/redirect-me")
     public Uni<Object> redirectMe() {

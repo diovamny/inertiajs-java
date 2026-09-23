@@ -441,9 +441,9 @@ entries:
     description: "Multiple messages per field (array of messages, order preserved)"
     reference: "https://inertiajs.com/docs/v3/the-basics/validation"
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
-    status: PARCIAL
-    test_ref: "ValidationIntegrationTest, ValidationQuarkusTest"
-    notes: "0.0.5 closes this in M2 via ValidationErrors + inertia.validation.all-errors; until then single message per field only"
+    status: TESTED
+    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationErrorsUnitTest, ValidationErrorsApiUnitTest"
+    notes: "M2: ValidationErrors core + withValidationErrors/withErrorMessages + inertia.validation.all-errors (default false); TCK multi-message-submit + ordered-arrays green on 3 transports; E2E client proof lands in M4"
   - id: PROTO-054A
     section: "Special"
     description: "merge/prepend/deepMerge wire metadata + matchPropsOn"

@@ -1,6 +1,5 @@
 package io.github.diovamny.quarkus.inertia.vertx;
 
-import java.util.HashMap;
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -209,7 +208,7 @@ public class InertiaVertxHandler {
                     ctx, "inertia-precognition-validate-fields")
                 : null;
 
-        var errors = new HashMap<String, String>();
+        var bag = io.github.diovamny.inertia.core.model.ValidationErrors.builder();
         for (var violation : exception.getConstraintViolations()) {
             var propertyPath = violation.getPropertyPath().toString();
             var field = propertyPath.contains(".")
@@ -219,8 +218,10 @@ public class InertiaVertxHandler {
                     && !matchesValidateOnly(validateFields, field)) {
                 continue;
             }
-            errors.put(field, violation.getMessage());
+            bag.add(field, violation.getMessage());
         }
+        var allErrors = config != null && config.validationAllErrors();
+        var errors = bag.build().toWireMap(allErrors);
 
         var isPrecognition = isTrue(rc, ctx, "inertia-precognition");
         if (isPrecognition) {

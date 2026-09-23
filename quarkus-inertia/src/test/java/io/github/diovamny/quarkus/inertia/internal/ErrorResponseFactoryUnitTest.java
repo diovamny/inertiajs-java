@@ -43,6 +43,7 @@ class ErrorResponseFactoryUnitTest {
             @Override public java.util.Optional<String> rootView() { return java.util.Optional.empty(); }
             @Override public java.util.Optional<java.util.List<String>> flashKeys() { return java.util.Optional.empty(); }
             @Override public boolean alwaysIncludeErrors() { return true; }
+            @Override public boolean validationAllErrors() { return false; }
             @Override public int errorStatus() { return errorStatus; }
             @Override public String errorComponent() { return errorComponent; }
             @Override public boolean lazyEtagEnabled() { return true; }

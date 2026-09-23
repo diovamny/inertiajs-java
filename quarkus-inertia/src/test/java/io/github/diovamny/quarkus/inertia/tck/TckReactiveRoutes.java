@@ -103,6 +103,12 @@ public class TckReactiveRoutes {
     Validator validator;
 
     @Blocking
+    @Route(path = "submit-multi", methods = HttpMethod.POST)
+    public Uni<Object> submitMulti() {
+        return inertia.back().withErrorMessages(Map.of("name", List.of("required", "must be valid")));
+    }
+
+    @Blocking
     @Route(path = "submit-valid", methods = HttpMethod.POST)
     public Uni<Object> submitValid(RoutingContext rc) {
         io.vertx.core.json.JsonObject body = null;

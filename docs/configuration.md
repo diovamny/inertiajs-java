@@ -22,6 +22,7 @@ each property.
 | `inertia.root-view` | _(unset)_ | ✅ | ✅ | Explicit view name for the root view; defaults to `root-template`. |
 | `inertia.flash-keys` | _(empty)_ | ✅ | ✅ | Comma-separated session keys flashed with every page. |
 | `inertia.always-include-errors` | `true` | ✅ | ✅ | Always inject validation `errors` into props (Laravel-compatible). |
+| `inertia.validation.all-errors` | `false` | ✅ | ✅ | Multi-message errors: `false` = legacy `Map<field,message>`; `true` = `Map<field,List<message>>` ordered arrays (Inertia `withAllErrors` parity) in flash, bags and Precognition 422. Explicit `withValidationErrors`/`withErrorMessages` always emit arrays. |
 | `inertia.error-status` | `500` | ✅ | ✅ | HTTP status used for error pages. |
 | `inertia.error-component` | `ErrorPage` | ✅ | ✅ | Component rendered for error pages. |
 | `inertia.error-details-enabled` | `false` | ✅ | ✅ | Include exception details in error responses (development only). |

@@ -441,6 +441,17 @@ public interface InertiaConfig {
     boolean alwaysIncludeErrors();
 
     /**
+     * Emit arrays of messages per field ({@code Map<field, List<message>>}).
+     * Default {@code false} preserves the legacy {@code Map<field, message>} wire.
+     * <p>Property: {@code inertia.validation.all-errors}.</p>
+     *
+     * @return {@code true} for multi-message arrays, default {@code false}
+     */
+    @WithName("validation.all-errors")
+    @WithDefault("false")
+    boolean validationAllErrors();
+
+    /**
      * HTTP status used for Inertia error pages when an unhandled exception
      * reaches the exception mapper.
      * <p>Property: {@code inertia.error-status}.</p>

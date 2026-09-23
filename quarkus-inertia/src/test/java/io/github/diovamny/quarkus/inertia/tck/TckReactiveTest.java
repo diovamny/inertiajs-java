@@ -34,6 +34,8 @@ class TckReactiveTest {
         "scroll-prepend-intent",
         "named-bag-submit-redirects-back",
         "named-bag-errors-nested-on-reload",
+        "multi-message-submit-redirects-back",
+        "multi-message-errors-are-ordered-arrays-on-reload",
         "multipart-upload-redirects",
         "once-combos-full-visit");
 

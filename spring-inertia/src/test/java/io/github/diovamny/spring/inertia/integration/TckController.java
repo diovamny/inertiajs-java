@@ -60,6 +60,11 @@ public class TckController {
         return inertia.redirect("/tck/page");
     }
 
+    @PostMapping("/submit-multi")
+    public Object submitMulti() {
+        return inertia.back().withErrorMessages(Map.of("name", List.of("required", "must be valid")));
+    }
+
     @GetMapping("/redirect-me")
     public Object redirectMe() {
         return inertia.redirect("/tck/page");

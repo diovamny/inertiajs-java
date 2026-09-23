@@ -36,15 +36,26 @@ public class PrecognitionHandler {
 
     private final JsonProvider jsonProvider;
     private final FlashStore flashStore;
+    private final io.github.diovamny.spring.inertia.config.InertiaProperties properties;
 
-    public PrecognitionHandler(JsonProvider jsonProvider, FlashStore flashStore) {
+    public PrecognitionHandler(JsonProvider jsonProvider, FlashStore flashStore,
+            io.github.diovamny.spring.inertia.config.InertiaProperties properties) {
         this.jsonProvider = jsonProvider;
         this.flashStore = flashStore;
+        this.properties = properties;
+    }
+
+    /** Legacy constructor (tests): all-errors disabled. */
+    public PrecognitionHandler(JsonProvider jsonProvider, FlashStore flashStore) {
+        this(jsonProvider, flashStore, new io.github.diovamny.spring.inertia.config.InertiaProperties());
     }
 
     @ExceptionHandler({ MethodArgumentNotValidException.class, ConstraintViolationException.class })
     public ResponseEntity<?> handleValidation(Exception ex) {
-        var errors = extractErrors(ex);
+        var bag = extractErrorBag(ex);
+        var allErrors = properties != null && properties.getValidation() != null
+            && properties.getValidation().isAllErrors();
+        var errors = bag.toWireMap(allErrors);
         InertiaRequestContext.set(PageObjectBuilder.CONTEXT_ERRORS, errors);
 
         if (InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION) != null) {
@@ -57,26 +68,25 @@ public class PrecognitionHandler {
                 .body(jsonProvider.toJson(Map.of("errors", filtered)));
         }
 
-        var bag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
-        var errorsToFlash = bag != null ? Map.of(String.valueOf(bag), errors) : errors;
+        var errorBag = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_ERROR_BAG);
+        var errorsToFlash = errorBag != null ? Map.of(String.valueOf(errorBag), errors) : errors;
         flashStore.put("errors", errorsToFlash);
         return redirectBackWithErrors(errors);
     }
 
-    private static Map<String, String> extractErrors(Exception ex) {
-        var errors = new LinkedHashMap<String, String>();
+    private static io.github.diovamny.inertia.core.model.ValidationErrors extractErrorBag(Exception ex) {
+        var builder = io.github.diovamny.inertia.core.model.ValidationErrors.builder();
         if (ex instanceof MethodArgumentNotValidException valid) {
             for (FieldError fieldError : valid.getBindingResult().getFieldErrors()) {
-                errors.putIfAbsent(fieldError.getField(),
+                builder.add(fieldError.getField(),
                     fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "Invalid value");
             }
         } else if (ex instanceof ConstraintViolationException violations) {
             for (var violation : violations.getConstraintViolations()) {
-                errors.putIfAbsent(String.valueOf(violation.getPropertyPath()),
-                    violation.getMessage());
+                builder.add(String.valueOf(violation.getPropertyPath()), violation.getMessage());
             }
         }
-        return errors;
+        return builder.build();
     }
 
     /**
@@ -88,7 +98,7 @@ public class PrecognitionHandler {
      * @param errors the full field error map
      * @return the filtered map
      */
-    private static Map<String, String> filterToValidateOnly(Map<String, String> errors) {
+    private static Map<String, Object> filterToValidateOnly(Map<String, Object> errors) {
         var raw = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PRECOGNITION_VALIDATE_FIELDS);
         if (raw == null) {
             return errors;
@@ -103,7 +113,7 @@ public class PrecognitionHandler {
         if (fields.isEmpty()) {
             return errors;
         }
-        var filtered = new LinkedHashMap<String, String>();
+        var filtered = new LinkedHashMap<String, Object>();
         for (var entry : errors.entrySet()) {
             if (fields.contains(entry.getKey())) {
                 filtered.put(entry.getKey(), entry.getValue());
@@ -112,7 +122,7 @@ public class PrecognitionHandler {
         return filtered;
     }
 
-    private ResponseEntity<?> redirectBackWithErrors(Map<String, String> errors) {
+    private ResponseEntity<?> redirectBackWithErrors(Map<String, Object> errors) {
         var referer = InertiaRequestContext.header("Referer");
         var target = referer != null && !referer.isBlank() ? referer : "/";
         var status = "GET".equalsIgnoreCase(InertiaRequestContext.method())

@@ -21,7 +21,16 @@ in your `pom.xml`; no code changes are needed for patch releases.
   `specs/inertia-v3-baseline-2026-09-23.yaml`; split rows `PROTO-053B/054B/057B`
   start as `PARCIAL`/`IMPLEMENTADO` and close inside `0.0.5` (M2/M3/M4).
 - Build now via Maven Wrapper (`./mvnw` / `.\mvnw.cmd`); clean-clone CI on
-  Windows + Linux (M1). M2/M3 API migration notes land with the code.
+  Windows + Linux (M1).
+- M2 validation (additive, legacy wire preserved): new core
+  `ValidationErrors` (ordered, immutable) + `withValidationErrors` /
+  `withErrorMessages` on `InertiaRedirect`/`InertiaRender`/`InertiaResponse`
+  (both adapters, overloads avoid `Map` erasure clashes); new flag
+  `inertia.validation.all-errors` (default `false` → legacy
+  `Map<field,message>`; `true` → `Map<field,List<message>>` in flash, bags
+  and Precognition 422, same shape on 3 transports). Quarkus manual
+  `InertiaConfig` implementations must add
+  `default boolean validationAllErrors() { return false; }`.
 
 ## 0.0.3 → 0.0.4 (breaking)
 

@@ -1,6 +1,5 @@
 package io.github.diovamny.quarkus.inertia.protocol;
 
-import java.util.HashMap;
 import java.util.Map;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolationException;
@@ -37,6 +36,9 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
     @Inject
     JsonProvider jsonProvider;
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.config.InertiaConfig config;
+
     @Override
     public Response toResponse(ConstraintViolationException exception) {
         var ctx = Vertx.currentContext();
@@ -45,7 +47,7 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
             ? (String) InertiaContextLocals.get(ctx, "inertia-precognition-validate-fields")
             : null;
 
-        var errors = new HashMap<String, String>();
+        var bag = io.github.diovamny.inertia.core.model.ValidationErrors.builder();
         for (var violation : exception.getConstraintViolations()) {
             var propertyPath = violation.getPropertyPath().toString();
             var field = propertyPath.contains(".") ?
@@ -54,8 +56,10 @@ public class PrecognitionExceptionMapper implements ExceptionMapper<ConstraintVi
                     && !matchesValidateOnly(validateFields, field)) {
                 continue;
             }
-            errors.put(field, violation.getMessage());
+            bag.add(field, violation.getMessage());
         }
+        var allErrors = config != null && config.validationAllErrors();
+        var errors = bag.build().toWireMap(allErrors);
 
         if (ctx == null) {
             return Response.status(Response.Status.BAD_REQUEST)

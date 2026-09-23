@@ -283,6 +283,34 @@ public class InertiaProperties {
     /** Whether validation errors are always injected into the props. */
     private boolean alwaysIncludeErrors = true;
 
+    /** Validation semantics (prefix {@code inertia.validation}). */
+    private Validation validation = new Validation();
+
+    /** Validation semantics. */
+    public static class Validation {
+        /**
+         * Emit arrays of messages per field ({@code Map<field, List<message>>}).
+         * Default {@code false} preserves the legacy {@code Map<field, message>} wire.
+         */
+        private boolean allErrors = false;
+
+        public boolean isAllErrors() {
+            return allErrors;
+        }
+
+        public void setAllErrors(boolean allErrors) {
+            this.allErrors = allErrors;
+        }
+    }
+
+    public Validation getValidation() {
+        return validation;
+    }
+
+    public void setValidation(Validation validation) {
+        this.validation = validation;
+    }
+
     /** HTTP status used for error pages. */
     private int errorStatus = 500;
 

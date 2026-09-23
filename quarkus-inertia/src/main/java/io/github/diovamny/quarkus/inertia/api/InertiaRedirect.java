@@ -97,6 +97,28 @@ public class InertiaRedirect implements Uni<Object> {
     }
 
     /**
+     * Flash multiple messages per field (Inertia {@code withAllErrors} parity).
+     *
+     * @param errors immutable multi-message bag
+     * @return this redirect for chaining
+     */
+    public InertiaRedirect withValidationErrors(
+            io.github.diovamny.inertia.core.model.ValidationErrors errors) {
+        return with("errors", errors != null ? errors.toWireMap(true) : Map.of());
+    }
+
+    /**
+     * Flash multiple messages per field from a plain multimap.
+     *
+     * @param errors field-to-messages multimap
+     * @return this redirect for chaining
+     */
+    public InertiaRedirect withErrorMessages(Map<String, ? extends java.util.Collection<String>> errors) {
+        return with("errors",
+            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true));
+    }
+
+    /**
      * Flash the submitted form data so a full-page reload can repopulate the
      * form, equivalent to Laravel's {@code ->withInput()}.
      */
