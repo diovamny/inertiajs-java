@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.diovamny</groupId>
   <artifactId>inertia-parent</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <packaging>pom</packaging>
   <name>Inertia.js Java Ecosystem</name>
   <description>Server-side Inertia.js v3 adapters for Spring Boot 4.1 and Quarkus</description>

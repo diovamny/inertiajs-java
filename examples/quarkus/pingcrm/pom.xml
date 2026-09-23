@@ -6,7 +6,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>pingcrm</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -34,12 +34,12 @@
         <dependency>
             <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia</artifactId>
-            <version>0.0.4</version>
+            <version>0.0.5</version>
         </dependency>
         <dependency>
             <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia-security</artifactId>
-            <version>0.0.4</version>
+            <version>0.0.5</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

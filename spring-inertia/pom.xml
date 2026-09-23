@@ -7,13 +7,13 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.github.diovamny.spring.inertia</groupId>
     <artifactId>spring-inertia</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <packaging>jar</packaging>
 
     <name>Spring Boot Inertia.js v3 Adapter</name>

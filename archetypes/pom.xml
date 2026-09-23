@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>inertia-archetypes</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <packaging>pom</packaging>
 
     <name>Inertia.js Java Archetypes</name>
