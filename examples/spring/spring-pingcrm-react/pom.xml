@@ -126,7 +126,7 @@
                         </goals>
                         <configuration>
                             <nodeVersion>${node.version}</nodeVersion>
-                            <npmVersion>10.2.4</npmVersion>
+                            <npmVersion>11.17.0</npmVersion>
                         </configuration>
                     </execution>
                     <execution>
