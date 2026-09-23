@@ -756,18 +756,11 @@ public class InertiaImpl implements Inertia {
     }
 
     private io.vertx.ext.web.RoutingContext resolveRoutingContext() {
-        var ctx = io.vertx.core.Vertx.currentContext();
-        if (ctx != null) {
-            var rc = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.routingContext(ctx);
-            if (rc != null) {
-                return rc;
-            }
-            var local = ctx.getLocal("inertia-routing-context");
-            if (local instanceof io.vertx.ext.web.RoutingContext fallback) {
-                return fallback;
-            }
-        }
-        return null;
+        // Hardened resolution (M7): the helper never trusts worker-thread ctx
+        // locals, so no raw ctx.getLocal fallback here (it could return a
+        // concurrent request's routing context).
+        return io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals
+            .routingContext(io.vertx.core.Vertx.currentContext());
     }
 
     private io.vertx.ext.web.Session session() {

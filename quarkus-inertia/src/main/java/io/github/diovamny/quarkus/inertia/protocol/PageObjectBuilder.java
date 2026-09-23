@@ -850,12 +850,10 @@ public class PageObjectBuilder {
     }
 
     private io.vertx.ext.web.Session session() {
-        var ctx = Vertx.currentContext();
-        if (ctx != null) {
-            var local = ctx.getLocal("inertia-routing-context");
-            if (local instanceof io.vertx.ext.web.RoutingContext rc) {
-                return rc.session();
-            }
+        // Hardened resolution (M7): never trust worker-thread ctx locals.
+        var rc = InertiaContextLocals.routingContext(Vertx.currentContext());
+        if (rc != null) {
+            return rc.session();
         }
         try {
             var routingContext = currentVertxRequest.getCurrent();

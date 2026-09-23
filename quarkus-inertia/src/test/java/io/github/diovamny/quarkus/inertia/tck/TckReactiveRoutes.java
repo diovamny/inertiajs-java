@@ -34,9 +34,63 @@ public class TckReactiveRoutes {
     }
 
     @Blocking
+    @Route(path = "deferred")
+    public Uni<Object> deferred() {
+        inertia.deferred("slow", "data", () -> Uni.createFrom().item((Object) "lazy-value"));
+        return inertia.render("Tck/Deferred", Map.of("title", "t"));
+    }
+
+    @Blocking
+    @Route(path = "once")
+    public Uni<Object> once() {
+        inertia.once("notice", "Hello");
+        return inertia.render("Tck/Once", Map.of());
+    }
+
+    @Blocking
+    @Route(path = "submit", methods = HttpMethod.POST)
+    public Uni<Object> submit(RoutingContext rc) {
+        io.vertx.core.json.JsonObject body = null;
+        try {
+            body = rc.body().asJsonObject();
+        } catch (Exception ignored) {
+            // falls through to a blank name below
+        }
+        var name = body != null ? body.getString("name") : null;
+        if (name == null || name.isBlank()) {
+            return inertia.back().withErrors(Map.of("name", "required"));
+        }
+        return inertia.redirect("/tck/page");
+    }
+
+    @Blocking
     @Route(path = "redirect-me")
     public Uni<Object> redirectMe() {
         return inertia.redirect("/tck/page");
+    }
+
+    @Blocking
+    @Route(path = "put-me", methods = HttpMethod.PUT)
+    public Uni<Object> putMe() {
+        return inertia.redirect("/tck/page");
+    }
+
+    @Blocking
+    @Route(path = "delete-me", methods = HttpMethod.DELETE)
+    public Uni<Object> deleteMe() {
+        return inertia.redirect("/tck/page");
+    }
+
+    @Blocking
+    @Route(path = "back", methods = HttpMethod.POST)
+    public Uni<Object> back() {
+        return inertia.back();
+    }
+
+    @Blocking
+    @Route(path = "versioned")
+    public Uni<Object> versioned() {
+        return inertia.render("Tck/Versioned", Map.of());
     }
 
     @Blocking

@@ -44,14 +44,9 @@ public class ReactiveResponseWriter {
         var ctx = Vertx.currentContext();
         if (ctx == null) return Uni.createFrom().item(response);
 
-        RoutingContext rc = (RoutingContext) io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.get(
-            ctx, ROUTING_CONTEXT_KEY);
-        if (rc == null) {
-            var direct = ctx.getLocal(ROUTING_CONTEXT_KEY);
-            if (direct instanceof RoutingContext fallback) {
-                rc = fallback;
-            }
-        }
+        // Hardened resolution (M7): never trust worker-thread ctx locals.
+        RoutingContext rc = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals
+            .routingContext(ctx);
         if (rc == null) {
             return Uni.createFrom().item(response);
         }

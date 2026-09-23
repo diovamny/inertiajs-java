@@ -8,6 +8,7 @@ Honest scope for 0.0.5 (see the full
 - Instant-visit `sharedProps` client behavior closes inside 0.0.5 (PROTO-057B).
 - Legacy v1/v2 `<div data-page>` template: unsupported by design (v3-only, no opt-in).
 - Quarkus Reactive Routes: stable target in 0.0.5, same contract as the other
-  transports (parity + stress + 9-cell E2E in this release).
+  transports (parity + stress + 9-cell E2E in this release; see the
+  [reactive parity](https://github.com/diovamny/inertiajs-java/blob/release-0.0.5/docs/reactive-parity.md) matrix).
 - No Inertia DevTools module (the extension already interops).
 - No full-JPA-entity props (use DTOs).

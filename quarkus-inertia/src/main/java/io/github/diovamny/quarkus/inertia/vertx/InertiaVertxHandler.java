@@ -54,11 +54,21 @@ public class InertiaVertxHandler {
     @Inject
     io.github.diovamny.quarkus.inertia.config.InertiaConfig config;
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.protocol.RequestRoutingContext requestRoutingContext;
+
     void setup(@Observes Router router) {
         router.route().order(-1).handler(this::handle).failureHandler(this::handleFailure);
     }
 
     private void handle(RoutingContext rc) {
+        // Request-scoped holder first: it travels with the request's CDI
+        // context, so readers on any thread resolve this request's rc (M7).
+        try {
+            requestRoutingContext.setRoutingContext(rc);
+        } catch (Exception ignored) {
+            // No request context (should not happen on the event loop).
+        }
         var ctx = Vertx.currentContext();
         // Bind the routing context BEFORE extracting headers so every
         // InertiaContextLocals.put() mirrors into rc (request-scoped) instead

@@ -426,8 +426,8 @@ entries:
     reference: "04-redirects.yaml, 05-version.yaml, 06-csrf.yaml, 07-validation.yaml"
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
-    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest"
-    notes: "Same normative cases on 3 stacks; per-stack overrides only where contracts diverge (0.0.5 removes divergences)"
+    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, ReactiveStressTest"
+    notes: "43 normative cases; reactive runs 42 path-mapped + dedicated staleVersionIs409WithReactivePath (same 409 semantics, transport-local path); M7 concurrency isolation green (see docs/reactive-parity.md)"
   - id: PROTO-053A
     section: "Validation"
     description: "X-Inertia-Error-Bag default + named bags, one message per field"

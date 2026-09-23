@@ -32,7 +32,8 @@ v3 clients only; no legacy v1/v2 mode, no `2.x` support row.
 - **Quarkus Reactive Routes**: stable target in `0.0.5`, same contract as
   Spring MVC and Quarkus REST. Any remaining divergence is a `NO_APLICA`
   row with justification or an open P0/P1 bug. Evidence: full TCK on
-  3 transports, `reactive-stress` profile, 9-cell E2E matrix.
+  3 transports, `reactive-stress` profile, 9-cell E2E matrix —
+  see [reactive parity](reactive-parity.md).
 - **Inertia DevTools module**: out of scope on purpose — the browser
   extension already interops with any correct v3 server.
 - **Frontend behavior** (polling, prefetching, UI state): client-side, proven
