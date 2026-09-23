@@ -46,7 +46,19 @@ public class SsrClient {
         this.connectTimeout = properties.getSsrConnectTimeout();
         this.readTimeout = properties.getSsrReadTimeout();
 
-        var requestFactory = new SimpleClientHttpRequestFactory();
+        var requestFactory = new SimpleClientHttpRequestFactory() {
+            @Override
+            protected void prepareConnection(java.net.HttpURLConnection connection, String httpMethod) {
+                try {
+                    super.prepareConnection(connection, httpMethod);
+                } catch (java.io.IOException e) {
+                    throw new IllegalStateException("SSR connection setup failed", e);
+                }
+                // Never follow redirects to non-validated hosts (M5): a 3xx
+                // from the sidecar becomes a CSR fallback, not a new request.
+                connection.setInstanceFollowRedirects(false);
+            }
+        };
         if (connectTimeout != null) {
             requestFactory.setConnectTimeout((int) connectTimeout.toMillis());
         }
@@ -57,6 +69,12 @@ public class SsrClient {
         this.restClient = RestClient.builder()
             .baseUrl(properties.getSsrUrl())
             .requestFactory(requestFactory)
+            .defaultStatusHandler(
+                org.springframework.http.HttpStatusCode::is3xxRedirection,
+                (request, response) -> {
+                    throw new IllegalStateException(
+                        "SSR sidecar must not redirect (CSR fallback instead)");
+                })
             .build();
     }
 

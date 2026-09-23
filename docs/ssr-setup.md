@@ -230,16 +230,36 @@ public class SsrHealthIndicator implements HealthIndicator {
 
 The Node.js sidecar is a **trust boundary**:
 
-- Bind it to `localhost` (or a Unix socket) — never expose it to the network.
-  It receives the full page object (including server props) and returns raw
-  HTML that the adapter injects without sanitization.
+- **Local by default.** Bind it to `localhost` — never expose it to the
+  network. It receives the full page object (including server props) and
+  returns raw HTML that the adapter injects without sanitization.
+  `http://localhost`, `http://127.0.0.1` and `http://[::1]` boot without
+  extra config.
+- **Remote requires explicit opt-in (validated at startup, M5).** A
+  non-local `inertia.ssr-url` boots only when **all** hold:
+  `inertia.ssr-remote-enabled=true` **and** an `https` URL **and** the host
+  listed in `inertia.ssr-allowed-hosts`. Anything else fails fast with a
+  safe message (scheme/host/port only — never tokens or payloads).
+  URLs with credentials (`user:pass@`) or fragments never boot. Example:
+
+  ```properties
+  inertia.ssr-enabled=true
+  inertia.ssr-url=https://ssr.internal.example.com/render
+  inertia.ssr-remote-enabled=true
+  inertia.ssr-allowed-hosts=ssr.internal.example.com
+  ```
+
+- **No redirect-following.** Both HTTP clients disable redirects: any `3xx`
+  from the sidecar is a CSR fallback, never a new request to a
+  non-validated host.
 - Connection/read timeouts apply (`inertia.ssr-connect-timeout`,
-  `inertia.ssr-read-timeout`); failures fall back to client-side rendering
-  and are logged server-side as structured `unreachable / timeout /
-  error-status / unknown` events — never rendered to the client.
+  `inertia.ssr-read-timeout`); circuit breaker + CSR fallback stay intact —
+  validation never turns an ordinary sidecar outage into a `500`.
+  Failures are logged server-side as structured `unreachable / timeout /
+  error-status / unknown` events with scheme/host/port only — never
+  rendered to the client.
 - Cap the sidecar response size at the reverse proxy; on the adapter side,
   `inertia.max-page-bytes` bounds every served page with `413`.
-- Never point `inertia.ssr-url` at a remote host without explicit validation.
 
 ## Production Tips
 

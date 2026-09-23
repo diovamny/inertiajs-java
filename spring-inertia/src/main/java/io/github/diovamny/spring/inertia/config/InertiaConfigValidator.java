@@ -22,6 +22,16 @@ public class InertiaConfigValidator {
         validateRootView(properties.getRootView());
         validateCsrfRefreshPolicy(properties.getCsrfRefreshPolicy());
         validateSecurity(properties, environment);
+        validateSsrEndpoint(properties);
+    }
+
+    private static void validateSsrEndpoint(InertiaProperties properties) {
+        if (!properties.isSsrEnabled()) {
+            return;
+        }
+        // Fail fast: insecure remote sidecars can never boot (M5).
+        io.github.diovamny.inertia.core.ssr.SsrEndpointPolicy.validate(
+            properties.getSsrUrl(), properties.isSsrRemoteEnabled(), properties.getSsrAllowedHosts());
     }
 
     private static void validateCsrfRefreshPolicy(String policy) {

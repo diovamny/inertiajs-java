@@ -35,6 +35,12 @@ in your `pom.xml`; no code changes are needed for patch releases.
   `inertia.mergeable(key, value)...value()` / `applyMergePlan(plan)` on both
   facades (same plan, same wire on 3 transports). Legacy
   `merge(key, value, rule, matchOn...)` unchanged in `0.x`.
+- M5 SSR (fail-fast, no wire change): new core `SsrEndpointPolicy`; local
+  sidecars boot unchanged; remote requires `inertia.ssr-remote-enabled=true`
+  + `https` + `inertia.ssr-allowed-hosts`. Both HTTP clients stop following
+  redirects (`3xx` → CSR fallback). Quarkus manual `InertiaConfig`
+  implementations must add `default boolean ssrRemoteEnabled() { return false; }`
+  and `default Optional<List<String>> ssrAllowedHosts() { return Optional.empty(); }`.
 
 ## 0.0.3 → 0.0.4 (breaking)
 

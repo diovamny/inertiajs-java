@@ -59,6 +59,16 @@ public class InertiaProperties {
     /** URL of the SSR server endpoint. */
     private String ssrUrl = "http://localhost:13714/render";
 
+    /**
+     * Allow a remote (non-localhost) SSR sidecar. Default {@code false}:
+     * localhost-only posture. Remote additionally requires {@code https} and
+     * {@code ssrAllowedHosts}.
+     */
+    private boolean ssrRemoteEnabled = false;
+
+    /** Allowlisted remote SSR hosts (compared case-insensitively, host only). */
+    private List<String> ssrAllowedHosts = List.of();
+
     /** Paths excluded from SSR. */
     private List<String> ssrExcludePaths = List.of();
 
@@ -365,6 +375,22 @@ public class InertiaProperties {
 
     public void setSsrUrl(String ssrUrl) {
         this.ssrUrl = ssrUrl;
+    }
+
+    public boolean isSsrRemoteEnabled() {
+        return ssrRemoteEnabled;
+    }
+
+    public void setSsrRemoteEnabled(boolean ssrRemoteEnabled) {
+        this.ssrRemoteEnabled = ssrRemoteEnabled;
+    }
+
+    public List<String> getSsrAllowedHosts() {
+        return ssrAllowedHosts;
+    }
+
+    public void setSsrAllowedHosts(List<String> ssrAllowedHosts) {
+        this.ssrAllowedHosts = ssrAllowedHosts != null ? ssrAllowedHosts : List.of();
     }
 
     public List<String> getSsrExcludePaths() {
