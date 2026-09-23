@@ -194,6 +194,7 @@ public final class MergePlan {
                 case APPEND -> appendPaths.add(clean);
                 case PREPEND -> prependPaths.add(clean);
                 case DEEP -> deepPaths.add(clean);
+                default -> throw new IllegalArgumentException("Unknown merge operation: " + operation);
             }
             return this;
         }

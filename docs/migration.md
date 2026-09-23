@@ -28,9 +28,11 @@ in your `pom.xml`; no code changes are needed for patch releases.
   (both adapters, overloads avoid `Map` erasure clashes); new flag
   `inertia.validation.all-errors` (default `false` → legacy
   `Map<field,message>`; `true` → `Map<field,List<message>>` in flash, bags
-  and Precognition 422, same shape on 3 transports). Quarkus manual
-  `InertiaConfig` implementations must add
-  `default boolean validationAllErrors() { return false; }`.
+  and Precognition 422, same shape on 3 transports). `japicmp` 0.0.4→0.0.5:
+  core/spring/quarkus all MINOR (additive). Quarkus manual
+  `InertiaConfig` implementations should add
+  `default boolean validationAllErrors() { return false; }`
+  (source-level only; binary compatible).
 - M3 merge (additive): new core `MergePlan` + `MergeableBuilder` and
   `inertia.mergeable(key, value)...value()` / `applyMergePlan(plan)` on both
   facades (same plan, same wire on 3 transports). Legacy
@@ -38,9 +40,11 @@ in your `pom.xml`; no code changes are needed for patch releases.
 - M5 SSR (fail-fast, no wire change): new core `SsrEndpointPolicy`; local
   sidecars boot unchanged; remote requires `inertia.ssr-remote-enabled=true`
   + `https` + `inertia.ssr-allowed-hosts`. Both HTTP clients stop following
-  redirects (`3xx` → CSR fallback). Quarkus manual `InertiaConfig`
-  implementations must add `default boolean ssrRemoteEnabled() { return false; }`
-  and `default Optional<List<String>> ssrAllowedHosts() { return Optional.empty(); }`.
+  redirects (`3xx` → CSR fallback). `japicmp` 0.0.4→0.0.5: core/spring/quarkus
+  all MINOR (additive). Quarkus manual `InertiaConfig` implementations should
+  add `default boolean ssrRemoteEnabled() { return false; }` and
+  `default Optional<List<String>> ssrAllowedHosts() { return Optional.empty(); }`
+  (source-level only; binary compatible).
 
 ## 0.0.3 → 0.0.4 (breaking)
 

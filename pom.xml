@@ -49,7 +49,7 @@
     <!-- Set -Dcentral.autoPublish=false for upload-only trial runs. -->
     <central.autoPublish>true</central.autoPublish>
     <jacoco.version>0.8.12</jacoco.version>
-    <pitest.version>1.16.3</pitest.version>
+    <pitest.version>1.17.4</pitest.version>
     <maven.checkstyle.plugin.version>3.6.0</maven.checkstyle.plugin.version>
     <spotbugs.version>4.8.6.8</spotbugs.version>
     <dependency-check.version>12.1.0</dependency-check.version>
@@ -357,7 +357,7 @@
                     <dependency>
                       <groupId>${project.groupId}</groupId>
                       <artifactId>${project.artifactId}</artifactId>
-                      <version>0.0.3</version>
+                      <version>0.0.4</version>
                       <type>jar</type>
                     </dependency>
                   </oldVersion>

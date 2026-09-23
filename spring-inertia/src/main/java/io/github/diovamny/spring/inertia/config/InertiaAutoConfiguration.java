@@ -303,9 +303,8 @@ public class InertiaAutoConfiguration {
     }
 
     @Bean
-    public PrecognitionHandler precognitionHandler(JsonProvider jsonProvider, FlashStore flashStore,
-            InertiaProperties properties) {
-        return new PrecognitionHandler(jsonProvider, flashStore, properties);
+    public PrecognitionHandler precognitionHandler(JsonProvider jsonProvider, FlashStore flashStore) {
+        return new PrecognitionHandler(jsonProvider, flashStore);
     }
 
     @Bean

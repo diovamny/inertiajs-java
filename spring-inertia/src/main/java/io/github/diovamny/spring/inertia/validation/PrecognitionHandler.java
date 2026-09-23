@@ -36,18 +36,26 @@ public class PrecognitionHandler {
 
     private final JsonProvider jsonProvider;
     private final FlashStore flashStore;
-    private final io.github.diovamny.spring.inertia.config.InertiaProperties properties;
+    private io.github.diovamny.spring.inertia.config.InertiaProperties properties =
+        new io.github.diovamny.spring.inertia.config.InertiaProperties();
 
-    public PrecognitionHandler(JsonProvider jsonProvider, FlashStore flashStore,
-            io.github.diovamny.spring.inertia.config.InertiaProperties properties) {
+    public PrecognitionHandler(JsonProvider jsonProvider, FlashStore flashStore) {
         this.jsonProvider = jsonProvider;
         this.flashStore = flashStore;
-        this.properties = properties;
     }
 
-    /** Legacy constructor (tests): all-errors disabled. */
-    public PrecognitionHandler(JsonProvider jsonProvider, FlashStore flashStore) {
-        this(jsonProvider, flashStore, new io.github.diovamny.spring.inertia.config.InertiaProperties());
+    /**
+     * Optional wiring for {@code inertia.validation.all-errors}: Spring calls
+     * this setter when the {@code InertiaProperties} bean exists (always in a
+     * Boot app). Kept as a setter (instead of a 3-arg constructor) so the
+     * {@code @Bean} method signature stays binary-compatible with 0.0.4.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setProperties(
+            io.github.diovamny.spring.inertia.config.InertiaProperties properties) {
+        if (properties != null) {
+            this.properties = properties;
+        }
     }
 
     @ExceptionHandler({ MethodArgumentNotValidException.class, ConstraintViolationException.class })

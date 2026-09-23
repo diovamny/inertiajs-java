@@ -8,11 +8,34 @@
   serialization vs instant-visit behavior; Reactive as stable target, no
   experimental label at the end of the release); README/ROADMAP/NOT_SUPPORTED
   without `2.x` or `58/59`-as-certification claims; version `0.0.5` single source.
-- M1–M8 (planned in this branch, no deferrals): Maven Wrapper + locked versions +
-  clean-clone CI; `ValidationErrors` multi-message; `MergePlan` explicit append +
-  nested routes; `SsrEndpointPolicy` fail-fast; Reactive parity (full TCK +
-  `reactive-stress` + 9-cell E2E Vue/React/Svelte x 3 transports); blocking
-  PIT/SCA fail-closed (Dependency-Check 12.1.0) + SBOM per release + RC review.
+- M1 (P100-02/03): Maven Wrapper 3.9.11 (`mvnw`/`mvnw.cmd`), Enforcer
+  (Java 21+/Maven 3.9+), Node `24.21.0` + npm `11.17.0` (`engines`,
+  `.nvmrc`), `specs/e2e-compliance.yaml`, clean-checkout CI
+  (ubuntu+windows), `npm run verify:metadata`.
+- M2 (P100-04/05): core `ValidationErrors` + `withValidationErrors`/
+  `withErrorMessages` (erasure-safe, ADR-003) + `inertia.validation.all-errors`
+  (default `false`); TCK multi-message on 3 transports; `japicmp` MINOR.
+- M3 (P100-06/07): core `MergePlan` + `MergeableBuilder` +
+  `inertia.mergeable()...value()`/`applyMergePlan` (ADR-004); TCK
+  `merge-nested` + child reset on 3 transports; legacy `merge()` unchanged.
+- M5 (P100-10/11): core `SsrEndpointPolicy` + startup fail-fast in both
+  adapters (ADR-005) + no-redirect HTTP clients + sidecar-controlled tests.
+- M7 (P100-17/18): Reactive graduated to stable — 43-case TCK parity,
+  `ReactiveStressTest` (8×12 concurrent), G-17-class isolation fix
+  (`InertiaContextLocals` + registries + writer), `docs/reactive-parity.md`,
+  nightly `reactive-stress.yml`.
+- M4a (P100-08/09, part 1): Playwright + official Vue 3 client 10/10 on
+  Spring (validation, bags, merge-append, instant-visit PROTO-057B first
+  client proof, upload, 409, partials); matrix `60/62 verified, 8 E2E`.
+  M4b (same branch, before tag): Quarkus-Vue login cells (demo Secure-cookie
+  + post-login anomaly ticketed), React/Svelte fixtures, Reactive/SSR cells.
+- M6-lite (P100-12/13): no moves; frozen core-decision inventory (ADR-006).
+- M8 (P100-14/15/16, part 1): `verify -Pquality-gates` green (0 Checkstyle,
+  SpotBugs High clean, full suites); `japicmp` 0.0.4→0.0.5 MINOR ×3;
+  pitest 1.17.4 (minion still aborts on this station — report-only +
+  ticket, 3 local repros); SCA fail-closed on tags (Dependency-Check
+  12.1.0); SBOM aggregate post-deploy (existing step). Pre-tag gates left:
+  M4b E2E cells, external review, native smoke on tag CI.
 
 ## 0.0.4
 

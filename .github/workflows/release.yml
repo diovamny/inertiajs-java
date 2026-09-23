@@ -41,14 +41,15 @@ jobs:
         run: ./mvnw clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=true -DskipDependencyCheck=true
 
       - name: PIT mutation testing (report only)
-        # NOT blocking: the pitest 1.16.3 coverage minion aborts with
-        # UNKNOWN_ERROR on JDK 21 (reproduced on Linux CI and Windows, with
-        # and without JaCoCo, serial and parallel) before running a single
-        # mutant — a toolchain bug, not a code-quality signal. The report is
-        # still published for review. Follow-up: retry with pitest >= 1.17
-        # and/or an isolated argLine, then flip this step back to blocking.
+        # NOT blocking yet: the coverage minion aborts with UNKNOWN_ERROR on
+        # JDK 21 before running a single mutant — a toolchain/environment
+        # issue, not a code-quality signal. Reproduced on Windows with pitest
+        # 1.16.3 and 1.17.4 (with/without JaCoCo, with --add-opens, scoped to
+        # one package); the report step stays for review. Ticket P100-14:
+        # isolate the minion (argLine/JDK matrix, minimal repro) and flip this
+        # step back to blocking once the minion runs green on Linux CI.
         continue-on-error: true
-        run: ./mvnw verify -Pquality-gates -DskipStaticAnalysis=true -DskipMutationAnalysis=false -DskipDependencyCheck=true
+        run: ./mvnw verify -Pquality-gates -DskipStaticAnalysis=true -DskipMutationAnalysis=false -DskipDependencyCheck=true -Djacoco.skip=true
 
       - name: Diagnose Central server wiring (lengths only, values stay masked)
         # Prints whether the `central` server entry exists and the LENGTH of
@@ -106,11 +107,27 @@ jobs:
             --passphrase "$GPG_PASSPHRASE" --clearsign -o /dev/null
           echo "GPG signing setup OK"
 
+      - name: Require NVD_API_KEY on tags (fail-closed SCA)
+        # Releases must not skip dependency vulnerability scanning. On tag
+        # pushes the key is mandatory; manual dispatches (trials) may run
+        # without it but then skip the scan explicitly loud, never silently.
+        # NOTE: the secrets context is not allowed in `if:`, so the secret is
+        # mapped to env first and the condition reads env instead.
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              echo "::error::NVD_API_KEY is required for releases (fail-closed SCA, Dependency-Check 12.1.0)"
+              exit 1
+            fi
+            echo "NVD_API_KEY unset: OWASP scan will be skipped (non-tag trial run only)"
+          fi
+
       - name: OWASP Dependency Check
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
-        # NOTE: the secrets context is not allowed in `if:`, so the secret is
-        # mapped to env first and the condition reads env instead.
+        # The previous step guarantees the key exists on tags (fail-closed).
         if: ${{ env.NVD_API_KEY != '' }}
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
