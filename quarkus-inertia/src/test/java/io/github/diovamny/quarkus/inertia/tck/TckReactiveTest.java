@@ -30,6 +30,8 @@ class TckReactiveTest {
         "merge-metadata-emitted",
         "merge-reset-clears-metadata",
         "merge-partial-keeps-metadata",
+        "merge-nested-append-prepend-metadata",
+        "merge-nested-reset-clears-child-path",
         "scroll-metadata-emitted",
         "scroll-prepend-intent",
         "named-bag-submit-redirects-back",

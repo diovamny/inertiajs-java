@@ -74,6 +74,20 @@ public class TckReactiveRoutes {
     }
 
     @Blocking
+    @Route(path = "merge-nested")
+    public Uni<Object> mergeNested() {
+        var posts = Map.of("data", List.of(Map.of("id", 1, "title", "One")),
+            "pinned", List.of(Map.of("id", 9, "title", "Nine")));
+        var value = inertia.mergeable("posts", posts)
+            .append("data")
+            .prepend("pinned")
+            .matchOn("data.id")
+            .value();
+        var config = inertia.mergeable("config", Map.of("theme", "dark")).deep("theme").value();
+        return inertia.render("Tck/MergeNested", Map.of("posts", value, "config", config));
+    }
+
+    @Blocking
     @Route(path = "scroll")
     public Uni<Object> scroll() {
         inertia.scroll("items", List.of(Map.of("id", 1), Map.of("id", 2)),

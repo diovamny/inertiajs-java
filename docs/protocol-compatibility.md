@@ -5,8 +5,8 @@
 **Reference:** [Inertia v3 Protocol](https://inertiajs.com/docs/v3/core-concepts/the-protocol)
 **Source of truth:** [`specs/inertia-v3-compliance.yaml`](../specs/inertia-v3-compliance.yaml) — this file is GENERATED, do not edit by hand (see `scripts/generate-compatibility-matrix.mjs`).
 
-[![Protocol v3](https://img.shields.io/badge/Inertia%20v3-59%2F62%20verified-brightgreen)](../specs/inertia-v3-compliance.yaml)
-**Protocol: 59/62 verified (5 with Playwright E2E).**
+[![Protocol v3](https://img.shields.io/badge/Inertia%20v3-60%2F62%20verified-brightgreen)](../specs/inertia-v3-compliance.yaml)
+**Protocol: 60/62 verified (5 with Playwright E2E).**
 
 Status semantics: ✅ means an executable test exists and is green in the current suite; 🔄 means the code exists with indirect coverage and a dedicated test is tracked (see notes); ❌ means the requirement is known but not yet backed by a real test; `N/A` means not applicable.
 
@@ -69,7 +69,7 @@ Important: this file is now evidence-based and generated. Claims of 100% compati
 | 53 | Validation | X-Inertia-Error-Bag default + named bags, one message per field | https://inertiajs.com/docs/v3/the-basics/validation | TESTED | ✅ | ✅ | TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationQuarkusTest, ValidationIntegrationTest | Default + named bags via 07-validation.yaml on 3 transports (redirect 303 + nested flash); wire shape Map<field,message> (see PROTO-053B for multi-message) |
 | 54 | Validation | Multiple messages per field (array of messages, order preserved) | https://inertiajs.com/docs/v3/the-basics/validation | TESTED | ✅ | ✅ | TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationErrorsUnitTest, ValidationErrorsApiUnitTest | M2: ValidationErrors core + withValidationErrors/withErrorMessages + inertia.validation.all-errors (default false); TCK multi-message-submit + ordered-arrays green on 3 transports; E2E client proof lands in M4 |
 | 55 | Special | merge/prepend/deepMerge wire metadata + matchPropsOn | https://inertiajs.com/docs/v3/data-props/merging-props | IMPLEMENTED | 🔄 | 🔄 | MergePropProcessorTest (both) | mergeProps/prependProps/deepMergeProps/matchPropsOn emitted; scroll merge-intent covered (see PROTO-054B for explicit append API) |
-| 56 | Special | Explicit append() API with nested routes (append/prepend per path) | https://inertiajs.com/docs/v3/data-props/merging-props | PARCIAL | 🔄 | 🔄 | MergePropProcessorTest (both) | 0.0.5 closes this in M3 via MergePlan + mergeable().append().prepend().matchOn(); no dedicated append() method yet |
+| 56 | Special | Explicit append() API with nested routes (append/prepend per path) | https://inertiajs.com/docs/v3/data-props/merging-props | TESTED | ✅ | ✅ | TckSpringTest, TckQuarkusTest, TckReactiveTest, MergePlanUnitTest, MergeableBuilderUnitTest | M3: MergePlan + mergeable().append().prepend().deep().matchOn() on both facades (same wire on 3 transports); legacy merge() unchanged; TCK merge-nested + reset green; E2E client proof lands in M4 |
 | 57 | Special | X-Inertia-Infinite-Scroll-Merge-Intent honored | https://inertiajs.com/docs/v3/data-loading/infinite-scrolling | TESTED | ✅ | ✅ | InertiaPageTest (both), InertiaHeaderExtractorTest | Header extracted; scrollProps metadata; dedicated infinite-scroll TCK in Fase 2 (H8) |
 | 58 | Special | once key, fresh and expiry semantics | https://inertiajs.com/docs/v3/data-loading/once-props | TESTED | ✅ | ✅ | OncePropRegistryTest (both), OncePropsIntegrationTest, TckSpringTest, TckQuarkusTest, TckReactiveTest | customKey + expiry (Duration/Instant) + once+merge/optional/deferred combos via 03-deferred-once.yaml on 3 transports; fresh is server-internal with no wire effect |
 | 59 | Shared | sharedProps field serialized in page object (server-side) | https://inertiajs.com/docs/v3/the-basics/instant-visits | TESTED | ✅ | ✅ | InertiaPageTest (both) | Explicit sharedProps field in PageObject, omitted when empty (see PROTO-057B for client-observed behavior) |

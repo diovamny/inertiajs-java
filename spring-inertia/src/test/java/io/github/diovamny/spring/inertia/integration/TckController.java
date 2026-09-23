@@ -117,6 +117,19 @@ public class TckController {
             "config", inertia.merge("config", Map.of("theme", "dark"), MergeRule.DEEP_MERGE)));
     }
 
+    @GetMapping("/merge-nested")
+    public Object mergeNested() {
+        var posts = Map.of("data", List.of(Map.of("id", 1, "title", "One")),
+            "pinned", List.of(Map.of("id", 9, "title", "Nine")));
+        var value = inertia.mergeable("posts", posts)
+            .append("data")
+            .prepend("pinned")
+            .matchOn("data.id")
+            .value();
+        var config = inertia.mergeable("config", Map.of("theme", "dark")).deep("theme").value();
+        return inertia.render("Tck/MergeNested", Map.of("posts", value, "config", config));
+    }
+
     @GetMapping("/scroll")
     public Object scroll() {
         inertia.scroll("items", List.of(Map.of("id", 1), Map.of("id", 2)),

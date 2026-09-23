@@ -31,6 +31,10 @@ in your `pom.xml`; no code changes are needed for patch releases.
   and Precognition 422, same shape on 3 transports). Quarkus manual
   `InertiaConfig` implementations must add
   `default boolean validationAllErrors() { return false; }`.
+- M3 merge (additive): new core `MergePlan` + `MergeableBuilder` and
+  `inertia.mergeable(key, value)...value()` / `applyMergePlan(plan)` on both
+  facades (same plan, same wire on 3 transports). Legacy
+  `merge(key, value, rule, matchOn...)` unchanged in `0.x`.
 
 ## 0.0.3 → 0.0.4 (breaking)
 

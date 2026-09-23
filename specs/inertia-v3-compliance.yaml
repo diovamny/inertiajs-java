@@ -457,9 +457,9 @@ entries:
     description: "Explicit append() API with nested routes (append/prepend per path)"
     reference: "https://inertiajs.com/docs/v3/data-props/merging-props"
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
-    status: PARCIAL
-    test_ref: "MergePropProcessorTest (both)"
-    notes: "0.0.5 closes this in M3 via MergePlan + mergeable().append().prepend().matchOn(); no dedicated append() method yet"
+    status: TESTED
+    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, MergePlanUnitTest, MergeableBuilderUnitTest"
+    notes: "M3: MergePlan + mergeable().append().prepend().deep().matchOn() on both facades (same wire on 3 transports); legacy merge() unchanged; TCK merge-nested + reset green; E2E client proof lands in M4"
   - id: PROTO-055
     section: "Special"
     description: "X-Inertia-Infinite-Scroll-Merge-Intent honored"

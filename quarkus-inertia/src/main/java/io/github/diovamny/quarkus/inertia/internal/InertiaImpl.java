@@ -635,6 +635,33 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public io.github.diovamny.inertia.core.model.MergeableBuilder mergeable(String key, Object value) {
+        return io.github.diovamny.inertia.core.model.MergeableBuilder.of(key, value, this::applyMergePlan);
+    }
+
+    @Override
+    public Object applyMergePlan(io.github.diovamny.inertia.core.model.MergePlan plan) {
+        if (plan == null) {
+            throw new IllegalArgumentException("MergePlan must not be null");
+        }
+        for (var path : plan.qualifiedMergePaths()) {
+            sharedData.addMergePropKey(path);
+        }
+        for (var path : plan.qualifiedPrependPaths()) {
+            sharedData.addMergePropKey(path);
+            sharedData.addPrependPropKey(path);
+        }
+        for (var path : plan.qualifiedDeepMergePaths()) {
+            sharedData.addMergePropKey(path);
+            sharedData.addDeepMergePropKey(path);
+        }
+        for (var path : plan.qualifiedMatchPaths()) {
+            sharedData.addMatchPropKey(path);
+        }
+        return plan.value();
+    }
+
+    @Override
     public void scroll(String key, Map<String, Object> metadata) {
         sharedData.addScrollProp(key, metadata);
     }

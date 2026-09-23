@@ -14,6 +14,7 @@ by the executable TCK (`inertia-tck/src/main/resources/protocol-v3/`).
 | Optional | `inertia.optional("section", supplier)` | omitted unless requested | resolved when requested |
 | Once | `inertia.once("notice", value)` | delivered once | omitted afterwards; `X-Inertia-Except-Once-Props` suppresses by name |
 | Merge / prepend / deep-merge | `inertia.merge(...)` and friends | listed in `mergeProps`/`prependProps`/`deepMergeProps` metadata | client merges instead of replacing |
+| Explicit append + nested routes | `inertia.mergeable(key, value).append(path).prepend(path).deep(path).matchOn(fields...).value()` or `applyMergePlan(plan)` | dotted `mergeProps`/`prependProps`/`deepMergeProps` + `matchPropsOn` | same; `X-Inertia-Reset` of a parent prunes dotted descendants |
 | Scroll | `inertia.scroll(key, value, metadata)` | value + `scrollProps` metadata | infinite-scroll protocol |
 | Cached | `CachedPropStore` (TTL memoization) | resolved once per TTL | same |
 | `RawJson` | `inertia.rawJson("...")` | embedded verbatim, never re-escaped | same |
@@ -21,7 +22,24 @@ by the executable TCK (`inertia-tck/src/main/resources/protocol-v3/`).
 | Head | `inertia.head()` + `inertia.server-head=true` | published as `props.head` | same |
 
 TCK rules: `02-partial.yaml` (`only`/`except`/mismatch),
-`03-deferred-once.yaml`, `07-validation.yaml` (error bags).
+`03-deferred-once.yaml`, `07-validation.yaml` (error bags),
+`08-merge.yaml` (merge/prepend/deep-merge, nested `merge-nested` routes,
+`matchPropsOn`, reset).
+
+```java
+// Explicit per-path merge (both adapters, same MergePlan + wire):
+return inertia.render("Posts/Index", Map.of(
+    "posts", inertia.mergeable("posts", posts)
+        .append("data")      // -> mergeProps: posts.data
+        .prepend("pinned")   // -> prependProps: posts.pinned
+        .matchOn("data.id")  // -> matchPropsOn: posts.data.id
+        .value()));
+```
+
+Rules: paths are dot-notation relative to the prop; blank or malformed
+paths fail fast; a path declared twice keeps the last operation; `matchOn`
+fields are relative to the prop root and may be several. The legacy
+`merge(key, value, rule, matchOn...)` stays available in `0.x`.
 
 ## Typed results (`inertia-core`, `result` package)
 
