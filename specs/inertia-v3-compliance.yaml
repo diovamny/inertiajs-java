@@ -443,7 +443,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
     test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationErrorsUnitTest, ValidationErrorsApiUnitTest"
-    notes: "M2: ValidationErrors core + withValidationErrors/withErrorMessages + inertia.validation.all-errors (default false); TCK multi-message-submit + ordered-arrays green on 3 transports; E2E client proof lands in M4"
+    e2e_verified: [spring-mvc]
+    notes: "M2 wire on 3 transports (TCK); M4a Vue-observed bags on Spring (Playwright validation + named-bag); remaining E2E cells land in M4b"
   - id: PROTO-054A
     section: "Special"
     description: "merge/prepend/deepMerge wire metadata + matchPropsOn"
@@ -459,7 +460,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
     test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, MergePlanUnitTest, MergeableBuilderUnitTest"
-    notes: "M3: MergePlan + mergeable().append().prepend().deep().matchOn() on both facades (same wire on 3 transports); legacy merge() unchanged; TCK merge-nested + reset green; E2E client proof lands in M4"
+    e2e_verified: [spring-mvc]
+    notes: "M3 wire on 3 transports (TCK); M4a Vue-observed append (Playwright badge 1-total to 2-total) on Spring; remaining E2E cells land in M4b"
   - id: PROTO-055
     section: "Special"
     description: "X-Inertia-Infinite-Scroll-Merge-Intent honored"
@@ -491,7 +493,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: IMPLEMENTADO
     test_ref: "InertiaPageTest (both)"
-    notes: "0.0.5 closes this in M4 with Playwright + official Vue/React/Svelte clients (persist, update, exclude, collision)"
+    e2e_verified: [spring-mvc]
+    notes: "M4a Vue-observed on Spring only (placeholder with shared+current props before server 2s response, then server greeting); no TCK applies (client behavior); full E2E_VERIFICADO needs all 9 cells in M4b"
   - id: PROTO-058
     section: "HTML"
     description: "SSR failure uses structured error contract"

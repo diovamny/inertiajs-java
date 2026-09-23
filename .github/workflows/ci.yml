@@ -161,6 +161,10 @@ jobs:
       # without a 32+ char rest-csrf signature key. This value is not a
       # secret; length is all the guardrail checks.
       INERTIA_CSRF_HMAC_KEY: 0123456789abcdef0123456789abcdef
+      # E2E runs over plain http: Secure cookies would never be stored by the
+      # browser, so browser logins cannot complete. Production (https) keeps
+      # %prod.cookie-force-secure=true; M4b completes the Quarkus E2E cells.
+      QUARKUS_REST_CSRF_COOKIE_FORCE_SECURE: "false"
     strategy:
       fail-fast: false
       matrix:
