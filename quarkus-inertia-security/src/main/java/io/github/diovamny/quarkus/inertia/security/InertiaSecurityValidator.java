@@ -47,14 +47,20 @@ public class InertiaSecurityValidator {
                     + "quarkus.rest-csrf.require-form-url-encoded=false: "
                     + "Inertia posts JSON, which the default form-only check skips");
         }
-        if (io.quarkus.runtime.LaunchMode.current() == io.quarkus.runtime.LaunchMode.NORMAL) {
-            var key = rawConfig.getOptionalValue("quarkus.rest-csrf.token-signature-key", String.class);
-            if (key.isEmpty() || key.get().isBlank() || key.get().length() < 32) {
-                throw new IllegalStateException(
-                    "inertia.security.mode=framework requires a "
-                        + "quarkus.rest-csrf.token-signature-key of at least 32 characters "
-                        + "in prod mode (provide it via a secret, never the repository)");
-            }
+        // A rest-csrf signature key signs the cookie, so a client that only
+        // echoes the cookie (every official Inertia client) can never pass
+        // verification: the check requires cookie == sign(header), which no
+        // echo satisfies (verified against quarkus-rest-csrf 3.39.2 bytecode).
+        // Inertia SPAs must therefore leave the key UNSET (plain double-submit
+        // + SameSite + HTTPS). Only server-rendered flows that embed the raw
+        // token (e.g. Qute `{csrfToken}`) may use a signature key.
+        var key = rawConfig.getOptionalValue("quarkus.rest-csrf.token-signature-key", String.class);
+        if (key.isPresent() && !key.get().isBlank()) {
+            LOG.warn("quarkus.rest-csrf.token-signature-key is set: official Inertia "
+                + "clients echo the XSRF-TOKEN cookie and cannot pass signed "
+                + "verification (cookie must equal sign(header)). Unset the key "
+                + "for Inertia SPA frontends; keep it only for server-rendered "
+                + "raw-token flows.");
         }
         LOG.info("Inertia Quarkus Security bridge active: 401 -> 409 challenges, "
             + "403 Inertia pages, rest-csrf failure -> 303 recovery");

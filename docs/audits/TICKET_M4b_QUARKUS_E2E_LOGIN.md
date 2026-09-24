@@ -1,8 +1,7 @@
-# Ticket M4b-01 — E2E Quarkus-Vue: el login por navegador no completa sobre http (demo, pre-tag 0.0.5)
+# Ticket M4b-01 — E2E Quarkus-Vue: login bloqueado por firma CSRF (CERRADO)
 
-- Estado: abierto, bloquea las celdas E2E Quarkus (no bloquea TCK/contrato).
-- Alcance: `examples/quarkus/kitchen-sink` (jar prod) + `@inertiajs/vue3`.
-  El adaptador está descartado como causa (ver evidencia).
+- Estado: **cerrado 2026-09-24** (causa raíz encontrada y corregida).
+- Alcance: `examples/quarkus/*` (jar prod) + clientes oficiales cookie-echo.
 
 ## Repro (100%)
 
@@ -38,13 +37,22 @@
    posteriores se pierden).
 3. Interacción `quarkus.http.auth` (permit/secured) con rest-csrf en el jar prod.
 
-## Criterio de cierre (M4b)
+## Cierre (causa raíz confirmada por bytecode)
 
-- Login por navegador verde en Quarkus (misma suite `inertia-contracts`),
-  sin cambiar el contrato del adaptador; si el fix toca la demo, documentarlo
-  en la demo (no en el adaptador) + nota en `docs/reactive-parity.md`/CI.
-- No se marca ninguna celda Quarkus E2E_VERIFICADO hasta entonces
-  (`specs/e2e-compliance.yaml` ya refleja `verified_cells` honestas).
+`CsrfRequestResponseReactiveFilter.verifyCsrfToken` exige
+`cookie.equals(sign(header))`: con `token-signature-key` la cookie contiene
+la FIRMA, y ningún cliente que solo reenvíe la cookie (todos los oficiales
+Inertia) puede pasar jamás. El bridge exigía la clave en prod (`fail-fast`
+≥32) y las 4 demos la fijaban → login imposible en prod; en `@QuarkusTest`
+(sin clave, doble-submit plano) funcionaba. El adaptador queda exonerado.
+
+Fix aplicado: bridge avisa en vez de exigir (solo flujos server-rendered
+con token crudo pueden firmar); 4 demos sin clave + nota; CI sin HMAC;
+`security-integration-plan.md` corregido.
+
+Hallazgo colateral (demo, también corregido): `ValidationRequest.age`
+`Integer` revienta JSON-B con `""` (Jackson coacciona a null) → 500 en el
+submit primario; parseo explícito con los mismos mensajes.
 
 ## Otros M4b (mismo ticket padre, pre-tag)
 

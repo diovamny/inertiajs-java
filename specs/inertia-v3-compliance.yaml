@@ -443,16 +443,16 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
     test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationErrorsUnitTest, ValidationErrorsApiUnitTest"
-    e2e_verified: [spring-mvc]
-    notes: "M2 wire on 3 transports (TCK); M4a Vue-observed bags on Spring (Playwright validation + named-bag); remaining E2E cells land in M4b"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "M2 wire on 3 transports (TCK); Vue-observed bags on Spring + Quarkus REST (Playwright validation + named-bag); remaining E2E cells land in M4b"
   - id: PROTO-054A
     section: "Special"
     description: "merge/prepend/deepMerge wire metadata + matchPropsOn"
     reference: "https://inertiajs.com/docs/v3/data-props/merging-props"
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
-    status: IMPLEMENTED
-    test_ref: "MergePropProcessorTest (both)"
-    notes: "mergeProps/prependProps/deepMergeProps/matchPropsOn emitted; scroll merge-intent covered (see PROTO-054B for explicit append API)"
+    status: TESTED
+    test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, MergePropProcessorTest (both)"
+    notes: "TCK 08-merge.yaml green on 3 transports (metadata, reset, partial); scroll merge-intent covered (see PROTO-054B for explicit append API)"
   - id: PROTO-054B
     section: "Special"
     description: "Explicit append() API with nested routes (append/prepend per path)"
@@ -460,8 +460,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
     test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, MergePlanUnitTest, MergeableBuilderUnitTest"
-    e2e_verified: [spring-mvc]
-    notes: "M3 wire on 3 transports (TCK); M4a Vue-observed append (Playwright badge 1-total to 2-total) on Spring; remaining E2E cells land in M4b"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "M3 wire on 3 transports (TCK); Vue-observed append on Spring + Quarkus REST (Playwright badge 1-total to 2-total); remaining E2E cells land in M4b"
   - id: PROTO-055
     section: "Special"
     description: "X-Inertia-Infinite-Scroll-Merge-Intent honored"
@@ -493,8 +493,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: IMPLEMENTADO
     test_ref: "InertiaPageTest (both)"
-    e2e_verified: [spring-mvc]
-    notes: "M4a Vue-observed on Spring only (placeholder with shared+current props before server 2s response, then server greeting); no TCK applies (client behavior); full E2E_VERIFICADO needs all 9 cells in M4b"
+    e2e_verified: [spring-mvc, quarkus-reactive]
+    notes: "Vue-observed on Spring MVC and Reactive Routes (placeholder with shared+current props before server 2s response, then server greeting); no TCK applies (client behavior); full E2E_VERIFICADO needs all 9 cells in M4b"
   - id: PROTO-058
     section: "HTML"
     description: "SSR failure uses structured error contract"

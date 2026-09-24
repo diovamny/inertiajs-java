@@ -156,6 +156,18 @@ test.describe('Inertia v3 contracts (/login)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('redirect back re-renders with server flash (E2E-07 proof)', async ({ page }) => {
+    const errors = await collectBrowserErrors(page);
+    await loginAsTestUser(page);
+    await page.goto('/features/navigation/redirects');
+    await expect(page.getByRole('button', { name: 'Submit and redirect back' })).toBeVisible({ timeout: 30000 });
+    await page.getByRole('button', { name: 'Submit and redirect back' }).click();
+    // On Quarkus this route is served by Reactive Routes (@Route): the flash
+    // proves the reactive redirect contract through the official client.
+    await expect(page.getByText('Redirected back via redirect()->back()').first()).toBeVisible({ timeout: 15000 });
+    expect(errors).toEqual([]);
+  });
+
   test('multipart upload round-trips through the Vue client', async ({ page }) => {
     const errors = await collectBrowserErrors(page);
     await loginAsTestUser(page);
