@@ -39,7 +39,7 @@ see C100/I100/R100 in the policy.
 
 | inertiajs-java | Inertia.js client | Spring Boot | Quarkus | Java | Node.js (SSR) |
 |---|---|---|---|---|---|
-| 0.0.5 | 3.x only | 4.1.x | 3.39.x | 21+ | 20+ |
+| 0.0.5 | 3.7.1 (pinned) | 4.1.x | 3.39.x | 21+ | 20+ |
 
 ## Your controllers. Your routes. Modern components.
 

@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/vue3": "^3.7.0",
+    "@inertiajs/vue3": "3.7.1",
     "@inertiajs/vite": "^3.7.0",
     "vue": "^3.5.39"
   },

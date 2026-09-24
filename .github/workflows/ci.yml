@@ -41,6 +41,11 @@ jobs:
         # Fails when version.properties, poms, README, CHANGELOG or ROADMAP disagree.
         run: node scripts/check-versions.mjs
 
+      - name: Verify pinned official clients
+        # Fails unless every template + demo package.json declares exactly
+        # 3.7.1 and every lockfile resolves 3.7.1 (Fase A).
+        run: node scripts/check-client-versions.mjs
+
       - name: Verify generated compliance matrix
         # Regenerates docs/protocol-compatibility.md from the YAML source of
         # truth and fails on any diff (the markdown is a build artifact).

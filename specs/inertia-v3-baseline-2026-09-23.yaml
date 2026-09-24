@@ -1,9 +1,12 @@
-# Inertia.js v3 FROZEN BASELINE — snapshot 2026-09-23 (release-0.0.5, P100-01).
+# Inertia.js v3 FROZEN BASELINE — snapshot 2026-09-23, client line v3.7.1
+# (release-0.0.5, P100-01, Fase A: all official clients pinned at 3.7.1).
 # DO NOT EDIT: this is the frozen snapshot. Live tracking continues in
 # specs/inertia-v3-compliance.yaml. New upstream capabilities start as NO_EVALUADO.
 # Normative sources: protocol v3 (core-concepts/the-protocol), validation
 # (the-basics/validation), merging-props (data-props/merging-props),
-# instant-visits (the-basics/instant-visits), SSR (advanced/server-side-rendering).
+# instant-visits (the-basics/instant-visits), SSR (advanced/server-side-rendering),
+# plus inertiajs/inertia v3.7.1 release notes (no wire changes; #3253 '<'-escape
+# already covered by SafeJsonEncoderTest).
 # Policy: docs/COMPATIBILITY_POLICY.md. v3 clients only, no legacy v1/v2 mode.
 version: 1
 updated: 2026-09-23

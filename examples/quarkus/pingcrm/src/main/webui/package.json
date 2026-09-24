@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@inertiajs/vite": "^3.7.0",
-    "@inertiajs/vue3": "^3.7.0",
+    "@inertiajs/vue3": "3.7.1",
     "@popperjs/core": "^2.11.8",
     "lodash": "^4.17.21",
     "uuid": "^11.1.0",
