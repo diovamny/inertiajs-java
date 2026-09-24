@@ -18,8 +18,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>${frameworkVersion}</spring-boot.version>
         <inertia-adapter.version>${inertiaAdapterVersion}</inertia-adapter.version>
+        <inertia-core.version>${inertiaAdapterVersion}</inertia-core.version>
         <node.version>v24.21.0</node.version>
-        <npm.version>10.9.2</npm.version>
+        <npm.version>11.17.0</npm.version>
         <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
     </properties>
 
@@ -50,6 +51,11 @@
             <version>${symbol_dollar}{inertia-adapter.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.github.diovamny.inertia</groupId>
+            <artifactId>inertia-core</artifactId>
+            <version>${symbol_dollar}{inertia-core.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -72,6 +78,14 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${symbol_dollar}{spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <id>repackage-starter</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.github.eirslett</groupId>

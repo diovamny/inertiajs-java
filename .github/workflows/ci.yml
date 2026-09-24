@@ -99,16 +99,28 @@ jobs:
         include:
           - archetype: inertia-spring-vue-archetype
             framework-version: 4.1.0
+            starter-kind: spring
+            starter-jar: hello-inertia-*.jar
           - archetype: inertia-spring-react-archetype
             framework-version: 4.1.0
+            starter-kind: spring
+            starter-jar: hello-inertia-*.jar
           - archetype: inertia-spring-svelte-archetype
             framework-version: 4.1.0
+            starter-kind: spring
+            starter-jar: hello-inertia-*.jar
           - archetype: inertia-quarkus-vue-archetype
             framework-version: 3.39.2
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
           - archetype: inertia-quarkus-react-archetype
             framework-version: 3.39.2
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
           - archetype: inertia-quarkus-svelte-archetype
             framework-version: 3.39.2
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
     steps:
       - uses: actions/checkout@v5
 
@@ -146,6 +158,39 @@ jobs:
       - name: Build and test generated starter (Java + frontend)
         run: ./mvnw -B test
         working-directory: /tmp/hello-inertia
+
+      - name: Boot smoke + visit certification (Fase B)
+        # Proves the generated app (with explicit inertia-core) boots and
+        # serves the Welcome visit as HTML shell and Inertia JSON page.
+        working-directory: /tmp/hello-inertia
+        env:
+          INERTIA_CSRF_HMAC_KEY: 0123456789abcdef0123456789abcdef
+        run: |
+          ./mvnw -B -q -DskipTests package
+          JAR=$(ls target/${{ matrix.starter-jar }} | grep -v '\.original$' | head -n 1)
+          echo "Starting $JAR"
+          nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/starter-app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/starter-app.pid"
+          for i in $(seq 1 48); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              echo "Starter is up"
+              break
+            fi
+            sleep 5
+          done
+          curl -sf http://localhost:8080/ | grep -q 'id="app"'
+          curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
+          echo "Starter serves HTML shell and Inertia JSON (inertia-core wired)"
+          kill "$(cat $GITHUB_WORKSPACE/starter-app.pid)" || true
+          rm -f "$GITHUB_WORKSPACE/starter-app.pid"
+
+      - name: Upload starter boot log
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: archetype-${{ matrix.archetype }}-boot
+          path: starter-app.log
+          if-no-files-found: ignore
 
       - name: Upload starter test reports
         if: failure()

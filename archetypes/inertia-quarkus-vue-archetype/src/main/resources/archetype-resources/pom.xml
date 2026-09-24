@@ -17,8 +17,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.version>${frameworkVersion}</quarkus.version>
         <inertia-adapter.version>${inertiaAdapterVersion}</inertia-adapter.version>
+        <inertia-core.version>${inertiaAdapterVersion}</inertia-core.version>
         <node.version>v24.21.0</node.version>
-        <npm.version>10.9.2</npm.version>
+        <npm.version>11.17.0</npm.version>
         <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
     </properties>
 
@@ -39,6 +40,11 @@
             <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia</artifactId>
             <version>${symbol_dollar}{inertia-adapter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.diovamny.inertia</groupId>
+            <artifactId>inertia-core</artifactId>
+            <version>${symbol_dollar}{inertia-core.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
