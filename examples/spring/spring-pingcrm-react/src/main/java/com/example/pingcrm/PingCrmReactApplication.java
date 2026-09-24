@@ -90,7 +90,7 @@ public class PingCrmReactApplication implements WebMvcConfigurer {
                 .authenticationEntryPoint(entryPoint)
                 .accessDeniedHandler(deniedHandler))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/assets/**", "/favicon.svg", "/h2-console/**").permitAll()
+                .requestMatchers("/login", "/e2e-probe/**", "/assets/**", "/favicon.svg", "/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));

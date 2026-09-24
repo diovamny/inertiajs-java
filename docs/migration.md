@@ -37,6 +37,13 @@ in your `pom.xml`; no code changes are needed for patch releases.
   `inertia.mergeable(key, value)...value()` / `applyMergePlan(plan)` on both
   facades (same plan, same wire on 3 transports). Legacy
   `merge(key, value, rule, matchOn...)` unchanged in `0.x`.
+- Fase E error bags (behavior fix, 0.0.5): manual
+  `back().withErrors(...)` / `withValidationErrors(...)` /
+  `withErrorMessages(...)` on `InertiaRedirect`/`InertiaRender`/`InertiaResponse`
+  now honor `X-Inertia-Error-Bag` exactly like the validation-exception path
+  (new `support.ErrorBags` helper per adapter + unit tests). With a bag, the
+  page receives `errors: {<bag>: {...}}`; without one the shape is unchanged
+  (flat). Only visits that actually send a bag header are affected.
 - M5 SSR (fail-fast, no wire change): new core `SsrEndpointPolicy`; local
   sidecars boot unchanged; remote requires `inertia.ssr-remote-enabled=true`
   + `https` + `inertia.ssr-allowed-hosts`. Both HTTP clients stop following

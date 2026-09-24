@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.spring.inertia.support.ErrorBags;
 
 /**
  * An Inertia redirect response. Extends {@link ResponseEntity} so Spring MVC
@@ -57,7 +58,7 @@ public class InertiaRedirect extends ResponseEntity<String> {
      * @return this redirect for chaining
      */
     public InertiaRedirect withErrors(Map<String, String> errors) {
-        flashStore.put("errors", errors);
+        flashStore.put("errors", ErrorBags.wrap(errors));
         return this;
     }
 
@@ -70,7 +71,7 @@ public class InertiaRedirect extends ResponseEntity<String> {
      */
     public InertiaRedirect withValidationErrors(
             io.github.diovamny.inertia.core.model.ValidationErrors errors) {
-        flashStore.put("errors", errors != null ? errors.toWireMap(true) : Map.of());
+        flashStore.put("errors", ErrorBags.wrap(errors != null ? errors.toWireMap(true) : Map.of()));
         return this;
     }
 
@@ -81,8 +82,8 @@ public class InertiaRedirect extends ResponseEntity<String> {
      * @return this redirect for chaining
      */
     public InertiaRedirect withErrorMessages(Map<String, ? extends java.util.Collection<String>> errors) {
-        flashStore.put("errors",
-            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true));
+        flashStore.put("errors", ErrorBags.wrap(
+            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true)));
         return this;
     }
 

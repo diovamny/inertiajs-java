@@ -5,6 +5,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 
 import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.spring.inertia.support.ErrorBags;
 
 /**
  * A rendered page that can be chained with flash data before being returned,
@@ -77,7 +78,7 @@ public class InertiaRender extends InertiaResponse {
      * Flash validation errors under the {@code errors} key (one message per field).
      */
     public InertiaRender withErrors(Map<String, String> errors) {
-        return flash("errors", errors);
+        return flash("errors", ErrorBags.wrap(errors));
     }
 
     /**
@@ -88,7 +89,7 @@ public class InertiaRender extends InertiaResponse {
      */
     public InertiaRender withValidationErrors(
             io.github.diovamny.inertia.core.model.ValidationErrors errors) {
-        return flash("errors", errors != null ? errors.toWireMap(true) : Map.of());
+        return flash("errors", ErrorBags.wrap(errors != null ? errors.toWireMap(true) : Map.of()));
     }
 
     /**
@@ -98,8 +99,8 @@ public class InertiaRender extends InertiaResponse {
      * @return this render for chaining
      */
     public InertiaRender withErrorMessages(Map<String, ? extends java.util.Collection<String>> errors) {
-        return flash("errors",
-            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true));
+        return flash("errors", ErrorBags.wrap(
+            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true)));
     }
 
     /**

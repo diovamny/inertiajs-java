@@ -368,6 +368,30 @@ jobs:
             health-url: http://localhost:8082/q/health
             jar: quarkus-app/quarkus-run.jar
             spec: pingcrm-contracts.spec.ts
+          - demo: matrix-spring-pingcrm-react
+            module: examples/spring/spring-pingcrm-react
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/actuator/health
+            jar: spring-pingcrm-react-*.jar
+            spec: feature-matrix.spec.ts
+          - demo: matrix-spring-pingcrm-svelte
+            module: examples/spring/spring-pingcrm-svelte
+            base-url: http://localhost:8181
+            health-url: http://localhost:8181/actuator/health
+            jar: spring-pingcrm-svelte-*.jar
+            spec: feature-matrix.spec.ts
+          - demo: matrix-quarkus-pingcrm-react
+            module: examples/quarkus/pingcrm-react
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: feature-matrix.spec.ts
+          - demo: matrix-quarkus-pingcrm-svelte
+            module: examples/quarkus/quarkus-pingcrm-svelte
+            base-url: http://localhost:8082
+            health-url: http://localhost:8082/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: feature-matrix.spec.ts
     steps:
       - uses: actions/checkout@v5
 

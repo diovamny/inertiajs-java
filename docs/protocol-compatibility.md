@@ -6,8 +6,8 @@
 **Source of truth:** [`specs/inertia-v3-compliance.yaml`](../specs/inertia-v3-compliance.yaml) + [`specs/e2e-compliance.yaml`](../specs/e2e-compliance.yaml) — this file is GENERATED, do not edit by hand (see `scripts/generate-compatibility-matrix.mjs`).
 
 [![C100 contract](https://img.shields.io/badge/C100-61%2F62%20contract--verified-brightgreen)](../specs/inertia-v3-compliance.yaml)
-[![I100 interop](https://img.shields.io/badge/I100-37%2F90%20cells-green)](../specs/e2e-compliance.yaml)
-**C100 contract: 61/62 TCK-verified. I100 interop: 37/90 E2E cells green with official clients.**
+[![I100 interop](https://img.shields.io/badge/I100-57%2F90%20cells-green)](../specs/e2e-compliance.yaml)
+**C100 contract: 61/62 TCK-verified. I100 interop: 57/90 E2E cells green with official clients.**
 
 Status semantics (contract vs interop are separate): ✅ = normative test green on all 3 transports (counts for C100 only); 🧪 = officially observed by a real client in the listed transports (partial I100 evidence); 🔄 = code exists with indirect coverage and a tracked test; ❌ = known but untested; `N/A` = not applicable. A contract ✅ never counts as interop.
 

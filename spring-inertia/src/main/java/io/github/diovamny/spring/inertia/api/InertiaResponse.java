@@ -74,7 +74,7 @@ public class InertiaResponse extends ResponseEntity<String> {
      * @throws IllegalStateException when built without a {@link FlashStore}
      */
     public InertiaResponse withErrors(Map<String, String> errors) {
-        return flash("errors", errors);
+        return flash("errors", io.github.diovamny.spring.inertia.support.ErrorBags.wrap(errors));
     }
 
     /**
@@ -85,7 +85,8 @@ public class InertiaResponse extends ResponseEntity<String> {
      */
     public InertiaResponse withValidationErrors(
             io.github.diovamny.inertia.core.model.ValidationErrors errors) {
-        return flash("errors", errors != null ? errors.toWireMap(true) : Map.of());
+        return flash("errors", io.github.diovamny.spring.inertia.support.ErrorBags.wrap(
+            errors != null ? errors.toWireMap(true) : Map.of()));
     }
 
     /**
@@ -95,8 +96,8 @@ public class InertiaResponse extends ResponseEntity<String> {
      * @throws IllegalStateException when built without a {@link FlashStore}
      */
     public InertiaResponse withErrorMessages(Map<String, ? extends java.util.Collection<String>> errors) {
-        return flash("errors",
-            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true));
+        return flash("errors", io.github.diovamny.spring.inertia.support.ErrorBags.wrap(
+            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true)));
     }
 
     private FlashStore requireFlashStore() {
