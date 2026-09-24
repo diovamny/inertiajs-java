@@ -10,10 +10,12 @@
     <packaging>pom</packaging>
 
     <name>Inertia.js Spring Boot Demos</name>
-    <description>Spring Boot demos: spring-pingcrm</description>
+    <description>Spring Boot demos: spring-pingcrm (Vue), spring-pingcrm-react (React), spring-pingcrm-svelte (Svelte), spring-kitchen-sink (Vue)</description>
 
     <modules>
         <module>spring-pingcrm</module>
+        <module>spring-pingcrm-react</module>
+        <module>spring-pingcrm-svelte</module>
         <module>spring-kitchen-sink</module>
     </modules>
 

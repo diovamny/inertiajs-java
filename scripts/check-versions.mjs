@@ -85,6 +85,8 @@ for (const rel of archetypeTemplatePoms) {
 // 4. Examples inertia.version pins.
 const examplePoms = [
   'examples/spring/spring-pingcrm/pom.xml',
+  'examples/spring/spring-pingcrm-react/pom.xml',
+  'examples/spring/spring-pingcrm-svelte/pom.xml',
   'examples/spring/spring-kitchen-sink/pom.xml',
   'examples/quarkus/pingcrm/pom.xml',
   'examples/quarkus/pingcrm-react/pom.xml',

@@ -20,6 +20,7 @@ const manifests = [
   'archetypes/inertia-quarkus-react-archetype/src/main/resources/archetype-resources/src/main/webui/package.json',
   'archetypes/inertia-quarkus-svelte-archetype/src/main/resources/archetype-resources/src/main/webui/package.json',
   'examples/spring/spring-pingcrm/src/main/webui/package.json',
+  'examples/spring/spring-pingcrm-react/src/main/webui/package.json',
   'examples/spring/spring-pingcrm-svelte/src/main/webui/package.json',
   'examples/spring/spring-kitchen-sink/src/main/webui/package.json',
   'examples/quarkus/demo-app/src/main/webui/package.json',
@@ -52,6 +53,7 @@ for (const rel of manifests) {
 
 const locks = [
   'examples/spring/spring-pingcrm/src/main/webui/package-lock.json',
+  'examples/spring/spring-pingcrm-react/src/main/webui/package-lock.json',
   'examples/spring/spring-pingcrm-svelte/src/main/webui/package-lock.json',
   'examples/spring/spring-kitchen-sink/src/main/webui/package-lock.json',
   'examples/quarkus/demo-app/src/main/webui/package-lock.json',
