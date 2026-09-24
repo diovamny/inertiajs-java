@@ -5,21 +5,18 @@ Honest scope for `0.0.5` (branch `release-0.0.5`). Each item links its tracking 
 or its release task. Policy: [`COMPATIBILITY_POLICY.md`](COMPATIBILITY_POLICY.md).
 v3 clients only; no legacy v1/v2 mode, no `2.x` support row.
 
-## Protocol surface (closes inside 0.0.5, tracked as PARCIAL/IMPLEMENTADO)
+## Protocol surface (status verificado en `specs/inertia-v3-compliance.yaml`)
 
-- **Explicit `append()` API** (`PROTO-054B`, `PARCIAL`): wire metadata
-  (`PROTO-054A`) exists via `mergeProps` + scroll merge-intent, but there is
-  no dedicated `append()` method yet. Closes in M3 via `MergePlan` +
-  `mergeable().append().prepend().matchOn()` with TCK on 3 transports + E2E.
-- **Multiple messages per field** (`PROTO-053B`, `PARCIAL`): the wire shape is
-  still `Map<field, message>` (one message per field, default or named bag).
-  Closes in M2 via `ValidationErrors` + `inertia.validation.all-errors`
-  (default `false`), preserved in flash, bags and Precognition, same JSON on
-  3 transports + E2E.
+- **Explicit `append()` API** (`PROTO-054B`, `TESTED`): `MergePlan` +
+  `mergeable().append().prepend().matchOn()` con TCK en 3 transportes y
+  E2E Vue/Spring; resto de celdas E2E en M4b.
+- **Multiple messages per field** (`PROTO-053B`, `TESTED`): `ValidationErrors`
+  + `inertia.validation.all-errors` (default `false` = legacy
+  `Map<field, message>`; `true` = arrays ordenados) en flash, bags y
+  Precognition, mismo JSON en 3 transportes; E2E Vue/Spring verde, resto en M4b.
 - **Instant-visits `sharedProps` client behavior** (`PROTO-057B`,
-  `IMPLEMENTADO`): the field is serialized (`PROTO-057A`); client-observed
-  persist/update/exclude/collision across instant visits closes in M4 with
-  official Vue/React/Svelte clients.
+  `IMPLEMENTADO`): el campo se serializa (`PROTO-057A`); observado por
+  cliente oficial solo en Vue/Spring (M4a); E2E completo en M4b.
 - **`browserApi` / `sourceLocation` in SSR failures**: local failures
   classify as `unreachable / timeout / error-status / unknown` with hints
   (server-side only); sidecar-reported browser details travel inside render
@@ -27,13 +24,14 @@ v3 clients only; no legacy v1/v2 mode, no `2.x` support row.
 - **Legacy v1/v2 root template** (`<div data-page>`): intentionally
   unsupported, not even opt-in (v3-pure, −59% bootstrap bytes). No legacy API.
 
-## Transports and platforms (all stable targets in 0.0.5)
+## Transports and platforms (0.0.5: Reactive graduates stable in this release)
 
 - **Quarkus Reactive Routes**: stable target in `0.0.5`, same contract as
-  Spring MVC and Quarkus REST. Any remaining divergence is a `NO_APLICA`
-  row with justification or an open P0/P1 bug. Evidence: full TCK on
-  3 transports, `reactive-stress` profile, 9-cell E2E matrix —
-  see [reactive parity](reactive-parity.md).
+  Spring MVC and Quarkus REST. Graduation completes with the Fase F fixes
+  (no event-loop blocking, no split package) + full I100 — no 30-day wait,
+  fixes now. Until then: TCK 43/43 + `reactive-stress` green, E2E Vue cells
+  in M4b. Any remaining divergence is a `NO_APLICA` row with justification
+  or an open P0/P1 bug — see [reactive parity](reactive-parity.md).
 - **Inertia DevTools module**: out of scope on purpose — the browser
   extension already interops with any correct v3 server.
 - **Frontend behavior** (polling, prefetching, UI state): client-side, proven

@@ -12,11 +12,15 @@ Scope: `0.0.5`, branch `release-0.0.5`. Single source of truth for what
   not even opt-in. There is no legacy mode, no `2.x` support row.
 - Server APIs are v3-only. No `legacy` flag will be added to inflate a score.
 
-## 2. Stable transports (no experimental label in 0.0.5)
+## 2. Stable transports (Reactive graduates stable inside 0.0.5)
 
 `Spring MVC`, `Quarkus REST` and `Quarkus Reactive Routes` are all stable
 targets in `0.0.5` and must reach the same contract. Differences must be a
 justified `NO_APLICA` row or an open P0/P1 bug — never a hidden doc note.
+Reactive graduation is declared complete when the Fase F fixes land
+(no event-loop blocking, no split package) together with full I100;
+the 30-day clock is replaced by fixes-now plus `reactive-stress` evidence
+(decision 2026-09-24, recorded here instead of silent compliance).
 
 ## 3. The three measurements (C100 / I100 / R100)
 

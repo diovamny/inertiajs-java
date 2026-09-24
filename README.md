@@ -165,11 +165,12 @@ public class ContactsRouter {
 > JDBC, Panache blocking); with a reactive client (Hibernate Reactive,
 > MongoDB reactive, REST calls) leave it off.
 >
-> Quarkus Reactive Routes is a stable target in `0.0.5` (same contract as
+> Quarkus Reactive Routes graduates stable inside `0.0.5` (same contract as
 > > Spring MVC and Quarkus REST). The G-17 request-context isolation fix ships
-> > with a permanent concurrency regression suite (`InertiaContextLocalsTest`,
-> > including 20×100 isolation) plus the `reactive-stress` profile and the full
-> > 9-cell E2E matrix (see `docs/COMPATIBILITY_POLICY.md`).
+> > with a permanent concurrency regression suite (`InertiaContextLocalsTest`
+> > plus `ReactiveStressTest`) and the `reactive-stress` profile; graduation
+> > completes with the Fase F fixes + full E2E matrix
+> > (see `docs/COMPATIBILITY_POLICY.md`).
 
 Every route returns `Uni<Object>` (Quarkus) or `Object` (Spring): an HTML shell
 with the page object on the first visit, the JSON page object on Inertia

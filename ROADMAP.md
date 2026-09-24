@@ -7,9 +7,11 @@ and [compatibility policy](docs/COMPATIBILITY_POLICY.md).
 ## Now (0.0.5 — release branch `release-0.0.5`)
 
 - v3-only scope (no `2.x` client, no legacy `<div data-page>` mode): Spring Boot 4.1 /
-  Quarkus 3.39 / Java 21 baseline green on **3 stable transports** (Spring MVC,
+  Quarkus 3.39 / Java 21 baseline green on **3 transports** (Spring MVC,
   Quarkus REST, Quarkus Reactive Routes): unit suites, TCK on 3 stacks,
-  kitchen-sink demos, Playwright 9-cell contracts, archetype generation.
+  kitchen-sink demos, Playwright E2E (Vue/Spring green in M4a; full 9-cell
+  matrix in M4b — see `specs/e2e-compliance.yaml`, the only E2E source of truth),
+  archetype generation.
 - Publish `0.0.5` to Maven Central (namespace `io.github.diovamny`) with signed
   artifacts and `META-INF/LICENSE`. Version single source: `version.properties`
   (`project.version=0.0.5`); `node scripts/check-versions.mjs` fails the build
@@ -22,8 +24,12 @@ and [compatibility policy](docs/COMPATIBILITY_POLICY.md).
 - P100-04/05 (M2): `ValidationErrors` multi-message on 3 transports + TCK/E2E.
 - P100-06/07 (M3): `MergePlan` explicit `append()` + nested routes + TCK/E2E.
 - P100-10/11 (M5): `SsrEndpointPolicy` fail-fast + controlled sidecar + docs.
-- P100-17/18 (M7): Reactive parity (full TCK, `reactive-stress`, 9-cell E2E).
-- P100-08/09 (M4): official Vue/React/Svelte fixtures, 9-cell E2E green.
+- P100-17/18 (M7): Reactive parity (full TCK, `reactive-stress`); graduation
+  to stable completes with the Fase F fixes (event-loop blocking, split
+  package) + full I100 — no 30-day clock, fixes now.
+- P100-08/09 (M4): M4a done (official Vue 3 client 10/10 on Spring);
+  M4b in progress (Quarkus-Vue login, React/Svelte fixtures, Reactive + SSR
+  cells) in this same branch before the tag.
 - P100-12–16 (M6+M8): minimal core extraction, blocking PIT/SCA fail-closed
   (Dependency-Check 12.1.0), SBOM per release, external review, RC.
 - Harden quality gates: project-specific Checkstyle ruleset with
