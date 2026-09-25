@@ -37,7 +37,7 @@ jobs:
 
       - name: Generate Quarkus starter
         run: >
-          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          $GITHUB_WORKSPACE/mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=inertia-quarkus-vue-archetype
@@ -127,7 +127,7 @@ jobs:
 
       - name: Generate Spring starter
         run: >
-          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          $GITHUB_WORKSPACE/mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeArtifactId=inertia-spring-vue-archetype
           -DarchetypeGroupId=io.github.diovamny
