@@ -235,6 +235,7 @@ jobs:
           echo "Starting $JAR"
           nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/demo-visit.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/demo-visit.pid"
+          echo "Polling http://localhost:${{ matrix.port }}${{ matrix.path }}"
           for i in $(seq 1 48); do
             if curl -sf "http://localhost:${{ matrix.port }}${{ matrix.path }}" > /dev/null; then
               echo "Demo is up"
@@ -247,6 +248,10 @@ jobs:
           echo "Visit certified: HTML shell + Inertia JSON ${{ matrix.component }}"
           kill "$(cat $GITHUB_WORKSPACE/demo-visit.pid)" || true
           rm -f "$GITHUB_WORKSPACE/demo-visit.pid"
+
+      - name: Print demo log tail (failure diagnosis)
+        if: failure()
+        run: tail -n 120 demo-visit.log || echo "no demo-visit.log"
 
       - name: Upload demo log
         if: failure()
@@ -522,6 +527,7 @@ jobs:
 
       - name: Wait for health endpoint
         run: |
+          echo "Polling ${{ matrix.health-url }}"
           for i in $(seq 1 48); do
             if curl -sf "${{ matrix.health-url }}" > /dev/null; then
               echo "Demo is healthy"
@@ -545,6 +551,10 @@ jobs:
             kill "$(cat e2e-app.pid)" || true
             rm -f e2e-app.pid
           fi
+
+      - name: Print app log tail (failure diagnosis)
+        if: failure()
+        run: tail -n 120 e2e-app.log || echo "no e2e-app.log"
 
       - name: Upload E2E evidence
         if: failure()
