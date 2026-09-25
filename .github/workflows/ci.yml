@@ -123,7 +123,12 @@ jobs:
         # frontend-maven-plugin downloads Node into ~/.m2; a flaky download
         # poisons setup-java's Maven cache across runs (EOFException / missing
         # tarball). Purging forces a fresh download; retries then self-heal.
-        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+        run: |
+          rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+          # Delete Maven's negative-cache markers (*.lastUpdated): a transient
+          # Central blip cached as "not found" fails every later run without
+          # retrying. Present artifacts are kept; only failures are re-attempted.
+          find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Spring demo smoke
         run: ./mvnw clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-pingcrm-react,examples/spring/spring-pingcrm-svelte,examples/spring/spring-kitchen-sink -Pexamples
@@ -211,7 +216,12 @@ jobs:
       - name: Purge cached Node.js distributions
         # A poisoned Node tarball in the Maven cache breaks every
         # frontend-maven-plugin build in this job.
-        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+        run: |
+          rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+          # Delete Maven's negative-cache markers (*.lastUpdated): a transient
+          # Central blip cached as "not found" fails every later run without
+          # retrying. Present artifacts are kept; only failures are re-attempted.
+          find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Package demo
         # Boot with CWD = module dir: H2 file DBs (./data/…) and uploads
@@ -300,7 +310,12 @@ jobs:
         # frontend-maven-plugin downloads Node into ~/.m2; a flaky download
         # poisons setup-java's Maven cache across runs (EOFException / missing
         # tarball). Purging forces a fresh download; retries then self-heal.
-        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+        run: |
+          rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+          # Delete Maven's negative-cache markers (*.lastUpdated): a transient
+          # Central blip cached as "not found" fails every later run without
+          # retrying. Present artifacts are kept; only failures are re-attempted.
+          find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Generate starter from archetype
         run: >
@@ -382,6 +397,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Readiness uses /login (not actuator/health): only
+          # spring-kitchen-sink ships actuator and only the svelte/kitchen-sink
+          # Quarkus demos ship the health extension. /login is 200
+          # unauthenticated on every pingcrm demo (same URL the demo-visit
+          # matrix certifies).
           - demo: spring
             module: examples/spring/spring-kitchen-sink
             base-url: http://localhost:8080
@@ -397,31 +417,31 @@ jobs:
           - demo: spring-pingcrm
             module: examples/spring/spring-pingcrm
             base-url: http://localhost:8080
-            health-url: http://localhost:8080/actuator/health
+            health-url: http://localhost:8080/login
             jar: spring-pingcrm-*.jar
             spec: pingcrm-contracts.spec.ts
           - demo: spring-pingcrm-react
             module: examples/spring/spring-pingcrm-react
             base-url: http://localhost:8080
-            health-url: http://localhost:8080/actuator/health
+            health-url: http://localhost:8080/login
             jar: spring-pingcrm-react-*.jar
             spec: pingcrm-contracts.spec.ts
           - demo: spring-pingcrm-svelte
             module: examples/spring/spring-pingcrm-svelte
             base-url: http://localhost:8181
-            health-url: http://localhost:8181/actuator/health
+            health-url: http://localhost:8181/login
             jar: spring-pingcrm-svelte-*.jar
             spec: pingcrm-contracts.spec.ts
           - demo: quarkus-pingcrm
             module: examples/quarkus/pingcrm
             base-url: http://localhost:8081
-            health-url: http://localhost:8081/q/health
+            health-url: http://localhost:8081/login
             jar: quarkus-app/quarkus-run.jar
             spec: pingcrm-contracts.spec.ts
           - demo: quarkus-pingcrm-react
             module: examples/quarkus/pingcrm-react
             base-url: http://localhost:8080
-            health-url: http://localhost:8080/q/health
+            health-url: http://localhost:8080/login
             jar: quarkus-app/quarkus-run.jar
             spec: pingcrm-contracts.spec.ts
           - demo: quarkus-pingcrm-svelte
@@ -433,19 +453,19 @@ jobs:
           - demo: matrix-spring-pingcrm-react
             module: examples/spring/spring-pingcrm-react
             base-url: http://localhost:8080
-            health-url: http://localhost:8080/actuator/health
+            health-url: http://localhost:8080/login
             jar: spring-pingcrm-react-*.jar
             spec: feature-matrix.spec.ts
           - demo: matrix-spring-pingcrm-svelte
             module: examples/spring/spring-pingcrm-svelte
             base-url: http://localhost:8181
-            health-url: http://localhost:8181/actuator/health
+            health-url: http://localhost:8181/login
             jar: spring-pingcrm-svelte-*.jar
             spec: feature-matrix.spec.ts
           - demo: matrix-quarkus-pingcrm-react
             module: examples/quarkus/pingcrm-react
             base-url: http://localhost:8080
-            health-url: http://localhost:8080/q/health
+            health-url: http://localhost:8080/login
             jar: quarkus-app/quarkus-run.jar
             spec: feature-matrix.spec.ts
           - demo: matrix-quarkus-pingcrm-svelte
@@ -476,7 +496,12 @@ jobs:
       - name: Purge cached Node.js distributions
         # See examples job: a poisoned Node tarball in the Maven cache breaks
         # every frontend-maven-plugin build in this job.
-        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+        run: |
+          rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+          # Delete Maven's negative-cache markers (*.lastUpdated): a transient
+          # Central blip cached as "not found" fails every later run without
+          # retrying. Present artifacts are kept; only failures are re-attempted.
+          find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Install adapters (resolve locally, not from Central)
         # Demos resolve inertia-parent/adapters 0.0.5, which are not published
@@ -572,7 +597,12 @@ jobs:
         # frontend-maven-plugin downloads Node into ~/.m2; a flaky download
         # poisons setup-java's Maven cache across runs (EOFException / missing
         # tarball). Purging forces a fresh download; retries then self-heal.
-        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+        run: |
+          rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+          # Delete Maven's negative-cache markers (*.lastUpdated): a transient
+          # Central blip cached as "not found" fails every later run without
+          # retrying. Present artifacts are kept; only failures are re-attempted.
+          find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Generate starter from archetype
         run: >
