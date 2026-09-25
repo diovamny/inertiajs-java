@@ -23,16 +23,16 @@ see C100/I100/R100 in the policy.
 |-------------------------------|:---:|:---:|:---:|:---:|
 | Initial page (HTML + JSON)    | ✅  | ✅  | ✅  | ✅  |
 | Partial reloads               | ✅  | ✅  | ✅  | ✅  |
-| Deferred props                | ✅  | ✅  | ✅  | 🔄  |
-| Once props (key/expiry/combos)| ✅  | ✅  | ✅  | 🔄  |
-| Merge / prepend / deepMerge   | ✅  | ✅  | ✅  | 🔄  |
-| Explicit append() + nested routes | 🔄 | 🔄 | 🔄 | 🔄 |
-| Infinite scroll               | ✅  | ✅  | ✅  | 🔄  |
-| Error bags (single message)   | ✅  | ✅  | ✅  | 🔄  |
-| Multiple messages per field   | 🔄  | 🔄  | 🔄  | 🔄  |
-| File uploads                  | ✅  | ✅  | ✅  | 🔄  |
-| SSR con sidecar               | ✅  | ✅  | ✅  | 🔄  |
-| Instant-visit sharedProps (client-observed) | 🔄 | 🔄 | 🔄 | 🔄 |
+| Deferred props                | ✅  | ✅  | ✅  | ✅  |
+| Once props (key/expiry/combos)| ✅  | ✅  | ✅  | ✅  |
+| Merge / prepend / deepMerge   | ✅  | ✅  | ✅  | ✅  |
+| Explicit append() + nested routes | ✅  | ✅  | ✅  | ✅  |
+| Infinite scroll               | ✅  | ✅  | ✅  | ✅  |
+| Error bags (single message)   | ✅  | ✅  | ✅  | ✅  |
+| Multiple messages per field   | ✅  | ✅  | ✅  | ✅  |
+| File uploads                  | ✅  | ✅  | ✅  | ✅  |
+| SSR con sidecar               | ✅  | ✅  | ✅  | ✅  |
+| Instant-visit sharedProps (client-observed) | ✅ | ✅ | ✅ | ✅ |
 | encryptHistory / clearHistory | ✅  | ✅  | ✅  | ✅  |
 | CSRF 303 + flash              | ✅  | ✅  | ✅  | ✅  |
 | Native Image (GraalVM)        | ✅  | ✅  | ✅  | ✅  |

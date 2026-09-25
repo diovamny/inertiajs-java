@@ -15,7 +15,7 @@ export default function ProbeTarget() {
       <p data-testid="probe-target-greeting" className="mb-6">
         {props.greeting}
       </p>
-      <Link href="/e2e-probe" className="text-indigo-500 hover:underline">
+      <Link href=".." className="text-indigo-500 hover:underline">
         Back to probe
       </Link>
     </div>

@@ -14,21 +14,29 @@
   let success = $derived(page.props?.success ?? null)
   let bagErrors = $derived(page.props?.errors?.probeSecondary ?? null)
 
+  // Probe pages are served under a variant base (/e2e-probe on Spring/JAX-RS,
+  // /e2e-probe-rx on Reactive Routes): derive it from the current URL so every
+  // form post and visit targets the same transport (E2E_PROBE_BASE). Called
+  // from event handlers only, so server-side rendering never touches window.
+  function probeBase() {
+    return window.location.pathname.replace(/\/target\/?$/, '').replace(/\/+$/, '')
+  }
+
   function submitPrimary(e) {
     e.preventDefault()
-    form.post('/e2e-probe/validate')
+    form.post(probeBase() + '/validate')
   }
 
   function submitSecondary(e) {
     e.preventDefault()
-    secondary.post('/e2e-probe/validate-secondary', {
+    secondary.post(probeBase() + '/validate-secondary', {
       headers: { 'X-Inertia-Error-Bag': 'probeSecondary' },
     })
   }
 
   function submitUpload(e) {
     e.preventDefault()
-    upload.post('/e2e-probe/upload')
+    upload.post(probeBase() + '/upload')
   }
 
   function loadSlow() {
@@ -44,7 +52,7 @@
   }
 
   function visitTarget() {
-    router.visit('/e2e-probe/target?delay=2', {
+    router.visit(probeBase() + '/target?delay=2', {
       component: 'Probe/Target',
       pageProps: (current, shared) => ({
         ...shared,
@@ -54,7 +62,7 @@
   }
 
   function redirectBack() {
-    router.post('/e2e-probe/redirect-back')
+    router.post(probeBase() + '/redirect-back')
   }
 
   function onPhoto(e) {

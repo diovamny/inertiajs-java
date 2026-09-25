@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import CodeBlock from '@/components/CodeBlock.vue';
 import FeatureCard from '@/components/FeatureCard.vue';
 import FeatureHeader from '@/components/FeatureHeader.vue';
@@ -18,16 +19,24 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Instant Visits' },
 ];
 
-const targetUrl = '/features/navigation/instant-visit-target?delay=2';
+// Served under two bases (/features/navigation on Reactive Routes,
+// /features/rest-instant on JAX-RS): derive the sibling target URL from the
+// current page URL so instant visits stay on the same transport. page.url is
+// server-rendered, so this is SSR-safe (no window access); the template keeps
+// using targetUrl directly (computed auto-unwraps).
+const page = usePage();
+const targetUrl = computed(
+    () => page.url.replace(/\/(instant-)?visits\/?(\?.*)?$/, '') + '/instant-visit-target?delay=2',
+);
 
 function visitBasic() {
-    router.visit(targetUrl, {
+    router.visit(targetUrl.value, {
         component: 'Features/Navigation/InstantVisitTarget',
     });
 }
 
 function visitWithPlaceholderProps() {
-    router.visit(targetUrl, {
+    router.visit(targetUrl.value, {
         component: 'Features/Navigation/InstantVisitTarget',
         pageProps: (_currentProps, sharedProps) => ({
             ...sharedProps,
@@ -39,7 +48,7 @@ function visitWithPlaceholderProps() {
 }
 
 function visitWithCallbackProps() {
-    router.visit(targetUrl, {
+    router.visit(targetUrl.value, {
         component: 'Features/Navigation/InstantVisitTarget',
         pageProps: (currentProps, sharedProps) => ({
             ...sharedProps,
@@ -138,7 +147,7 @@ function visitWithCallbackProps() {
                         </Button>
                         <CodeBlock
                             code="
-                            router.visit(targetUrl, {
+                            router.visit(targetUrl.value, {
                               component: 'Features/.../Target',
                             })
                         "
@@ -161,7 +170,7 @@ function visitWithCallbackProps() {
                         </Button>
                         <CodeBlock
                             code="
-                            router.visit(targetUrl, {
+                            router.visit(targetUrl.value, {
                               component: 'Features/.../Target',
                               pageProps: (_, sharedProps) => ({
                                 ...sharedProps,
@@ -187,7 +196,7 @@ function visitWithCallbackProps() {
                         </Button>
                         <CodeBlock>
                             <textarea>
-                            router.visit(targetUrl, {
+                            router.visit(targetUrl.value, {
                               component: "Features/.../Target",
                               pageProps: (currentProps, sharedProps) => ({
                                 ...sharedProps,

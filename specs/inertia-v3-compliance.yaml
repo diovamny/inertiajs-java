@@ -443,8 +443,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
     test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, ValidationErrorsUnitTest, ValidationErrorsApiUnitTest"
-    e2e_verified: [spring-mvc, quarkus-rest]
-    notes: "M2 wire on 3 transports (TCK); Vue-observed bags on Spring + Quarkus REST (Playwright validation + named-bag); remaining E2E cells land in M4b"
+    e2e_verified: [spring-mvc, quarkus-rest, quarkus-reactive]
+    notes: "M2 wire on 3 transports (TCK); observed on all transports (Playwright validation + named-bag: Vue kitchen-sink, React/Svelte /e2e-probe + /e2e-probe-rx)"
   - id: PROTO-054A
     section: "Special"
     description: "merge/prepend/deepMerge wire metadata + matchPropsOn"
@@ -460,8 +460,8 @@ entries:
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
     test_ref: "TckSpringTest, TckQuarkusTest, TckReactiveTest, MergePlanUnitTest, MergeableBuilderUnitTest"
-    e2e_verified: [spring-mvc, quarkus-rest]
-    notes: "M3 wire on 3 transports (TCK); Vue-observed append on Spring + Quarkus REST (Playwright badge 1-total to 2-total); remaining E2E cells land in M4b"
+    e2e_verified: [spring-mvc, quarkus-rest, quarkus-reactive]
+    notes: "M3 wire on 3 transports (TCK); observed on all transports (Playwright append-merge: Vue kitchen-sink, React/Svelte /e2e-probe + /e2e-probe-rx)"
   - id: PROTO-055
     section: "Special"
     description: "X-Inertia-Infinite-Scroll-Merge-Intent honored"
@@ -491,10 +491,10 @@ entries:
     description: "Instant-visit sharedProps behavior observed by official client"
     reference: "https://inertiajs.com/docs/v3/the-basics/instant-visits"
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
-    status: IMPLEMENTADO
-    test_ref: "InertiaPageTest (both)"
-    e2e_verified: [spring-mvc, quarkus-reactive]
-    notes: "Vue-observed on Spring MVC and Reactive Routes (placeholder with shared+current props before server 2s response, then server greeting); no TCK applies (client behavior); full E2E_VERIFICADO needs all 9 cells in M4b"
+    status: E2E_VERIFICADO
+    test_ref: "InertiaPageTest (both), e2e/inertia-contracts.spec.ts (057B), e2e/feature-matrix.spec.ts (instant), e2e/reactive-contracts.spec.ts (rest-instant)"
+    e2e_verified: [spring-mvc, quarkus-rest, quarkus-reactive]
+    notes: "Observed on all 9 client x transport cells: Vue via kitchen-sink (@Route, JAX-RS twin and Spring MVC), React/Svelte via /e2e-probe (Spring/JAX-RS) and /e2e-probe-rx (Reactive Routes); placeholder with shared+current props before server 2s response, then server greeting; no TCK applies (client behavior)"
   - id: PROTO-058
     section: "HTML"
     description: "SSR failure uses structured error contract"

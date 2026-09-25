@@ -1,12 +1,9 @@
 package io.github.diovamny.spring.inertia.protocol;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import io.github.diovamny.inertia.core.protocol.PartialFilter;
 import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
 
 /**
@@ -33,8 +30,8 @@ public class PartialReloadProcessor {
      */
     public boolean isPartialReload(String component) {
         var partialComponent = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PARTIAL_COMPONENT);
-        return partialComponent != null && component != null
-            && component.equals(String.valueOf(partialComponent));
+        return PartialFilter.matchesComponent(
+            partialComponent == null ? null : String.valueOf(partialComponent), component);
     }
 
     /**
@@ -52,7 +49,7 @@ public class PartialReloadProcessor {
      * @return the requested keys, empty when the header is absent
      */
     public List<String> partialData() {
-        return attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA);
+        return PartialFilter.parseCsvList(stringAttr(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA));
     }
 
     /**
@@ -61,7 +58,7 @@ public class PartialReloadProcessor {
      * @return the excluded keys, empty when the header is absent
      */
     public List<String> partialExcept() {
-        return attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT);
+        return PartialFilter.parseCsvList(stringAttr(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT));
     }
 
     /**
@@ -81,101 +78,15 @@ public class PartialReloadProcessor {
      * @return the filtered map
      */
     public Map<String, Object> filterProps(Map<String, Object> props, Map<String, Object> always) {
-        var onlyKeys = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA));
-        var exceptKeys = new LinkedHashSet<>(attrList(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT));
-
-        Map<String, Object> result = new LinkedHashMap<>(always);
-
-        if (!onlyKeys.isEmpty() || !exceptKeys.isEmpty()) {
-            for (var entry : props.entrySet()) {
-                var key = entry.getKey();
-                var value = entry.getValue();
-                if (exceptKeys.contains(key)) {
-                    continue;
-                }
-                if (!onlyKeys.isEmpty() && !isSelected(key, onlyKeys)) {
-                    continue;
-                }
-                var nestedOnly = matchingPrefixes(key, onlyKeys);
-                var nestedExcept = matchingPrefixes(key, exceptKeys);
-                Object kept = value;
-                if (!nestedOnly.isEmpty() || !nestedExcept.isEmpty()) {
-                    kept = filterNode(value, nestedOnly, nestedExcept, key);
-                }
-                // A selected prop keeps its value even when it is null: null is
-                // a real prop value, not an omission signal (lazy/optional use
-                // dedicated marker types resolved upstream).
-                result.put(key, kept);
-            }
-        } else {
-            result.putAll(props);
-        }
-        return result;
+        // The filtering algorithm lives in inertia-core (PartialFilter);
+        // this class only extracts the request-scoped header values.
+        var onlyKeys = PartialFilter.parseCsv(stringAttr(InertiaHeaderExtractor.CONTEXT_PARTIAL_DATA));
+        var exceptKeys = PartialFilter.parseCsv(stringAttr(InertiaHeaderExtractor.CONTEXT_PARTIAL_EXCEPT));
+        return PartialFilter.filter(props, always, onlyKeys, exceptKeys);
     }
 
-    private Set<String> matchingPrefixes(String key, Set<String> patterns) {
-        var result = new LinkedHashSet<String>();
-        for (var pattern : patterns) {
-            if (pattern.startsWith(key + ".")) {
-                var rest = pattern.substring(key.length() + 1);
-                if (!rest.isEmpty()) {
-                    result.add(rest);
-                }
-            }
-        }
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object filterNode(Object value, Set<String> onlyPaths, Set<String> exceptPaths, String path) {
-        if (!(value instanceof Map<?, ?> map)) {
-            return value;
-        }
-        var result = new LinkedHashMap<String, Object>();
-        for (var child : map.entrySet()) {
-            var childKey = String.valueOf(child.getKey());
-            if (isExcluded(childKey, exceptPaths)) {
-                continue;
-            }
-            if (!onlyPaths.isEmpty() && !isSelected(childKey, onlyPaths)) {
-                continue;
-            }
-            var childValue = child.getValue();
-            var childOnly = matchingPrefixes(childKey, onlyPaths);
-            var childExcept = matchingPrefixes(childKey, exceptPaths);
-            var kept = (!childOnly.isEmpty() || !childExcept.isEmpty()) && childValue instanceof Map
-                ? filterNode(childValue, childOnly, childExcept, path + "." + childKey)
-                : childValue;
-            result.put(childKey, kept);
-        }
-        return result.isEmpty() ? null : result;
-    }
-
-    private boolean isSelected(String key, Set<String> patterns) {
-        for (var pattern : patterns) {
-            if (pattern.equals(key) || pattern.startsWith(key + ".")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isExcluded(String key, Set<String> exceptPatterns) {
-        return exceptPatterns.contains(key);
-    }
-
-    private static List<String> attrList(String name) {
+    private static String stringAttr(String name) {
         var value = InertiaRequestContext.get(name);
-        if (value == null) {
-            return List.of();
-        }
-        var list = new ArrayList<String>();
-        for (var part : String.valueOf(value).split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isBlank()) {
-                list.add(trimmed);
-            }
-        }
-        return list;
+        return value == null ? null : String.valueOf(value);
     }
 }

@@ -17,6 +17,11 @@
     <packaging>jar</packaging>
 
     <name>Spring Boot Inertia.js v3 Adapter</name>
+
+    <properties>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 74.0%). -->
+        <jacoco.line.minimum>0.70</jacoco.line.minimum>
+    </properties>
     <description>Inertia.js v3 adapter for Spring Boot 4 (Spring MVC / AOT / GraalVM Native)</description>
 
     <dependencies>

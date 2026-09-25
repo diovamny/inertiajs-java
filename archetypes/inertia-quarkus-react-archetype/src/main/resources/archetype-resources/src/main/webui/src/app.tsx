@@ -1,5 +1,5 @@
 import './styles/app.css'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { createInertiaApp } from '@inertiajs/react'
 import type { ResolvedComponent } from '@inertiajs/react'
 
@@ -12,6 +12,12 @@ createInertiaApp({
     return page
   },
   setup({ el, App, props }) {
-    createRoot(el).render(<App {...props} />)
+    // Hydrate server-rendered markup when the SSR sidecar produced it;
+    // otherwise mount a fresh client app (mirrors src/ssr.tsx).
+    if (el.dataset.serverRendered === 'true') {
+      hydrateRoot(el, <App {...props} />)
+    } else {
+      createRoot(el).render(<App {...props} />)
+    }
   },
 })

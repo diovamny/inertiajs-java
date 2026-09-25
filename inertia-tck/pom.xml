@@ -17,6 +17,12 @@
     <packaging>jar</packaging>
 
     <name>Inertia.js v3 Technology Compatibility Kit</name>
+
+    <properties>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 31.9%;
+             mostly fixtures; the normative assertions live in adapters). -->
+        <jacoco.line.minimum>0.25</jacoco.line.minimum>
+    </properties>
     <description>Executable normative protocol suite (YAML) plus a stack-agnostic
         HTTP runner used to certify the Spring and Quarkus adapters</description>
 

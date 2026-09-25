@@ -45,13 +45,20 @@ public class RedirectProcessor {
         } catch (IllegalArgumentException rejected) {
             return rejected();
         }
-        var status = isGet() ? 302 : 303;
-        if (!fullPage && isInertiaRequest() && !isPrefetch() && url != null && url.contains("#")) {
-            var headers = new HttpHeaders();
-            headers.set("X-Inertia-Redirect", url);
-            return new InertiaRedirect(HttpStatus.CONFLICT, headers, null, flashStore);
-        }
-        return back(status, Map.of(), url, fullPage);
+        // Status/shape decided in inertia-core (RedirectClassifier); this
+        // class only builds the framework response around the decision.
+        var decision = io.github.diovamny.inertia.core.protocol.RedirectClassifier.classify(
+            isGet(), isInertiaRequest(), isPrefetch(), url, fullPage, false);
+        return switch (decision.kind()) {
+            case CONFLICT_REDIRECT -> {
+                var headers = new HttpHeaders();
+                headers.set("X-Inertia-Redirect", decision.location());
+                yield new InertiaRedirect(HttpStatus.CONFLICT, headers, null, flashStore);
+            }
+            case CONFLICT_LOCATION ->
+                back(HttpStatus.CONFLICT.value(), Map.of(), decision.location(), true);
+            default -> back(decision.status(), Map.of(), decision.location(), false);
+        };
     }
 
     /**
@@ -149,8 +156,8 @@ public class RedirectProcessor {
     }
 
     private static String refererOrDefault(String fallback) {
-        var referer = InertiaRequestContext.header("Referer");
-        return referer != null && !referer.isBlank() ? referer : fallback;
+        return io.github.diovamny.inertia.core.protocol.RedirectClassifier.refererOr(
+            InertiaRequestContext.header("Referer"), fallback);
     }
 
     private static boolean isGet() {

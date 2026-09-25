@@ -17,7 +17,17 @@ interface ProbePageProps extends PageProps {
 /**
  * E2E feature probe (Fase E): exercises the full Inertia v3 contract through
  * the official React client on a public route (no login required).
+ *
+ * The probe is served under a variant base (/e2e-probe on Spring/JAX-RS,
+ * /e2e-probe-rx on Reactive Routes): probeBase() derives it from the current
+ * URL so every form post and visit targets the same transport
+ * (E2E_PROBE_BASE). It is only invoked from event handlers, so server-side
+ * rendering never touches window.
  */
+function probeBase(): string {
+  return window.location.pathname.replace(/\/target\/?$/, '').replace(/\/+$/, '')
+}
+
 export default function ProbeIndex() {
   const { props } = usePage<ProbePageProps>()
   const form = useForm({ name: '', email: '' })
@@ -29,19 +39,19 @@ export default function ProbeIndex() {
 
   const submitPrimary = (e: FormEvent) => {
     e.preventDefault()
-    form.post('/e2e-probe/validate')
+    form.post(probeBase() + '/validate')
   }
 
   const submitSecondary = (e: FormEvent) => {
     e.preventDefault()
-    secondary.post('/e2e-probe/validate-secondary', {
+    secondary.post(probeBase() + '/validate-secondary', {
       headers: { 'X-Inertia-Error-Bag': 'probeSecondary' },
     })
   }
 
   const submitUpload = (e: FormEvent) => {
     e.preventDefault()
-    upload.post('/e2e-probe/upload')
+    upload.post(probeBase() + '/upload')
   }
 
   return (
@@ -187,7 +197,7 @@ export default function ProbeIndex() {
           type="button"
           className="btn-indigo"
           onClick={() =>
-            router.visit('/e2e-probe/target?delay=2', {
+            router.visit(probeBase() + '/target?delay=2', {
               component: 'Probe/Target',
               pageProps: (current: Record<string, unknown>, shared: Record<string, unknown>) => ({
                 ...shared,
@@ -205,7 +215,7 @@ export default function ProbeIndex() {
         <button
           type="button"
           className="btn-indigo"
-          onClick={() => router.post('/e2e-probe/redirect-back')}
+          onClick={() => router.post(probeBase() + '/redirect-back')}
         >
           Submit and redirect back
         </button>

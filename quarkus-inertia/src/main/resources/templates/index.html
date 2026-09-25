@@ -7,8 +7,8 @@
     {#if ssrHead}{ssrHead}{/if}
 </head>
 <body>
-    <div id="app" {#if ssrBody}data-server-rendered="true"{/if}>{#if ssrBody}{ssrBody}{/if}</div>
-    <script type="application/json" data-page="app">{dataPage}</script>
+    {#if ssrBody}{ssrBody}{#else}<div id="app" ></div>
+    <script type="application/json" data-page="app">{dataPage}</script>{/if}
     <script type="module" src="/assets/app.js"></script>
 </body>
 </html>

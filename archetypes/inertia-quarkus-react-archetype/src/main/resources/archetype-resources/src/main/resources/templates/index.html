@@ -10,8 +10,8 @@
 </head>
 <body>
     <noscript>This application requires JavaScript.</noscript>
-    <div id="app">{#if ssrBody}{ssrBody.raw}{/if}</div>
-    <script type="application/json" data-page="app">{dataPage}</script>
+    {#if ssrBody}{ssrBody.raw}{#else}<div id="app"></div>
+    <script type="application/json" data-page="app">{dataPage}</script>{/if}
     <script type="module" src="/assets/app.js"></script>
 </body>
 </html>

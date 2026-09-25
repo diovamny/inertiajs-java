@@ -18,6 +18,11 @@
     <name>Inertia.js Java Archetypes</name>
     <description>Maven archetypes for Spring Boot and Quarkus Inertia.js v3 starters (Vue 3 / React / Svelte 5)</description>
 
+    <properties>
+        <!-- Archetype packaging carries no coverable code. -->
+        <jacoco.line.minimum>0.00</jacoco.line.minimum>
+    </properties>
+
     <modules>
         <module>inertia-spring-vue-archetype</module>
         <module>inertia-spring-react-archetype</module>

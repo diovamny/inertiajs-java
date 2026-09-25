@@ -9,6 +9,7 @@ This guide explains how to write tests for Inertia.js responses in both the **Sp
 1. [Spring Boot — MockMvc](#spring-boot--mockmvc)
 2. [Quarkus — REST-assured + InertiaPage](#quarkus--rest-assured--inertiapage)
 3. [Common Patterns](#common-patterns)
+4. [End-to-End — Playwright](#end-to-end--playwright)
 
 ---
 
@@ -268,3 +269,137 @@ page.assertComponent("Dashboard")
     .dump()    // prints JSON here for debugging
     .assertProp("user.name", "Alice");
 ```
+
+---
+
+## End-to-End — Playwright
+
+Browser contracts against the real demos with the official `@inertiajs/*`
+clients (pinned `3.7.1`). Specs live in `e2e/` (`inertia-contracts`,
+`pingcrm-contracts`, `feature-matrix`, `ssr-contracts`); each run targets
+**one booted demo** selected with `E2E_BASE_URL`. This is the procedure the
+`e2e` CI job follows, verified end-to-end on 2026-09-24 (118/118 green).
+
+### 1. Package the demos (once)
+
+```bash
+./mvnw -B -DskipTests install -P archetypes   # adapters + archetypes to ~/.m2
+./mvnw -B -DskipTests package -Pexamples \
+  -pl examples/spring/spring-kitchen-sink,examples/spring/spring-pingcrm,\
+examples/spring/spring-pingcrm-react,examples/spring/spring-pingcrm-svelte,\
+examples/quarkus/kitchen-sink,examples/quarkus/pingcrm,\
+examples/quarkus/pingcrm-react,examples/quarkus/quarkus-pingcrm-svelte
+```
+
+### 2. Boot one demo (CWD = module dir, H2 files resolve relative)
+
+| Demo | Port | Health | Spec(s) |
+|---|---|---|---|
+| `examples/spring/spring-kitchen-sink` | 8080 | `/actuator/health` | `inertia-contracts.spec.ts` |
+| `examples/quarkus/kitchen-sink` | 8081 | `/q/health` | `inertia-contracts.spec.ts` |
+| `examples/spring/spring-pingcrm` | 8080 | `/actuator/health` | `pingcrm-contracts.spec.ts` |
+| `examples/spring/spring-pingcrm-react` | 8080 | `/actuator/health` | `pingcrm-contracts` + `feature-matrix` |
+| `examples/spring/spring-pingcrm-svelte` | 8181 | `/actuator/health` | `pingcrm-contracts` + `feature-matrix` |
+| `examples/quarkus/pingcrm` | 8081 | `/q/health` | `pingcrm-contracts.spec.ts` |
+| `examples/quarkus/pingcrm-react` | 8080 | `/q/health` | `pingcrm-contracts` + `feature-matrix` |
+| `examples/quarkus/quarkus-pingcrm-svelte` | 8082 | `/q/health` | `pingcrm-contracts` + `feature-matrix` |
+
+```bash
+cd examples/spring/spring-pingcrm-react
+java -jar target/spring-pingcrm-react-0.0.5.jar
+# Quarkus over plain http needs:
+#   QUARKUS_REST_CSRF_COOKIE_FORCE_SECURE=false java -jar target/quarkus-app/quarkus-run.jar
+```
+
+### 3. Run the specs (serial, warmed up)
+
+```bash
+cd e2e
+E2E_BASE_URL=http://localhost:8080 npx playwright test --config playwright.config.ts \
+  --reporter=line --workers=1 pingcrm-contracts.spec.ts feature-matrix.spec.ts
+```
+
+Run **serially (`--workers=1`) after a warm-up request** (one `GET /login`
++ one `GET /e2e-probe`): on cold/slow machines, parallel workers against a
+freshly booted demo produce flakes (observed 2026-09-24: 7/11 cold-parallel
+vs 11/11 warm-serial on the same demo, root cause confirmed as cold-start
+contention, not product behavior). CI sets `workers: 1` via `$CI`.
+
+### 4. SSR (E2E-09): generated starter + sidecar
+
+```bash
+# generate (archetype default appName is already "Hello Inertia")
+./mvnw -B archetype:generate -DarchetypeCatalog=local \
+  -DarchetypeGroupId=io.github.diovamny \
+  -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.5 \
+  -DgroupId=com.acme -DartifactId=hello-inertia -Dpackage=com.acme.hello \
+  -DinertiaAdapterVersion=0.0.5 -DjavaVersion=21 -DframeworkVersion=4.1.0
+cd hello-inertia/src/main/webui
+npm install && npm run build && npm run build:ssr   # NOT `npm ci`: starters ship no lockfile
+cd ../../.. && ./mvnw -B -DskipTests package
+# terminal 1: node src/main/webui/ssr-server.mjs    # sidecar :13714
+# terminal 2: INERTIA_SSR_ENABLED=true java -jar target/hello-inertia-*.jar
+cd <repo>/e2e
+E2E_SSR_URL=http://localhost:8080 npx playwright test --config playwright.config.ts \
+  --reporter=line --workers=1 ssr-contracts.spec.ts -g "server-rendered|hydrates"
+# stop the sidecar, keep the app, then:
+E2E_SSR_URL=http://localhost:8080 npx playwright test --config playwright.config.ts \
+  --reporter=line --workers=1 ssr-contracts.spec.ts -g "fallback"
+```
+
+Expected text markers: `Hello Inertia powered by` (visible even with
+JavaScript disabled = server-rendered proof) and `Powered by Spring Boot`
+(or `Quarkus`). The `fallback` case proves CSR still renders with the
+sidecar down (SSR is never fatal).
+
+### 5. SSR through Reactive Routes (E2E-09 reactive cells)
+
+The SSR Java path (`SsrHandler` + sidecar contract) is transport-independent,
+but the matrix proves it per transport. For a Quarkus starter, add a
+throwaway `@Route` twin of the Welcome page (E2E fixture only, never part of
+the archetype) and run the same suite with `E2E_SSR_PATH`:
+
+```java
+// RxWelcomeRoute.java (TEMP fixture in the generated starter;
+// same package as WelcomeController, same Welcome props)
+import java.util.Map;
+import io.github.diovamny.quarkus.inertia.api.Inertia;
+import io.quarkus.vertx.web.Route;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Uni;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+public class RxWelcomeRoute {
+    @Inject
+    Inertia inertia;
+
+    @ConfigProperty(name = "app.name", defaultValue = "Hello Inertia")
+    String appName;
+
+    @Route(path = "/ssr-rx", methods = Route.HttpMethod.GET)
+    @Blocking
+    public Uni<Object> welcome() {
+        return inertia.render("Welcome", Map.of(
+            "appName", appName,
+            "framework", "Quarkus",
+            "frameworkVersion", "3.39.2",
+            "inertiaUrl", "https://inertiajs.com/"));
+    }
+}
+```
+
+```bash
+# + quarkus-reactive-routes dependency in the generated pom, then:
+./mvnw -B -DskipTests package
+# terminal 1: node src/main/webui/ssr-server.mjs
+# terminal 2: INERTIA_SSR_ENABLED=true java -jar target/quarkus-app/quarkus-run.jar
+cd <repo>/e2e
+E2E_SSR_URL=http://localhost:8080 E2E_SSR_PATH=/ssr-rx npx playwright test \
+  --config playwright.config.ts --reporter=line --workers=1 ssr-contracts.spec.ts \
+  -g "server-rendered|hydrates"
+# stop the sidecar, keep the app, then the fallback case with the same env
+```
+
+This proves render + hydration + fallback through `@Route`, closing the
+reactive SSR cells with the same assertions as the REST ones.

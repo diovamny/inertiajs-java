@@ -36,6 +36,32 @@
   ticket, 3 local repros); SCA fail-closed on tags (Dependency-Check
   12.1.0); SBOM aggregate post-deploy (existing step). Pre-tag gates left:
   M4b E2E cells, external review, native smoke on tag CI.
+- Docs/CI (executed audit 2026-09-24): README feature table aligned with the
+  generated matrix (`append()` and multi-message rows now Tested on the 3
+  transports, E2E still in progress); `ssr-e2e` job uses `npm install`
+  (generated starters ship no lockfile, `npm ci` fails EUSAGE); new
+  Playwright runbook appended to `docs/testing-guide.md` (demos/ports,
+  `--workers=1` + warm-up, SSR starter flow). Full fresh evidence: 711 unit
+  + integration tests, 242 demo smoke tests, 118 Playwright checks, all
+  green — see `docs/audits/AUDITORIA_EJECUTADA_AVANZADA_RELEASE_0.0.5_2026-09-24.md`.
+- Closure (executed audit 2026-09-25, all points closed): C100 62/62, I100
+  90/90 (all E2E scenarios E2E_VERIFICADO, incl. 28 reactive cells and 6+3
+  SSR cells). New E2E fixtures: `/e2e-probe-rx` Reactive Routes probes
+  (Quarkus React/Svelte), `reactive-contracts.spec.ts` + JAX-RS rest-instant
+  twin (Vue), SSR support in all 4 React/Svelte archetypes (+`hydrateRoot`),
+  `E2E_SSR_PATH` in ssr-contracts. Fixes found by execution: reactive CSRF
+  single-token adoption (dual-issuer 303s), protocol-exact SSR assembly (no
+  nested `#app`), Spring `inertia.ssr.*` dotted keys do not bind (docs now
+  canonical hyphenated). Quality gates blocking: PIT minion fixed (add-opens
+  + aligned junit-platform-launcher; core 82%/70%), SpotBugs failOnError,
+  per-module JaCoCo floors, SCA fail-closed (release tags + CI push job).
+  Protocol decisions extracted to `inertia-core.protocol` (VersionPolicy,
+  RedirectClassifier, PartialFilter, MergeLabels, ErrorWire; -447 lines in
+  adapters, +36 core tests); documented divergences kept per adapter.
+  Full evidence: 761 unit/integration + 242 demo smoke + 181 Playwright
+  checks green on final code (4 intentional skips of the reactive-only CSRF
+  test on the classic base) — see
+  `docs/audits/AUDITORIA_CIERRE_RELEASE_0.0.5_2026-09-25.md`.
 
 ## 0.0.4
 

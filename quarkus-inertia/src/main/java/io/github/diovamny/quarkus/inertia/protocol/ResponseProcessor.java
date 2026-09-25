@@ -101,17 +101,18 @@ public class ResponseProcessor {
                 .chain(reactiveWriter::write);
         }
 
-        if (isGetRequest()) {
-            var clientVersion = getClientVersion();
-            if (clientVersion != null && !clientVersion.equals(page.version()) && !isPrefetch()) {
-                return reactiveWriter.write(
-                    Response.status(Response.Status.CONFLICT)
-                        .header("X-Inertia-Location", page.url())
-                        .header("X-Inertia-Version", versionProvider.getVersion())
-                        .header("Vary", "X-Inertia, X-Inertia-Version")
-                        .build()
-                );
-            }
+        // Staleness decided in inertia-core (VersionPolicy); a null server
+        // version counts as untracked (never stale) instead of mismatched.
+        if (io.github.diovamny.inertia.core.protocol.VersionPolicy.isStale(
+                isGetRequest() ? "GET" : "OTHER", getClientVersion(), page.version(),
+                isPrefetch())) {
+            return reactiveWriter.write(
+                Response.status(Response.Status.CONFLICT)
+                    .header("X-Inertia-Location", page.url())
+                    .header("X-Inertia-Version", versionProvider.getVersion())
+                    .header("Vary", "X-Inertia, X-Inertia-Version")
+                    .build()
+            );
         }
 
         // Default to 200 when the controller did not set an explicit status.
@@ -173,15 +174,16 @@ public class ResponseProcessor {
                 .build();
         }
 
-        if (isGetRequest()) {
-            var clientVersion = getClientVersion();
-            if (clientVersion != null && !clientVersion.equals(page.version()) && !isPrefetch()) {
-                return Response.status(Response.Status.CONFLICT)
-                    .header("X-Inertia-Location", page.url())
-                    .header("X-Inertia-Version", versionProvider.getVersion())
-                    .header("Vary", "X-Inertia, X-Inertia-Version")
-                    .build();
-            }
+        // Staleness decided in inertia-core (VersionPolicy); a null server
+        // version counts as untracked (never stale) instead of mismatched.
+        if (io.github.diovamny.inertia.core.protocol.VersionPolicy.isStale(
+                isGetRequest() ? "GET" : "OTHER", getClientVersion(), page.version(),
+                isPrefetch())) {
+            return Response.status(Response.Status.CONFLICT)
+                .header("X-Inertia-Location", page.url())
+                .header("X-Inertia-Version", versionProvider.getVersion())
+                .header("Vary", "X-Inertia, X-Inertia-Version")
+                .build();
         }
 
         var status = pageStatus();

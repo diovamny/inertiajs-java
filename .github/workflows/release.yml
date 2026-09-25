@@ -40,15 +40,14 @@ jobs:
         # for local development only.
         run: ./mvnw clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=true -DskipDependencyCheck=true
 
-      - name: PIT mutation testing (report only)
-        # NOT blocking yet: the coverage minion aborts with UNKNOWN_ERROR on
-        # JDK 21 before running a single mutant — a toolchain/environment
-        # issue, not a code-quality signal. Reproduced on Windows with pitest
-        # 1.16.3 and 1.17.4 (with/without JaCoCo, with --add-opens, scoped to
-        # one package); the report step stays for review. Ticket P100-14:
-        # isolate the minion (argLine/JDK matrix, minimal repro) and flip this
-        # step back to blocking once the minion runs green on Linux CI.
-        continue-on-error: true
+      - name: PIT mutation testing (blocking)
+        # Blocking since the P100-14 root causes were fixed and verified:
+        # explicit --add-opens for the coverage minion on JDK 17+ plus an
+        # aligned junit-platform-launcher on the minion classpath (it aborted
+        # with UNKNOWN_ERROR / "OutputDirectoryProvider not available"
+        # before). Verified 2026-09-24 on inertia-core: 82% line coverage,
+        # 70% mutation killed, thresholds 5%/20% green. Raises are follow-up
+        # work once Linux numbers exist per module.
         run: ./mvnw verify -Pquality-gates -DskipStaticAnalysis=true -DskipMutationAnalysis=false -DskipDependencyCheck=true -Djacoco.skip=true
 
       - name: Diagnose Central server wiring (lengths only, values stay masked)

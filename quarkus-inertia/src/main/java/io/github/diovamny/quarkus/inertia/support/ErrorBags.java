@@ -1,7 +1,5 @@
 package io.github.diovamny.quarkus.inertia.support;
 
-import java.util.Map;
-
 import io.vertx.core.Vertx;
 
 import io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals;
@@ -48,10 +46,9 @@ public final class ErrorBags {
      *         {@code errors} unchanged
      */
     public static Object wrap(Object errors, String bag) {
-        if (errors == null || bag == null || bag.isBlank()) {
-            return errors;
-        }
-        return Map.of(bag, errors);
+        // Bag namespacing lives in inertia-core (ErrorWire); this class only
+        // resolves the current request's bag target.
+        return io.github.diovamny.inertia.core.protocol.ErrorWire.wrapBag(errors, bag);
     }
 
     private static String currentErrorBag() {

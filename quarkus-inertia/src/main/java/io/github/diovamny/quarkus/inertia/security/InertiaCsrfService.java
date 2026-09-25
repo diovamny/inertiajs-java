@@ -87,6 +87,19 @@ public class InertiaCsrfService {
     /**
      * Return the session token, creating it on first use.
      *
+     * <p>Framework-mode single-token rule: {@code quarkus-rest-csrf} owns
+     * issuance for JAX-RS traffic while this service owns reactive paths, but
+     * both share the {@code XSRF-TOKEN} cookie name. Without adoption the two
+     * issuers diverge (whoever wrote last wins the jar) and the other
+     * transport 303-fails every state-changing request with the "page
+     * expired" flash — e.g. browsing a reactive page (token A), logging in
+     * through JAX-RS (token R), then POSTing reactively. Adopting the
+     * presented cookie keeps one value per session however transports are
+     * mixed. A UUID is still generated when the client presents no cookie
+     * (reactive-first anonymous flow). Adoption is safe: the value stays
+     * bound to the server session, and {@code quarkus-rest-csrf} itself
+     * trusts the same cookie value.</p>
+     *
      * @param rc the routing context
      * @return the token, or {@code null} when there is no session
      */
@@ -94,11 +107,40 @@ public class InertiaCsrfService {
         var session = rc.session();
         if (session == null) return null;
         var token = (String) session.get(SESSION_ATTR);
+        if (InertiaSecurityModes.effectiveMode(config) == InertiaSecurityModes.Mode.FRAMEWORK) {
+            var adopted = effectiveToken(token, presentedCookie(rc), true);
+            if (adopted != null && !adopted.equals(token)) {
+                session.put(SESSION_ATTR, adopted);
+                return adopted;
+            }
+            if (adopted != null) return adopted;
+        }
         if (token == null) {
             token = UUID.randomUUID().toString();
             session.put(SESSION_ATTR, token);
         }
         return token;
+    }
+
+    /**
+     * Effective session token under the single-token rule.
+     *
+     * @param sessionToken        the token currently stored in the session, if any
+     * @param presentedCookie     the {@code XSRF-TOKEN} cookie the client sent, if any
+     * @param adoptFrameworkCookie whether framework-mode adoption applies
+     * @return the token to use, or {@code null} when neither side has one
+     */
+    static String effectiveToken(String sessionToken, String presentedCookie,
+            boolean adoptFrameworkCookie) {
+        if (adoptFrameworkCookie && presentedCookie != null && !presentedCookie.isBlank()) {
+            return presentedCookie;
+        }
+        return sessionToken;
+    }
+
+    private static String presentedCookie(RoutingContext rc) {
+        var cookie = rc.request().getCookie("XSRF-TOKEN");
+        return cookie == null ? null : cookie.getValue();
     }
 
     /**

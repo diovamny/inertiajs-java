@@ -1,9 +1,7 @@
 package io.github.diovamny.quarkus.inertia.protocol;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -558,13 +556,8 @@ public class PageObjectBuilder {
         var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
         var raw = (String) InertiaContextLocals.get(ctx, "inertia-reset");
-        if (raw == null || raw.isBlank()) return java.util.Set.of();
-        var keys = new HashSet<String>();
-        for (var part : raw.split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isEmpty()) keys.add(trimmed);
-        }
-        return keys;
+        // CSV parsing lives in inertia-core (MergeLabels).
+        return io.github.diovamny.inertia.core.protocol.MergeLabels.resetSet(raw);
     }
 
     /**
@@ -627,23 +620,22 @@ public class PageObjectBuilder {
         if (ctx == null) return false;
         if (!InertiaContextLocals.isTrue(ctx, "inertia-request")) return false;
         var method = (String) InertiaContextLocals.get(ctx, "request-method");
-        if (!"GET".equalsIgnoreCase(method)) return false;
         var clientVersion = (String) InertiaContextLocals.get(ctx, "inertia-version");
         if (clientVersion == null || clientVersion.isBlank()) return false;
-        return !clientVersion.equals(versionProvider.getVersion());
+        // Staleness decided in inertia-core (VersionPolicy); prefetch is a
+        // first-class input here so a stale prefetch keeps its flash (no 409
+        // is ever emitted for prefetches).
+        return io.github.diovamny.inertia.core.protocol.VersionPolicy.isStale(
+            method, clientVersion, versionProvider.getVersion(),
+            InertiaContextLocals.isTrue(ctx, "inertia-prefetch"));
     }
 
     private java.util.Set<String> exceptOncePropKeys() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
         var raw = (String) InertiaContextLocals.get(ctx, "inertia-except-once-props");
-        if (raw == null || raw.isBlank()) return java.util.Set.of();
-        var keys = new HashSet<String>();
-        for (var part : raw.split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isEmpty()) keys.add(trimmed);
-        }
-        return keys;
+        // CSV parsing lives in inertia-core (MergeLabels).
+        return io.github.diovamny.inertia.core.protocol.MergeLabels.resetSet(raw);
     }
 
     private void mergeFlashed(Map<String, Object> target, Map<String, Object> flashed) {
@@ -767,15 +759,8 @@ public class PageObjectBuilder {
      * @return a set of keys; never contains duplicates or blank entries
      */
     private static Set<String> splitToSet(String raw) {
-        if (raw == null || raw.isBlank()) return Set.of();
-        var keys = new LinkedHashSet<String>();
-        for (var part : raw.split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isEmpty()) {
-                keys.add(trimmed);
-            }
-        }
-        return keys;
+        // CSV parsing lives in inertia-core (PartialFilter).
+        return io.github.diovamny.inertia.core.protocol.PartialFilter.parseCsv(raw);
     }
 
     private PartialReloadProcessor.PartialReloadContext buildPartialReloadFromRequest(HttpServerRequest request) {

@@ -21,6 +21,8 @@
 
     <properties>
         <surefire.version>3.5.2</surefire.version>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 58.8%). -->
+        <jacoco.line.minimum>0.55</jacoco.line.minimum>
     </properties>
 
     <dependencies>

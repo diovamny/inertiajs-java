@@ -160,11 +160,10 @@ public class RedirectProcessor {
     }
 
     private Uni<Object> back0(String fallback, int forcedStatus, Map<String, String> headers) {
-        var referer = getRefererUrl();
+        var effectiveFallback = (fallback != null && !fallback.isBlank()) ? fallback : "/";
         final var url = io.github.diovamny.inertia.core.security.RedirectTargets.check(
-            (referer != null && !referer.isBlank())
-                ? referer
-                : (fallback != null && !fallback.isBlank()) ? fallback : "/");
+            io.github.diovamny.inertia.core.protocol.RedirectClassifier.refererOr(
+                getRefererUrl(), effectiveFallback));
         if (forcedStatus > 0) {
             return Uni.createFrom().deferred(() -> {
                 var builder = Response.status(forcedStatus)
@@ -288,11 +287,10 @@ public class RedirectProcessor {
     }
 
     private Response back0Sync(String fallback, int forcedStatus, Map<String, String> headers) {
-        var referer = getRefererUrl();
+        var effectiveFallback = (fallback != null && !fallback.isBlank()) ? fallback : "/";
         final var url = io.github.diovamny.inertia.core.security.RedirectTargets.check(
-            (referer != null && !referer.isBlank())
-                ? referer
-                : (fallback != null && !fallback.isBlank()) ? fallback : "/");
+            io.github.diovamny.inertia.core.protocol.RedirectClassifier.refererOr(
+                getRefererUrl(), effectiveFallback));
         if (forcedStatus > 0) {
             var builder = Response.status(forcedStatus)
                 .header("Location", url)

@@ -53,6 +53,15 @@ public class HtmlRenderer {
     public static final String PAGE_JSON_PLACEHOLDER = "__INERTIA_PAGE_JSON__";
     public static final String SSR_HEAD_PLACEHOLDER = "__INERTIA_SSR_HEAD__";
     public static final String SSR_BODY_PLACEHOLDER = "__INERTIA_SSR_BODY__";
+    /**
+     * Single root placeholder for protocol-exact SSR assembly. Templates using
+     * it get the sidecar body <em>in place of</em> the script tag and root
+     * {@code div} on SSR success (one {@code data-page} script, one
+     * {@code #app} carrying {@code data-server-rendered}), and the classic
+     * CSR shell otherwise. Templates without it keep the legacy assembly
+     * (body nested inside {@code #app}).
+     */
+    public static final String ROOT_PLACEHOLDER = "__INERTIA_ROOT__";
     public static final String VIEW_DATA_PLACEHOLDER_PREFIX = "__VIEW_";
     public static final String CSP_NONCE_PLACEHOLDER = "__INERTIA_CSP_NONCE__";
 
@@ -164,29 +173,12 @@ public class HtmlRenderer {
         // so no payload is duplicated into markup.
         String html = template.replace(PAGE_PLACEHOLDER, "");
 
-        if (properties.isSsrEnabled() && !isSsrExcluded(page.url())) {
-            var ttlMillis = ssrCacheTtlMillis();
-            var cached = ttlMillis != null ? ssrCache.get(rawJson) : java.util.Optional
-                .<io.github.diovamny.inertia.core.ssr.SsrResponseCache.Entry>empty();
-            SsrClient.SsrResult ssr;
-            if (cached.isPresent()) {
-                var entry = cached.get();
-                ssr = new SsrClient.SsrResult(entry.head(), entry.body());
-            } else {
-                ssr = ssrClient.render(page).orElse(null);
-                if (ssr == null) {
-                    metrics.recordSsrFallback();
-                } else if (ttlMillis != null && ssr.body() != null) {
-                    ssrCache.put(rawJson, ssr.body(), ssr.head(), ttlMillis,
-                        java.util.concurrent.TimeUnit.MILLISECONDS);
-                }
-            }
-            var result = java.util.Optional.ofNullable(ssr);
-            html = html.replace(SSR_HEAD_PLACEHOLDER, result.map(SsrClient.SsrResult::headHtml).orElse(""));
-            html = html.replace(SSR_BODY_PLACEHOLDER, result.map(SsrClient.SsrResult::body).orElse(""));
+        var ssr = resolveSsr(page, rawJson);
+        html = html.replace(SSR_HEAD_PLACEHOLDER, ssr.map(SsrClient.SsrResult::headHtml).orElse(""));
+        if (html.contains(ROOT_PLACEHOLDER)) {
+            html = html.replace(ROOT_PLACEHOLDER, rootHtml(rawJson, ssr.orElse(null)));
         } else {
-            html = html.replace(SSR_HEAD_PLACEHOLDER, "");
-            html = html.replace(SSR_BODY_PLACEHOLDER, "");
+            html = html.replace(SSR_BODY_PLACEHOLDER, ssr.map(SsrClient.SsrResult::body).orElse(""));
         }
 
         html = html.replace(PAGE_JSON_PLACEHOLDER, SafeJsonEncoder.encodeForScript(rawJson));
@@ -201,6 +193,56 @@ public class HtmlRenderer {
         }
 
         return html;
+    }
+
+    /**
+     * Resolve the SSR result for a page: empty when SSR is disabled, excluded
+     * or the sidecar fails (CSR fallback, counted in metrics).
+     *
+     * @param page the page object
+     * @param rawJson the serialized page JSON (SSR cache key)
+     * @return the SSR result, or empty for client-side rendering
+     */
+    private java.util.Optional<SsrClient.SsrResult> resolveSsr(PageObject page, String rawJson) {
+        if (!properties.isSsrEnabled() || isSsrExcluded(page.url())) {
+            return java.util.Optional.empty();
+        }
+        var ttlMillis = ssrCacheTtlMillis();
+        var cached = ttlMillis != null ? ssrCache.get(rawJson) : java.util.Optional
+            .<io.github.diovamny.inertia.core.ssr.SsrResponseCache.Entry>empty();
+        if (cached.isPresent()) {
+            var entry = cached.get();
+            return java.util.Optional.of(new SsrClient.SsrResult(entry.head(), entry.body()));
+        }
+        var ssr = ssrClient.render(page).orElse(null);
+        if (ssr == null) {
+            metrics.recordSsrFallback();
+        } else if (ttlMillis != null && ssr.body() != null) {
+            ssrCache.put(rawJson, ssr.body(), ssr.head(), ttlMillis,
+                java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
+        return java.util.Optional.ofNullable(ssr);
+    }
+
+    /**
+     * Protocol-exact root region for {@link #ROOT_PLACEHOLDER} templates (see
+     * the protocol SSR section: the sidecar body takes the place of the page
+     * object script tag and root {@code div}). On SSR success the body is
+     * embedded verbatim (single {@code data-page} script, single {@code #app}
+     * with {@code data-server-rendered}, so every official client hydrates
+     * instead of re-mounting). Otherwise the classic CSR shell, byte-identical
+     * to the legacy template output.
+     *
+     * @param rawJson the serialized page JSON
+     * @param ssr the SSR result, or {@code null} for client-side rendering
+     * @return the HTML for the root placeholder
+     */
+    static String rootHtml(String rawJson, SsrClient.SsrResult ssr) {
+        if (ssr != null && ssr.body() != null) {
+            return ssr.body();
+        }
+        return "<div id=\"app\"></div>\n    <script type=\"application/json\" data-page=\"app\">"
+            + SafeJsonEncoder.encodeForScript(rawJson) + "</script>";
     }
 
     /**

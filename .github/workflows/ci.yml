@@ -57,9 +57,40 @@ jobs:
         run: ./mvnw clean test -T 1C
 
       - name: Run quality gates
-        # Static analysis (Checkstyle/SpotBugs) executes and reports; OWASP stays
-        # skipped here (it needs NVD_API_KEY) and runs in the release workflow.
+        # Static analysis (Checkstyle/SpotBugs/JaCoCo-check) executes and
+        # blocks; PIT stays skipped here (runs blocking in the release
+        # workflow); OWASP runs in the dedicated sca job below on pushes.
         run: ./mvnw verify -Pquality-gates -DskipDependencyCheck=true -DskipStaticAnalysis=false
+
+  sca:
+    name: OWASP Dependency Check (fail-closed)
+    runs-on: ubuntu-latest
+    # Pushes to main only: PRs (especially forks) have no NVD_API_KEY, and
+    # releases re-scan on tags. Missing key on a push fails the job.
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Require NVD_API_KEY (fail-closed)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "::error::NVD_API_KEY is required for the SCA gate (fail-closed); set the repo secret"
+            exit 1
+          fi
+
+      - name: OWASP Dependency Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: ./mvnw verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
 
   examples:
     name: Demo smoke tests
@@ -512,8 +543,12 @@ jobs:
         working-directory: /tmp
 
       - name: Build client + SSR bundle
+        # NOTE: generated starters deliberately ship no package-lock.json, so
+        # `npm ci` cannot run here (EUSAGE). `npm install` resolves the pinned
+        # @inertiajs/* 3.7.1 range from the archetype template (verified
+        # 2026-09-24: resolves vue3/react/svelte 3.7.1).
         working-directory: /tmp/hello-inertia/src/main/webui
-        run: npm ci && npm run build && npm run build:ssr
+        run: npm install && npm run build && npm run build:ssr
 
       - name: Package starter
         working-directory: /tmp/hello-inertia

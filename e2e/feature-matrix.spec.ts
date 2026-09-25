@@ -266,6 +266,37 @@ test.describe('Feature matrix (/e2e-probe)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('reactive CSRF failure is denied with recovery flash', async ({ request }) => {
+    // Transport-specific contract: on the Reactive Routes base the adapter
+    // filter owns CSRF (declared reactive-csrf-paths); on the JAX-RS base
+    // quarkus-rest-csrf owns it (unit-covered in CsrfQuarkusTest).
+    test.skip(
+      PROBE === '/e2e-probe',
+      'rest-csrf owns denial on the JAX-RS base',
+    );
+    const page = await readInitialPage(request);
+    const denied = await request.post(`${PROBE}/validate`, {
+      data: { name: '', email: '' },
+      headers: {
+        'X-Inertia': 'true',
+        'X-Inertia-Version': page.version,
+        Referer: `${process.env.E2E_BASE_URL ?? 'http://localhost:8080'}${PROBE}`,
+      },
+      maxRedirects: 0,
+    });
+    expect(denied.status()).toBe(303);
+    expect(denied.headers()['location']).toBeTruthy();
+    const followup = await request.get(denied.headers()['location']!, {
+      headers: { 'X-Inertia': 'true', 'X-Inertia-Version': page.version },
+    });
+    expect(followup.status()).toBe(200);
+    const body = (await followup.json()) as PageObject;
+    const errors = body.props.errors as Record<string, unknown>;
+    // The request never reached validation: no field errors leak.
+    expect(errors.name).toBeUndefined();
+    expect(errors.email).toBeUndefined();
+  });
+
   test('browser mounts the probe page without console errors', async ({ page }) => {
     const errors = collectBrowserErrors(page);
     const response = await page.goto(PROBE);

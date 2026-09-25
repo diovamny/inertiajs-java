@@ -17,6 +17,11 @@
     <packaging>jar</packaging>
 
     <name>Quarkus Inertia.js Security Integration</name>
+
+    <properties>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 86.1%). -->
+        <jacoco.line.minimum>0.80</jacoco.line.minimum>
+    </properties>
     <description>Inertia.js v3 protocol bridge for Quarkus Security (rest-csrf ownership, 409 challenges, 403 pages)</description>
 
     <dependencies>

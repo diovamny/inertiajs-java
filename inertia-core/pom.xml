@@ -17,6 +17,11 @@
     <packaging>jar</packaging>
 
     <name>Inertia.js Java Core Protocol</name>
+
+    <properties>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 84.5%). -->
+        <jacoco.line.minimum>0.80</jacoco.line.minimum>
+    </properties>
     <description>Framework-agnostic Inertia.js v3 protocol model, SPI contracts,
         security utilities, server head builder and typed results shared by the
         Spring and Quarkus adapters</description>
