@@ -43,7 +43,7 @@
   Playwright runbook appended to `docs/testing-guide.md` (demos/ports,
   `--workers=1` + warm-up, SSR starter flow). Full fresh evidence: 711 unit
   + integration tests, 242 demo smoke tests, 118 Playwright checks, all
-  green — see `docs/audits/AUDITORIA_EJECUTADA_AVANZADA_RELEASE_0.0.5_2026-09-24.md`.
+  green — see `docs/audits/AUDITORIA_CIERRE_RELEASE_0.0.5_2026-09-25.md`.
 - Closure (executed audit 2026-09-25, all points closed): C100 62/62, I100
   90/90 (all E2E scenarios E2E_VERIFICADO, incl. 28 reactive cells and 6+3
   SSR cells). New E2E fixtures: `/e2e-probe-rx` Reactive Routes probes
