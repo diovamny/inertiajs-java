@@ -131,10 +131,33 @@ jobs:
           find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Spring demo smoke
-        run: ./mvnw clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-pingcrm-react,examples/spring/spring-pingcrm-svelte,examples/spring/spring-kitchen-sink -Pexamples
+        # nodejs.org truncates the Node tarball from time to time (EOFException
+        # on extract); a failed download also poisons the local file, so each
+        # attempt purges first and retries. Demo smoke may retry infra flakes;
+        # test failures inside a successful download still fail the step.
+        run: |
+          for attempt in 1 2 3; do
+            rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+            if ./mvnw clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-pingcrm-react,examples/spring/spring-pingcrm-svelte,examples/spring/spring-kitchen-sink -Pexamples; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       - name: Quarkus demo smoke
-        run: ./mvnw clean test -pl examples/quarkus/pingcrm,examples/quarkus/pingcrm-react,examples/quarkus/quarkus-pingcrm-svelte,examples/quarkus/kitchen-sink,examples/quarkus/demo-app -Pexamples
+        # Same flaky-Node-download retry as Spring above.
+        run: |
+          for attempt in 1 2 3; do
+            rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+            if ./mvnw clean test -pl examples/quarkus/pingcrm,examples/quarkus/pingcrm-react,examples/quarkus/quarkus-pingcrm-svelte,examples/quarkus/kitchen-sink,examples/quarkus/demo-app -Pexamples; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
   demo-visit:
     name: Demo visit (${{ matrix.demo }})
@@ -226,7 +249,17 @@ jobs:
       - name: Package demo
         # Boot with CWD = module dir: H2 file DBs (./data/…) and uploads
         # resolve relative to CWD, and same-named DBs must not mix (Fase C).
-        run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
+        # Retry loop: same flaky-Node-download class as the examples job.
+        run: |
+          for attempt in 1 2 3; do
+            rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+            if ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       - name: Boot and certify visit (Fase C)
         working-directory: ${{ matrix.module }}
@@ -344,7 +377,15 @@ jobs:
         working-directory: /tmp/hello-inertia
         run: |
           chmod +x mvnw
-          ./mvnw -B test
+          for attempt in 1 2 3; do
+            rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+            if ./mvnw -B test; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       - name: Boot smoke + visit certification (Fase B)
         # Proves the generated app (with explicit inertia-core) boots and
@@ -515,7 +556,17 @@ jobs:
         run: ./mvnw -B -q -DskipTests install
 
       - name: Package demo
-        run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
+        # Retry loop: same flaky-Node-download class as the examples job.
+        run: |
+          for attempt in 1 2 3; do
+            rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+            if ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       - name: Start demo
         working-directory: ${{ matrix.module }}
@@ -642,7 +693,15 @@ jobs:
         working-directory: /tmp/hello-inertia
         run: |
           chmod +x mvnw
-          ./mvnw -B -q -DskipTests package
+          for attempt in 1 2 3; do
+            rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+            if ./mvnw -B -q -DskipTests package; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       - name: Run SSR render + hydration specs
         working-directory: e2e
