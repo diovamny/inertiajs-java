@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.5 (release-0.0.5, in progress)
+## 0.0.5
 
 - M0 (P100-01): v3-only policy (`docs/COMPATIBILITY_POLICY.md`, frozen snapshot
   `specs/inertia-v3-baseline-2026-09-23.yaml`); honest matrix (PROTO-053 split
