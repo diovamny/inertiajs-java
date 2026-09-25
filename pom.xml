@@ -408,6 +408,14 @@
               <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
               <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
               <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+              <!-- NVD API resilience: the first scan on a fresh runner pulls
+                   the whole NVD dataset (hundreds of paged requests), and NVD
+                   rate-limits/flakes surface inside the client as an NPE
+                   ("bytes is null"). Retries + delay ride out transients
+                   instead of failing the fail-closed gate on them. -->
+              <nvdMaxRetryCount>10</nvdMaxRetryCount>
+              <nvdApiDelay>6000</nvdApiDelay>
+              <nvdApiResultsPerPage>2000</nvdApiResultsPerPage>
               <skipProvidedScope>true</skipProvidedScope>
               <skipTestScope>true</skipTestScope>
             </configuration>
