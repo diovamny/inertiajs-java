@@ -203,6 +203,16 @@ jobs:
           java-version: 21
           cache: maven
 
+      - name: Install adapters (resolve locally, not from Central)
+        # Same as e2e job: demos need inertia-parent/adapters 0.0.5 installed,
+        # otherwise the job only passes on a warm Maven cache.
+        run: ./mvnw -B -q -DskipTests install
+
+      - name: Purge cached Node.js distributions
+        # A poisoned Node tarball in the Maven cache breaks every
+        # frontend-maven-plugin build in this job.
+        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+
       - name: Package demo
         # Boot with CWD = module dir: H2 file DBs (./data/…) and uploads
         # resolve relative to CWD, and same-named DBs must not mix (Fase C).
@@ -467,6 +477,12 @@ jobs:
         # See examples job: a poisoned Node tarball in the Maven cache breaks
         # every frontend-maven-plugin build in this job.
         run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+
+      - name: Install adapters (resolve locally, not from Central)
+        # Demos resolve inertia-parent/adapters 0.0.5, which are not published
+        # to Central yet; install the current reactor first (same as examples
+        # job). Without this the job only passes on a warm Maven cache.
+        run: ./mvnw -B -q -DskipTests install
 
       - name: Package demo
         run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
