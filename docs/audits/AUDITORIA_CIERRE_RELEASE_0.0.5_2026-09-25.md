@@ -1,8 +1,8 @@
 # Auditoría de cierre — `release-0.0.5`: todos los puntos abiertos, cerrados
 
 **Fecha:** 2026-09-25 (madrugada local UTC-4; continúa el trabajo del 2026-09-24)
-**Rama:** `release-0.0.5`, HEAD `6b6980d` + los cambios documentados aquí (producto,
-demos, arquetipos, specs, CI y docs; sin commits).
+**Rama:** `release-0.0.5`, HEAD `3327d15` (commit#2) + tag local `v0.0.5-rc1`
+(sin push, decisión del mantenedor). Ver §9 (adenda post-cierre).
 **Método:** ejecución total en esta máquina. Toda celda registrada corresponde a
 una corrida verde en esta rama; todo fix incluye su prueba. Lo que no se ejecutó
 se declara en §8. Auditorías previas (estáticas y la primera ejecutada) quedan
@@ -161,10 +161,27 @@ documentado), `PartialFilter` (only/except/dot-notation/nulos), `MergeLabels`
 Adaptadores rewired: PartialReloadProcessor ×2 (-98/-111), ErrorBags ×2,
 reset/prune/version/redirect en ambos builders (-66/-123 builders,
 -10/-39 redirectores). Total: **-447 líneas en adaptadores**.
-Divergencias preservadas a propósito y documentadas (isExternal
-case/puertos, 409-con-versión-nula, orden de reset, TTL de once, flash):
-unificarlas cambiaría comportamiento probado. Deuda restante honesta:
-sync/async dentro de Quarkus y scroll/once-resolution (ver §8).
+Divergencias preservadas a propósito y documentadas (409-con-versión-nula,
+orden de reset, TTL de once, flash): unificarlas cambiaría comportamiento
+probado. **Adenda §9:** `isExternal` YA unificado (`UrlIdentity` en core, ambos
+adapters delegan: RFC case-insensitivity + normalización de puerto por defecto
+—corrige `:80`/`:443` explícitos contra mismo origen— + fail-closed ante
+objetivo inparseable); sync/async de Quarkus YA unificado (`assemble`/`finish`,
+§4.5-bis). Deuda restante honesta: scroll/once-resolution.
+
+### 4.5-bis Unificación sync/async Quarkus + `isExternal` (adenda §9, commit#2)
+
+- `PageObjectBuilder` (Quarkus): `build`/`buildSync` comparten `assemble()`
+  (componente + props explícitas/instancia/shared/once/optional + flags de
+  página) y `finish()` (head/flash/metadata + partial + always + camelize);
+  la única divergencia es la resolución de suppliers (`Uni` vs
+  `checkAsyncProps`+strip). El `pruneReset` local se eliminó (ahora
+  `MergeLabels.pruneReset`, null-safe). Fichero 1010→920 líneas, CRLF puro.
+- Nuevo `inertia-core.protocol.UrlIdentity` (+ tests): ambos adapters delegan
+  (`RedirectProcessor` Quarkus, `InertiaFilter` Spring).
+- Validación: suite Maven completa re-ejecutada en verde tras el cambio
+  (mismos totales §3.1, 0 fallos) + SSR re-verificado x2 en stack completo
+  (§4.8).
 
 ### 4.6 Hallazgos H1–H5 → todos cerrados
 
@@ -196,6 +213,30 @@ boot): tabla de referencia en la auditoría anterior.
    `/render`): corregido a canónico. Costó 3 horas de diagnóstico forense;
    queda como test de concepto y nota de troubleshooting.
 
+### 4.8 Re-verificación SSR post-unificación (adenda §9, commit#2)
+
+Starters frescos generados de los arquetipos 0.0.5 + webuis compilados
+(`build` + `build:ssr`); `ssr-contracts.spec.ts` 3/3 en ambos stacks, contra
+el código final con `assemble`/`finish`:
+
+- Spring starter `/`: server-render sin JS + hidratación sin errores +
+  fallback con sidecar caído (3/3).
+- Quarkus starter `/ssr-rx` (fixture `@Route` de guía §5 + sidecar): 3/3.
+  Valida el `PageObjectBuilder` refactorizado extremo a extremo (SSR usa la
+  misma tubería de ensamblado).
+
+Hallazgos de harness (severidad baja, no producto):
+
+1. `quarkus-vertx-web` no existe en Quarkus 3.39.2: la fixture `/ssr-rx` de
+   la guía requiere la dependencia `quarkus-reactive-routes` (como en
+   `examples/quarkus/pingcrm-react`). La guía §5 muestra el `@Route` pero no
+   la dependencia; el starter generado no la trae.
+2. `-DappName` se hornea en generación (Spring: `@Value` literal): las
+   aserciones E2E esperan `Hello Inertia`; los fixtures se generan/editan
+   en consecuencia. Convención documentada en la guía de migración.
+3. Higiene E2E: sidecars/apps huérfanos de corridas previas ocupaban
+   `:13714`/`:8080` (3 procesos eliminados antes de re-verificar).
+
 ---
 
 ## 5. Comparación funcional (actualizada, cambios marcados con ★)
@@ -216,17 +257,20 @@ boot): tabla de referencia en la auditoría anterior.
 
 ## 6. Plan restante (ordenado, con nombre)
 
-1. **RC + revisión externa** (único bloqueante real de R100): tag `0.0.5-rc1`,
-   dos revisores externos, ventana de feedback, luego tag final.
+1. **RC + revisión externa** (único bloqueante real de R100): tag local
+   `v0.0.5-rc1` CREADO (commit#2 `3327d15`, sin push); faltan dos revisores
+   externos, ventana de feedback, push y tag final.
 2. **PIT completo en Linux + subida de umbrales**: el primer release con PIT
    bloqueante dará los números por módulo; subir 5/20 a la medición −margen.
 3. **SCA inaugural con key**: el primer scan con `NVD_API_KEY` puede revelar
    CVEs ≥8 (el gate hará su trabajo: corregir antes del tag).
-4. **Completar la unificación documentada**: sync/async Quarkus,
-   scroll/once-resolution, `isExternal` (requiere decisión de semántica).
+4. **Completar la unificación documentada**: hecho sync/async Quarkus e
+   `isExternal` (§4.5-bis); resta scroll/once-resolution.
 5. **DevTools mínimo / instrumentación de negocio**: recorder con redacción +
    eventos de render (P2 heredado, no bloqueante).
-6. **Migrar la guía Laravel/Rails→Java** (freno de adopción, P3).
+6. **Migrar la guía Laravel/Rails→Java**: HECHO (sección en
+   `docs/migration.md`: tabla de equivalencias verificada contra el facade,
+   starters, SSR, gotchas de certificación).
 
 ---
 
@@ -253,9 +297,30 @@ boot): tabla de referencia en la auditoría anterior.
 - Los fixtures TEMP (`/ssr-rx` en starters, `E2E_SSR_PATH`) están
   documentados en `docs/testing-guide.md` para re-ejecución determinista;
   el repo solo contiene el soporte permanente (specs, probes, arquetipos).
+  del repo).
 - Los scores de Laravel/Rails son los de la auditoría base (fuentes
   inspeccionadas, suites no re-ejecutadas).
-- Todo cambio está en el árbol de trabajo sin commit (decisión del
-  mantenedor). Archivos nuevos de diagnóstico temporal fueron eliminados;
+
+---
+
+## 9. Adenda post-cierre (2026-09-25, commit#2 `3327d15` + tag `v0.0.5-rc1`)
+
+Trabajo ejecutado después del cierre §§1–8, en la misma rama y máquina:
+
+| Punto del plan restante | Estado |
+|---|---|
+| Unificación sync/async Quarkus (§6.4) | **HECHO** — `assemble`/`finish`/`Assembly`, `pruneReset` local eliminado (§4.5-bis) |
+| `isExternal` (§6.4, "requería decisión") | **HECHO** — `UrlIdentity` en core, ambos adapters delegan (decisión: RFC + fail-closed) |
+| Guía Laravel/Rails→Java (§6.6) | **HECHA** — `docs/migration.md` |
+| SSR re-verify x2 | **HECHO** — Spring `/` 3/3 + Quarkus `/ssr-rx` 3/3 en código final (§4.8) |
+| Tag `v0.0.5-rc1` (§6.1) | **CREADO local** (sin push); revisión externa + push pendientes |
+| Suite completa post-cambio | `mvn -B test` verde 7 módulos (mismos totales §3.1, 0 fallos) + `verify:pit-exclusions` + `verify:metadata` verdes |
+
+Deuda restante honesta: scroll/once-resolution; PIT completo en Linux;
+SCA con key real; nativos GraalVM; `reactive-stress` nocturno.
+- Todo cambio está commiteado: `497a76c` (cierre) + `3327d15` (commit#2:
+  unificación, UrlIdentity, guía, SSR re-verificado) + tag local `v0.0.5-rc1`
+  (sin push). Archivos nuevos de diagnóstico temporal fueron eliminados;
   solo queda `docs/playwright-opencode-mcp.md` (ajeno a este trabajo, no
-  tocar).
+  tocar). Los fixtures SSR viven en `%TEMP%\ssr-verify` (desechables, fuera
+  del repo).
