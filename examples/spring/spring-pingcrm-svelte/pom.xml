@@ -135,7 +135,9 @@
                 </configuration>
             </plugin>
 
-            <!-- Frontend build (Svelte 5 + Vite) — skip when dist/ already exists -->
+            <!-- Frontend build (Svelte 5 + Vite): bound like every other demo
+                 so fresh checkouts/CI produce dist/ (the manifest strategy
+                 needs .vite/manifest.json on the classpath at boot). -->
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
@@ -147,24 +149,31 @@
                 <executions>
                     <execution>
                         <id>install node and npm</id>
-                        <phase>none</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>install-node-and-npm</goal>
                         </goals>
+                        <configuration>
+                            <nodeVersion>${node.version}</nodeVersion>
+                            <npmVersion>11.17.0</npmVersion>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>npm install</id>
-                        <phase>none</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
                     </execution>
                     <execution>
                         <id>npm run build</id>
-                        <phase>none</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
