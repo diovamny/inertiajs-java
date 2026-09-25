@@ -119,6 +119,12 @@ jobs:
         # test classpath needs the TCK, none of which is published yet.
         run: ./mvnw -B -q -DskipTests install
 
+      - name: Purge cached Node.js distributions
+        # frontend-maven-plugin downloads Node into ~/.m2; a flaky download
+        # poisons setup-java's Maven cache across runs (EOFException / missing
+        # tarball). Purging forces a fresh download; retries then self-heal.
+        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+
       - name: Spring demo smoke
         run: ./mvnw clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-pingcrm-react,examples/spring/spring-pingcrm-svelte,examples/spring/spring-kitchen-sink -Pexamples
 
@@ -280,9 +286,15 @@ jobs:
       - name: Install adapters and archetypes
         run: ./mvnw -B -q -DskipTests clean install -P archetypes
 
+      - name: Purge cached Node.js distributions
+        # frontend-maven-plugin downloads Node into ~/.m2; a flaky download
+        # poisons setup-java's Maven cache across runs (EOFException / missing
+        # tarball). Purging forces a fresh download; retries then self-heal.
+        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+
       - name: Generate starter from archetype
         run: >
-          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          $GITHUB_WORKSPACE/mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
@@ -297,8 +309,12 @@ jobs:
         working-directory: /tmp
 
       - name: Build and test generated starter (Java + frontend)
-        run: ./mvnw -B test
+        # The archetype template ships mvnw without the exec bit (Maven
+        # archetypes do not preserve file permissions); restore it here.
         working-directory: /tmp/hello-inertia
+        run: |
+          chmod +x mvnw
+          ./mvnw -B test
 
       - name: Boot smoke + visit certification (Fase B)
         # Proves the generated app (with explicit inertia-core) boots and
@@ -447,6 +463,11 @@ jobs:
         working-directory: e2e
         run: npm ci && npx playwright install --with-deps chromium
 
+      - name: Purge cached Node.js distributions
+        # See examples job: a poisoned Node tarball in the Maven cache breaks
+        # every frontend-maven-plugin build in this job.
+        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+
       - name: Package demo
         run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
 
@@ -531,9 +552,15 @@ jobs:
       - name: Install adapters and archetypes
         run: ./mvnw -B -q -DskipTests clean install -P archetypes
 
+      - name: Purge cached Node.js distributions
+        # frontend-maven-plugin downloads Node into ~/.m2; a flaky download
+        # poisons setup-java's Maven cache across runs (EOFException / missing
+        # tarball). Purging forces a fresh download; retries then self-heal.
+        run: rm -rf ~/.m2/repository/com/github/eirslett/node ~/.m2/repository/com/github/eirslett/npm
+
       - name: Generate starter from archetype
         run: >
-          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          $GITHUB_WORKSPACE/mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
@@ -557,7 +584,9 @@ jobs:
 
       - name: Package starter
         working-directory: /tmp/hello-inertia
-        run: ./mvnw -B -q -DskipTests package
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -q -DskipTests package
 
       - name: Run SSR render + hydration specs
         working-directory: e2e
