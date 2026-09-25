@@ -20,7 +20,7 @@
     <description>Reactive Inertia.js v3 adapter for Quarkus</description>
 
     <properties>
-        <surefire.version>3.5.2</surefire.version>
+        <surefire.version>3.6.0</surefire.version>
         <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 58.8%). -->
         <jacoco.line.minimum>0.55</jacoco.line.minimum>
         <!-- PIT floors, calibrated 2026-09-25 (measured 39% line, 28% kill;
