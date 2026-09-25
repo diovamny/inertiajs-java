@@ -255,7 +255,7 @@ jobs:
 
       - name: Upload demo log
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: demo-visit-${{ matrix.demo }}
           path: demo-visit.log
@@ -372,7 +372,7 @@ jobs:
 
       - name: Upload starter boot log
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: archetype-${{ matrix.archetype }}-boot
           path: starter-app.log
@@ -380,7 +380,7 @@ jobs:
 
       - name: Upload starter test reports
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: archetype-${{ matrix.archetype }}-reports
           path: |
@@ -558,7 +558,7 @@ jobs:
 
       - name: Upload E2E evidence
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-${{ matrix.demo }}-evidence
           path: |
@@ -685,7 +685,7 @@ jobs:
 
       - name: Upload SSR evidence
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ssr-e2e-${{ matrix.archetype }}-evidence
           path: |
@@ -734,7 +734,7 @@ jobs:
 
       - name: Upload Surefire evidence on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: clean-checkout-${{ matrix.os }}-surefire
           path: |
