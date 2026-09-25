@@ -1,6 +1,8 @@
 package com.example.kitchensink.controller.feature;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import jakarta.inject.Inject;
 import io.quarkus.vertx.web.Route;
@@ -191,6 +193,68 @@ public class NavigationController {
         return inertia.render("Features/Navigation/UrlFragments", Map.of(
             "timestamp", Demo.now(),
             "redirectedFrom", "preserveFragment redirect"));
+    }
+
+    // ------------------------------------------------------------------
+    // E2E wire fixtures (audit closure): API-level proofs of the v3 wire
+    // contract on Reactive Routes for the Vue client. These pages have no
+    // .vue file on purpose: e2e/reactive-contracts.spec.ts asserts the JSON
+    // wire only and never mounts them (same approach as the TCK fixtures).
+    // ------------------------------------------------------------------
+
+    @Route(path = "props-wire")
+    @Blocking
+    public Uni<Object> propsWire() {
+        inertia.deferred("probe", "slow", () -> Uni.createFrom().<Object>item("slow-value"));
+        var entries = items(1);
+        inertia.merge("entries", entries, false, "id");
+        inertia.once("notice", "Probe notice");
+        inertia.scroll("items", List.of(Map.of("id", 1), Map.of("id", 2)),
+            Map.of("currentPage", 1, "nextPage", 2, "pageName", "page"));
+        return inertia.render("Features/Navigation/PropsWire", Map.of(
+            "greeting", "Wire sampler.",
+            "entries", entries));
+    }
+
+    @Route(path = "validate-wire", methods = Route.HttpMethod.POST)
+    @Blocking
+    public Uni<Object> validateWire(RoutingContext rc) {
+        var body = jsonBody(rc);
+        var errors = new LinkedHashMap<String, String>();
+        if (isBlank(body.getString("name"))) {
+            errors.put("name", "Please enter your full name.");
+        }
+        if (isBlank(body.getString("email"))) {
+            errors.put("email", "We need your email address.");
+        }
+        if (!errors.isEmpty()) {
+            return inertia.back().withErrors(errors);
+        }
+        inertia.flash("success", "Wire form submitted!");
+        return inertia.back();
+    }
+
+    @Route(path = "upload-wire", methods = Route.HttpMethod.POST)
+    @Blocking
+    public Uni<Object> uploadWire(RoutingContext rc) {
+        if (rc.fileUploads() == null || rc.fileUploads().isEmpty()) {
+            return inertia.back().withErrors(Map.of("photo", "Please choose a photo."));
+        }
+        inertia.flash("success", "Uploaded 1 file(s) successfully!");
+        return inertia.back();
+    }
+
+    private static io.vertx.core.json.JsonObject jsonBody(RoutingContext rc) {
+        try {
+            var body = rc.body().asJsonObject();
+            return body != null ? body : new io.vertx.core.json.JsonObject();
+        } catch (Exception ignored) {
+            return new io.vertx.core.json.JsonObject();
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private int parseParam(String raw, int defaultValue) {

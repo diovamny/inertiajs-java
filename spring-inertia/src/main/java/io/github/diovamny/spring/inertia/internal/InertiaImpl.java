@@ -345,6 +345,31 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public io.github.diovamny.inertia.core.model.MergeableBuilder mergeable(String key, Object value) {
+        return io.github.diovamny.inertia.core.model.MergeableBuilder.of(key, value, this::applyMergePlan);
+    }
+
+    @Override
+    public Object applyMergePlan(io.github.diovamny.inertia.core.model.MergePlan plan) {
+        if (plan == null) {
+            throw new IllegalArgumentException("MergePlan must not be null");
+        }
+        for (var path : plan.qualifiedMergePaths()) {
+            addList(PageObjectBuilder.CONTEXT_MERGE_PROPS, path);
+        }
+        for (var path : plan.qualifiedPrependPaths()) {
+            addList(PageObjectBuilder.CONTEXT_PREPEND_PROPS, path);
+        }
+        for (var path : plan.qualifiedDeepMergePaths()) {
+            addList(PageObjectBuilder.CONTEXT_DEEP_MERGE_PROPS, path);
+        }
+        for (var path : plan.qualifiedMatchPaths()) {
+            addList(PageObjectBuilder.CONTEXT_MATCH_PROPS_ON, path);
+        }
+        return plan.value();
+    }
+
+    @Override
     public Object rawJson(String json) {
         return RawJson.of(json);
     }

@@ -81,10 +81,33 @@ public class InertiaRender implements Uni<Object> {
     }
 
     /**
-     * Flash validation errors under the {@code errors} key.
+     * Flash validation errors under the {@code errors} key (one message per field).
      */
     public InertiaRender withErrors(Map<String, String> errors) {
-        return flash("errors", errors);
+        return flash("errors", io.github.diovamny.quarkus.inertia.support.ErrorBags.wrap(errors));
+    }
+
+    /**
+     * Flash multiple messages per field (Inertia {@code withAllErrors} parity).
+     *
+     * @param errors immutable multi-message bag
+     * @return this render for chaining
+     */
+    public InertiaRender withValidationErrors(
+            io.github.diovamny.inertia.core.model.ValidationErrors errors) {
+        return flash("errors", io.github.diovamny.quarkus.inertia.support.ErrorBags.wrap(
+            errors != null ? errors.toWireMap(true) : Map.of()));
+    }
+
+    /**
+     * Flash multiple messages per field from a plain multimap.
+     *
+     * @param errors field-to-messages multimap
+     * @return this render for chaining
+     */
+    public InertiaRender withErrorMessages(Map<String, ? extends java.util.Collection<String>> errors) {
+        return flash("errors", io.github.diovamny.quarkus.inertia.support.ErrorBags.wrap(
+            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true)));
     }
 
     /**

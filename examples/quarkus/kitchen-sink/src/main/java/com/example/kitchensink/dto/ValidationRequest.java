@@ -1,8 +1,6 @@
 package com.example.kitchensink.dto;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -17,9 +15,9 @@ public class ValidationRequest {
     @Size(max = 255, message = "max")
     public String email;
 
-    @Min(value = 18, message = "You must be at least 18 years old.")
-    @Max(value = 120, message = "Please enter a valid age.")
-    public Integer age;
+    // String (not Integer): JSON-B cannot coerce "" to a number while
+    // Jackson can, so the demo parses explicitly (same messages as Spring).
+    public String age;
 
     @jakarta.validation.constraints.Pattern(
         regexp = "^(https?://.*)?$", message = "Please enter a valid URL (e.g., https://example.com).")

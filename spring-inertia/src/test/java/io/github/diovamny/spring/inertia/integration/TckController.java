@@ -60,6 +60,11 @@ public class TckController {
         return inertia.redirect("/tck/page");
     }
 
+    @PostMapping("/submit-multi")
+    public Object submitMulti() {
+        return inertia.back().withErrorMessages(Map.of("name", List.of("required", "must be valid")));
+    }
+
     @GetMapping("/redirect-me")
     public Object redirectMe() {
         return inertia.redirect("/tck/page");
@@ -110,6 +115,19 @@ public class TckController {
                 MergeRule.MERGE, "id"),
             "tags", inertia.merge("tags", List.of("a", "b"), MergeRule.PREPEND),
             "config", inertia.merge("config", Map.of("theme", "dark"), MergeRule.DEEP_MERGE)));
+    }
+
+    @GetMapping("/merge-nested")
+    public Object mergeNested() {
+        var posts = Map.of("data", List.of(Map.of("id", 1, "title", "One")),
+            "pinned", List.of(Map.of("id", 9, "title", "Nine")));
+        var value = inertia.mergeable("posts", posts)
+            .append("data")
+            .prepend("pinned")
+            .matchOn("data.id")
+            .value();
+        var config = inertia.mergeable("config", Map.of("theme", "dark")).deep("theme").value();
+        return inertia.render("Tck/MergeNested", Map.of("posts", value, "config", config));
     }
 
     @GetMapping("/scroll")

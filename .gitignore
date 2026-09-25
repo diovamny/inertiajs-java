@@ -42,3 +42,8 @@ opencode.json
 
 # Internal design notes (kept on disk, not published)
 docs/adr/
+docs/audits/
+
+# AI-assistant working files (kept on disk, not published)
+docs/playwright-opencode-mcp.md
+PLAN_*.md

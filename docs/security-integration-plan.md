@@ -316,11 +316,14 @@ Implementar en este orden:
    quarkus.rest-csrf.token-header-name=X-XSRF-TOKEN
    quarkus.rest-csrf.cookie-http-only=false
    %prod.quarkus.rest-csrf.cookie-force-secure=true
-   %prod.quarkus.rest-csrf.token-signature-key=${INERTIA_CSRF_HMAC_KEY}
+   # NO token-signature-key for Inertia SPAs: rest-csrf requires
+   # cookie == sign(header), which no cookie-echo client can satisfy
+   # (verified against quarkus-rest-csrf 3.39.2 bytecode, M4b-01).
    ```
 
-   La comprobación de configuración debe rechazar en producción una clave
-   ausente o de menos de 32 caracteres.
+   La comprobación de configuración debe avisar (no fallar) si hay clave
+   firmada con clientes cookie-echo; solo los flujos server-rendered con
+   token crudo embebido pueden usar firma.
 3. Migrar los ejemplos desde `config/AuthFilter.java` a políticas HTTP y
    anotaciones `@Authenticated`/`@RolesAllowed`. La identidad se obtiene de
    `SecurityIdentity`; no de una entrada creada manualmente en sesión.

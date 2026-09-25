@@ -8,7 +8,7 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -17,6 +17,19 @@
     <packaging>jar</packaging>
 
     <name>Quarkus Inertia.js Security Integration</name>
+
+    <properties>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 86.1%). -->
+        <jacoco.line.minimum>0.80</jacoco.line.minimum>
+        <!-- PIT floors, calibrated 2026-09-25 (measured 19% line, 16% kill;
+             coverage comes mostly from excluded @QuarkusTest integration
+             tests; JaCoCo holds the real line at 80%). -->
+        <pit.mutation.minimum>10</pit.mutation.minimum>
+        <pit.coverage.minimum>10</pit.coverage.minimum>
+        <!-- Quarkus BOM uses JUnit 6: the PIT minion launcher must match
+             the engine line (1.13.4 crashes discovery on 6.x). -->
+        <junit-platform.version>6.1.3</junit-platform.version>
+    </properties>
     <description>Inertia.js v3 protocol bridge for Quarkus Security (rest-csrf ownership, 409 challenges, 403 pages)</description>
 
     <dependencies>

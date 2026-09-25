@@ -160,11 +160,10 @@ public class RedirectProcessor {
     }
 
     private Uni<Object> back0(String fallback, int forcedStatus, Map<String, String> headers) {
-        var referer = getRefererUrl();
+        var effectiveFallback = (fallback != null && !fallback.isBlank()) ? fallback : "/";
         final var url = io.github.diovamny.inertia.core.security.RedirectTargets.check(
-            (referer != null && !referer.isBlank())
-                ? referer
-                : (fallback != null && !fallback.isBlank()) ? fallback : "/");
+            io.github.diovamny.inertia.core.protocol.RedirectClassifier.refererOr(
+                getRefererUrl(), effectiveFallback));
         if (forcedStatus > 0) {
             return Uni.createFrom().deferred(() -> {
                 var builder = Response.status(forcedStatus)
@@ -288,11 +287,10 @@ public class RedirectProcessor {
     }
 
     private Response back0Sync(String fallback, int forcedStatus, Map<String, String> headers) {
-        var referer = getRefererUrl();
+        var effectiveFallback = (fallback != null && !fallback.isBlank()) ? fallback : "/";
         final var url = io.github.diovamny.inertia.core.security.RedirectTargets.check(
-            (referer != null && !referer.isBlank())
-                ? referer
-                : (fallback != null && !fallback.isBlank()) ? fallback : "/");
+            io.github.diovamny.inertia.core.protocol.RedirectClassifier.refererOr(
+                getRefererUrl(), effectiveFallback));
         if (forcedStatus > 0) {
             var builder = Response.status(forcedStatus)
                 .header("Location", url)
@@ -353,20 +351,15 @@ public class RedirectProcessor {
     }
 
     private boolean isExternal(String url) {
-        if (url == null || url.isBlank()) return false;
-        if (url.startsWith("/")) return false;
-        try {
-            var redirectUri = java.net.URI.create(url);
-            if (!redirectUri.isAbsolute()) return false;
-            var request = resolveRequest();
-            if (request == null) return true;
-            var requestScheme = request.scheme();
-            var requestAuthority = request.authority().toString();
-            return !requestScheme.equals(redirectUri.getScheme())
-                || !java.util.Objects.equals(requestAuthority, redirectUri.getAuthority());
-        } catch (Exception e) {
-            return true;
-        }
+        // URL identity lives in inertia-core (UrlIdentity): RFC
+        // case-insensitivity plus default-port normalization (previously this
+        // method compared case-sensitively without port normalization);
+        // unparseable targets fail closed.
+        if (url == null || url.isBlank() || url.startsWith("/")) return false;
+        var request = resolveRequest();
+        if (request == null) return true;
+        return io.github.diovamny.inertia.core.protocol.UrlIdentity.isExternal(
+            url, request.scheme(), request.authority().toString());
     }
 
     private boolean isInertiaRequest() {

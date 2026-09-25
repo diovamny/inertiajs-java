@@ -13,29 +13,33 @@ project and is not officially maintained by the Inertia.js team.
 
 ## Supported / Tested / Not supported
 
-Legend: ✅ = Tested in CI · 🔄 = In progress · ⚠️ = Stabilizing · ❌ = Not supported.
-Full evidence: [protocol compatibility](docs/protocol-compatibility.md) (generated,
-**58/59 verified**), [what is not supported](docs/NOT_SUPPORTED.md).
+Legend: ✅ = Tested in CI · 🔄 = In progress · ❌ = Not supported.
+Full evidence: [protocol compatibility](docs/protocol-compatibility.md) (generated
+from `specs/inertia-v3-compliance.yaml`), [compatibility policy](docs/COMPATIBILITY_POLICY.md),
+[what is not supported](docs/NOT_SUPPORTED.md). Row counts are not a certification;
+see C100/I100/R100 in the policy.
 
 | Feature                        | Spring MVC | Quarkus REST | Quarkus Reactive | E2E |
 |-------------------------------|:---:|:---:|:---:|:---:|
 | Initial page (HTML + JSON)    | ✅  | ✅  | ✅  | ✅  |
 | Partial reloads               | ✅  | ✅  | ✅  | ✅  |
-| Deferred props                | ✅  | ✅  | ✅  | 🔄  |
-| Once props (key/expiry/combos)| ✅  | ✅  | ✅  | 🔄  |
-| Merge / prepend / deepMerge   | ✅  | ✅  | ✅  | 🔄  |
-| Infinite scroll               | ✅  | ✅  | ✅  | 🔄  |
-| Error bags                    | ✅  | ✅  | ✅  | 🔄  |
-| File uploads                  | ✅  | ✅  | ✅  | 🔄  |
-| SSR con sidecar               | ✅  | ✅  | ✅  | 🔄  |
+| Deferred props                | ✅  | ✅  | ✅  | ✅  |
+| Once props (key/expiry/combos)| ✅  | ✅  | ✅  | ✅  |
+| Merge / prepend / deepMerge   | ✅  | ✅  | ✅  | ✅  |
+| Explicit append() + nested routes | ✅  | ✅  | ✅  | ✅  |
+| Infinite scroll               | ✅  | ✅  | ✅  | ✅  |
+| Error bags (single message)   | ✅  | ✅  | ✅  | ✅  |
+| Multiple messages per field   | ✅  | ✅  | ✅  | ✅  |
+| File uploads                  | ✅  | ✅  | ✅  | ✅  |
+| SSR con sidecar               | ✅  | ✅  | ✅  | ✅  |
+| Instant-visit sharedProps (client-observed) | ✅ | ✅ | ✅ | ✅ |
 | encryptHistory / clearHistory | ✅  | ✅  | ✅  | ✅  |
 | CSRF 303 + flash              | ✅  | ✅  | ✅  | ✅  |
 | Native Image (GraalVM)        | ✅  | ✅  | ✅  | ✅  |
-| Quarkus Reactive (estabiliz.) | ⚠️  | —   | ⚠️  | 🔄  |
 
 | inertiajs-java | Inertia.js client | Spring Boot | Quarkus | Java | Node.js (SSR) |
 |---|---|---|---|---|---|
-| 0.0.4 | 2.x / 3.x | 4.1.x | 3.39.x | 21+ | 20+ |
+| 0.0.5 | 3.7.1 (pinned) | 4.1.x | 3.39.x | 21+ | 20+ |
 
 ## Your controllers. Your routes. Modern components.
 
@@ -161,12 +165,12 @@ public class ContactsRouter {
 > JDBC, Panache blocking); with a reactive client (Hibernate Reactive,
 > MongoDB reactive, REST calls) leave it off.
 >
-> > ⚠️ **Reactive Routes: stabilization in course (0.0.4).** The G-17
-> > request-context isolation fix ships with a permanent concurrency regression
-> > suite (`InertiaContextLocalsTest`, including 20×100 isolation), but the
-> > reactive transport has less than one release cycle of bake-in. Prefer
-> > Spring MVC or Quarkus REST for production until a full cycle passes
-> > without regressions of this class.
+> Quarkus Reactive Routes graduates stable inside `0.0.5` (same contract as
+> > Spring MVC and Quarkus REST). The G-17 request-context isolation fix ships
+> > with a permanent concurrency regression suite (`InertiaContextLocalsTest`
+> > plus `ReactiveStressTest`) and the `reactive-stress` profile; graduation
+> > completes with the Fase F fixes + full E2E matrix
+> > (see `docs/COMPATIBILITY_POLICY.md`).
 
 Every route returns `Uni<Object>` (Quarkus) or `Object` (Spring): an HTML shell
 with the page object on the first visit, the JSON page object on Inertia
@@ -348,7 +352,7 @@ sessions and validation on the server.
 <dependency>
       <groupId>io.github.diovamny.spring.inertia</groupId>
       <artifactId>spring-inertia</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5</version>
 </dependency>
 ```
 
@@ -356,7 +360,7 @@ sessions and validation on the server.
 <dependency>
       <groupId>io.github.diovamny.quarkus.inertia</groupId>
       <artifactId>quarkus-inertia</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5</version>
 </dependency>
 ```
 
@@ -395,7 +399,7 @@ React 19, TypeScript, Vite, tests and an optional native `Dockerfile`:
 
 | Starter | Command |
 |---|---|
-| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.4 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
+| Spring Boot + Vue 3 | `mvn -B archetype:generate -DarchetypeGroupId=io.github.diovamny -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.5 -DgroupId=com.example -DartifactId=hello-inertia -Dpackage=com.example.hello` |
 | Spring Boot + React 19 | Same with `-DarchetypeArtifactId=inertia-spring-react-archetype` |
 | Spring Boot + Svelte 5 | Same with `-DarchetypeArtifactId=inertia-spring-svelte-archetype` |
 | Quarkus + Vue 3 | Same with `-DarchetypeArtifactId=inertia-quarkus-vue-archetype` |

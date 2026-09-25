@@ -63,9 +63,30 @@ for (const rel of archetypeMeta) {
   } else ok(`${rel}: defaultValue`);
 }
 
+// 3b. Archetype templates must declare explicit inertia-core pinned to the
+// adapter version (Fase B): same core everywhere, no transitive drift.
+const archetypeTemplatePoms = [
+  'archetypes/inertia-spring-vue-archetype/src/main/resources/archetype-resources/pom.xml',
+  'archetypes/inertia-spring-react-archetype/src/main/resources/archetype-resources/pom.xml',
+  'archetypes/inertia-spring-svelte-archetype/src/main/resources/archetype-resources/pom.xml',
+  'archetypes/inertia-quarkus-vue-archetype/src/main/resources/archetype-resources/pom.xml',
+  'archetypes/inertia-quarkus-react-archetype/src/main/resources/archetype-resources/pom.xml',
+  'archetypes/inertia-quarkus-svelte-archetype/src/main/resources/archetype-resources/pom.xml',
+];
+for (const rel of archetypeTemplatePoms) {
+  const text = read(rel);
+  if (!text.includes('<artifactId>inertia-core</artifactId>')) {
+    fail(`${rel}: missing explicit inertia-core dependency`);
+  } else if (!text.includes('<inertia-core.version>${inertiaAdapterVersion}</inertia-core.version>')) {
+    fail(`${rel}: inertia-core.version must derive from \${inertiaAdapterVersion}`);
+  } else ok(`${rel}: inertia-core pinned`);
+}
+
 // 4. Examples inertia.version pins.
 const examplePoms = [
   'examples/spring/spring-pingcrm/pom.xml',
+  'examples/spring/spring-pingcrm-react/pom.xml',
+  'examples/spring/spring-pingcrm-svelte/pom.xml',
   'examples/spring/spring-kitchen-sink/pom.xml',
   'examples/quarkus/pingcrm/pom.xml',
   'examples/quarkus/pingcrm-react/pom.xml',

@@ -118,8 +118,32 @@ public class FormController {
         form.name = FormValidator.blankToNull(form.name);
         form.email = FormValidator.blankToNull(form.email);
         form.website = FormValidator.blankToNull(form.website);
+        form.age = FormValidator.blankToNull(form.age);
         FormValidator.validate(validator, form);
+        var ageError = validateAge(form.age);
+        if (ageError != null) {
+            return inertia.back().withErrors(Map.of("age", ageError)).toResponse();
+        }
         return inertia.back().with("message", "Primary form submitted successfully!").toResponse();
+    }
+
+    private static String validateAge(String age) {
+        if (age == null) {
+            return null;
+        }
+        final int value;
+        try {
+            value = Integer.parseInt(age.trim());
+        } catch (NumberFormatException e) {
+            return "Please enter a valid age.";
+        }
+        if (value < 18) {
+            return "You must be at least 18 years old.";
+        }
+        if (value > 120) {
+            return "Please enter a valid age.";
+        }
+        return null;
     }
 
     @POST

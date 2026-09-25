@@ -8,7 +8,7 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -17,6 +17,14 @@
     <packaging>jar</packaging>
 
     <name>Inertia.js Java Core Protocol</name>
+
+    <properties>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 84.5%). -->
+        <jacoco.line.minimum>0.80</jacoco.line.minimum>
+        <!-- PIT floors, calibrated 2026-09-25 (measured 82% line, 70% kill). -->
+        <pit.mutation.minimum>60</pit.mutation.minimum>
+        <pit.coverage.minimum>75</pit.coverage.minimum>
+    </properties>
     <description>Framework-agnostic Inertia.js v3 protocol model, SPI contracts,
         security utilities, server head builder and typed results shared by the
         Spring and Quarkus adapters</description>

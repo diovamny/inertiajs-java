@@ -1,6 +1,5 @@
 package io.github.diovamny.quarkus.inertia.protocol;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -9,6 +8,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import io.github.diovamny.inertia.core.model.AlwaysProp;
 import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.protocol.MergeLabels;
+import io.github.diovamny.inertia.core.protocol.PartialFilter;
 
 /**
  * Applies a partial reload: keeps only the props requested by the client
@@ -34,47 +35,26 @@ public class PartialReloadProcessor {
             return page;
         }
 
-        Map<String, Object> filteredProps = new HashMap<>();
-
-        // Always props survive the filter unconditionally.
+        // Unwrap AlwaysProp markers up front: the shared filter then sees
+        // plain values, and the always set keeps them unconditional.
+        Map<String, Object> plainProps = new LinkedHashMap<>();
+        Map<String, Object> always = new LinkedHashMap<>();
         for (var entry : page.props().entrySet()) {
             var value = entry.getValue();
             if (value instanceof AlwaysProp) {
-                filteredProps.put(entry.getKey(), ((AlwaysProp<?>) value).value());
+                var unwrapped = ((AlwaysProp<?>) value).value();
+                plainProps.put(entry.getKey(), unwrapped);
+                always.put(entry.getKey(), unwrapped);
+            } else {
+                plainProps.put(entry.getKey(), value);
             }
         }
 
-        var onlyKeys = new LinkedHashSet<>(context.data());
-        var exceptKeys = new LinkedHashSet<>(context.except());
-
-        // Copy the props that survive only/except, handling nested paths structurally.
-        for (var entry : page.props().entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (value instanceof AlwaysProp) {
-                continue; // already added
-            }
-            // Skip a top-level key entirely only when it is excluded exactly.
-            if (exceptKeys.contains(key)) {
-                continue;
-            }
-            // For "only" filtering, a top-level key is included when it is
-            // selected exactly or when a nested path under it is selected.
-            if (!onlyKeys.isEmpty() && !isSelected(key, onlyKeys)) {
-                continue;
-            }
-            // Determine if nested paths apply to this top-level prop.
-            var nestedOnly = matchingPrefixes(key, onlyKeys);
-            var nestedExcept = matchingPrefixes(key, exceptKeys);
-            Object kept = value;
-            if (!nestedOnly.isEmpty() || !nestedExcept.isEmpty()) {
-                kept = filterNode(value, nestedOnly, nestedExcept, key);
-            }
-            // A selected prop keeps its value even when it is null: null is
-            // a real prop value, not an omission signal (lazy/optional use
-            // dedicated marker types resolved upstream).
-            filteredProps.put(key, kept);
-        }
+        // The filtering algorithm lives in inertia-core (PartialFilter).
+        var filteredProps = io.github.diovamny.inertia.core.protocol.PartialFilter.filter(
+            plainProps, always,
+            context.data() == null ? Set.of() : new LinkedHashSet<>(context.data()),
+            context.except() == null ? Set.of() : new LinkedHashSet<>(context.except()));
 
         // Map.copyOf forbids null values, but null is a legitimate prop value
         // that must survive partial reloads, so copy defensively instead.
@@ -87,94 +67,18 @@ public class PartialReloadProcessor {
         return result;
     }
 
-    /**
-     * Collect all nested sub-paths (relative to the top-level key) that
-     * patterns select. E.g. patterns {@code auth.user,auth.permissions}
-     * for key {@code auth} returns {@code ["user", "permissions"]}.
-     */
-    private Set<String> matchingPrefixes(String key, Set<String> patterns) {
-        var result = new LinkedHashSet<String>();
-        for (var pattern : patterns) {
-            if (pattern.startsWith(key + ".")) {
-                var rest = pattern.substring(key.length() + 1);
-                if (!rest.isEmpty()) {
-                    result.add(rest);
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Recursively filter a nested value according to the requested (only) and
-     * excluded (except) sub-paths. Returns the filtered value or {@code null}
-     * when nothing survives.
-     */
-    @SuppressWarnings("unchecked")
-    private Object filterNode(Object value, Set<String> onlyPaths, Set<String> exceptPaths, String path) {
-        if (!(value instanceof Map<?, ?> map)) {
-            return value;
-        }
-        var result = new LinkedHashMap<String, Object>();
-        for (var child : map.entrySet()) {
-            var childKey = String.valueOf(child.getKey());
-            // Skip excluded children: match exact or descendant paths.
-            if (isExcluded(childKey, exceptPaths)) {
-                continue;
-            }
-            // Keep only requested children when only paths are present.
-            if (!onlyPaths.isEmpty() && !isSelected(childKey, onlyPaths)) {
-                continue;
-            }
-            var childValue = child.getValue();
-            var childOnly = matchingPrefixes(childKey, onlyPaths);
-            var childExcept = matchingPrefixes(childKey, exceptPaths);
-            var kept = (!childOnly.isEmpty() || !childExcept.isEmpty()) && childValue instanceof Map
-                ? filterNode(childValue, childOnly, childExcept, path + "." + childKey)
-                : childValue;
-            result.put(childKey, kept);
-        }
-        return result.isEmpty() ? null : result;
-    }
-
-    private boolean isSelected(String key, Set<String> patterns) {
-        for (var pattern : patterns) {
-            if (pattern.equals(key) || pattern.startsWith(key + ".")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isExcluded(String key, Set<String> exceptPatterns) {
-        return exceptPatterns.contains(key);
-    }
-
     private PageObject stripResetKeys(PageObject page, Set<String> resetKeys) {
         var merge = page.mergeProps() == null ? java.util.List.<String>of() : page.mergeProps();
         var prepend = page.prependProps() == null ? java.util.List.<String>of() : page.prependProps();
         var deepMerge = page.deepMergeProps() == null ? java.util.List.<String>of() : page.deepMergeProps();
         var match = page.matchPropsOn() == null ? java.util.List.<String>of() : page.matchPropsOn();
 
-        var newMerge = merge.stream().filter(k -> !isDescendantOrSelf(k, resetKeys)).toList();
-        var newPrepend = prepend.stream().filter(k -> !isDescendantOrSelf(k, resetKeys)).toList();
-        var newDeepMerge = deepMerge.stream().filter(k -> !isDescendantOrSelf(k, resetKeys)).toList();
-        var newMatch = match.stream().filter(k -> !isDescendantOrSelf(k, resetKeys)).toList();
-
-        return page.withMergeMetadata(newMerge, newPrepend, newDeepMerge, newMatch);
-    }
-
-    /**
-     * Check if a key is equal to or a descendant of any reset key.
-     * E.g. {@code contacts.data.id} is a descendant of {@code contacts}.
-     */
-    private boolean isDescendantOrSelf(String key, Set<String> resetKeys) {
-        for (var resetKey : resetKeys) {
-            if (key.equals(resetKey) || key.startsWith(resetKey + ".")) {
-                return true;
-            }
-        }
-        return false;
+        // Reset pruning lives in inertia-core (MergeLabels).
+        return page.withMergeMetadata(
+            MergeLabels.pruneReset(new java.util.ArrayList<>(merge), resetKeys),
+            MergeLabels.pruneReset(new java.util.ArrayList<>(prepend), resetKeys),
+            MergeLabels.pruneReset(new java.util.ArrayList<>(deepMerge), resetKeys),
+            MergeLabels.pruneReset(new java.util.ArrayList<>(match), resetKeys));
     }
 
     public record PartialReloadContext(
@@ -184,7 +88,7 @@ public class PartialReloadProcessor {
         Set<String> reset
     ) {
         public boolean matchesComponent(String component) {
-            return partialComponent != null && partialComponent.equals(component);
+            return PartialFilter.matchesComponent(partialComponent, component);
         }
 
         public boolean hasData() {

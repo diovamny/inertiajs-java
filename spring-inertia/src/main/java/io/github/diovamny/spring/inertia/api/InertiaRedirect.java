@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.spring.inertia.support.ErrorBags;
 
 /**
  * An Inertia redirect response. Extends {@link ResponseEntity} so Spring MVC
@@ -53,11 +54,36 @@ public class InertiaRedirect extends ResponseEntity<String> {
     /**
      * Flash validation errors under the {@code errors} key.
      *
-     * @param errors field-to-message map
+     * @param errors field-to-message map (one message per field, legacy)
      * @return this redirect for chaining
      */
     public InertiaRedirect withErrors(Map<String, String> errors) {
-        flashStore.put("errors", errors);
+        flashStore.put("errors", ErrorBags.wrap(errors));
+        return this;
+    }
+
+    /**
+     * Flash multiple messages per field (Inertia {@code withAllErrors} parity).
+     * The wire shape is {@code Map<field, List<message>>} with order preserved.
+     *
+     * @param errors immutable multi-message bag
+     * @return this redirect for chaining
+     */
+    public InertiaRedirect withValidationErrors(
+            io.github.diovamny.inertia.core.model.ValidationErrors errors) {
+        flashStore.put("errors", ErrorBags.wrap(errors != null ? errors.toWireMap(true) : Map.of()));
+        return this;
+    }
+
+    /**
+     * Flash multiple messages per field from a plain multimap.
+     *
+     * @param errors field-to-messages multimap
+     * @return this redirect for chaining
+     */
+    public InertiaRedirect withErrorMessages(Map<String, ? extends java.util.Collection<String>> errors) {
+        flashStore.put("errors", ErrorBags.wrap(
+            io.github.diovamny.inertia.core.model.ValidationErrors.ofLists(errors).toWireMap(true)));
         return this;
     }
 

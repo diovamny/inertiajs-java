@@ -1,5 +1,67 @@
 # Changelog
 
+## 0.0.5
+
+- M0 (P100-01): v3-only policy (`docs/COMPATIBILITY_POLICY.md`, frozen snapshot
+  `specs/inertia-v3-baseline-2026-09-23.yaml`); honest matrix (PROTO-053 split
+  bags vs multi-message, PROTO-054 wire vs explicit `append()`, PROTO-057
+  serialization vs instant-visit behavior; Reactive as stable target, no
+  experimental label at the end of the release); README/ROADMAP/NOT_SUPPORTED
+  without `2.x` or `58/59`-as-certification claims; version `0.0.5` single source.
+- M1 (P100-02/03): Maven Wrapper 3.9.11 (`mvnw`/`mvnw.cmd`), Enforcer
+  (Java 21+/Maven 3.9+), Node `24.21.0` + npm `11.17.0` (`engines`,
+  `.nvmrc`), `specs/e2e-compliance.yaml`, clean-checkout CI
+  (ubuntu+windows), `npm run verify:metadata`.
+- M2 (P100-04/05): core `ValidationErrors` + `withValidationErrors`/
+  `withErrorMessages` (erasure-safe, ADR-003) + `inertia.validation.all-errors`
+  (default `false`); TCK multi-message on 3 transports; `japicmp` MINOR.
+- M3 (P100-06/07): core `MergePlan` + `MergeableBuilder` +
+  `inertia.mergeable()...value()`/`applyMergePlan` (ADR-004); TCK
+  `merge-nested` + child reset on 3 transports; legacy `merge()` unchanged.
+- M5 (P100-10/11): core `SsrEndpointPolicy` + startup fail-fast in both
+  adapters (ADR-005) + no-redirect HTTP clients + sidecar-controlled tests.
+- M7 (P100-17/18): Reactive graduated to stable — 43-case TCK parity,
+  `ReactiveStressTest` (8×12 concurrent), G-17-class isolation fix
+  (`InertiaContextLocals` + registries + writer), `docs/reactive-parity.md`,
+  nightly `reactive-stress.yml`.
+- M4a (P100-08/09, part 1): Playwright + official Vue 3 client 10/10 on
+  Spring (validation, bags, merge-append, instant-visit PROTO-057B first
+  client proof, upload, 409, partials); matrix `60/62 verified, 8 E2E`.
+  M4b (same branch, before tag): Quarkus-Vue login cells (demo Secure-cookie
+  + post-login anomaly ticketed), React/Svelte fixtures, Reactive/SSR cells.
+- M6-lite (P100-12/13): no moves; frozen core-decision inventory (ADR-006).
+- M8 (P100-14/15/16, part 1): `verify -Pquality-gates` green (0 Checkstyle,
+  SpotBugs High clean, full suites); `japicmp` 0.0.4→0.0.5 MINOR ×3;
+  pitest 1.17.4 (minion still aborts on this station — report-only +
+  ticket, 3 local repros); SCA fail-closed on tags (Dependency-Check
+  12.1.0); SBOM aggregate post-deploy (existing step). Pre-tag gates left:
+  M4b E2E cells, external review, native smoke on tag CI.
+- Docs/CI (executed audit 2026-09-24): README feature table aligned with the
+  generated matrix (`append()` and multi-message rows now Tested on the 3
+  transports, E2E still in progress); `ssr-e2e` job uses `npm install`
+  (generated starters ship no lockfile, `npm ci` fails EUSAGE); new
+  Playwright runbook appended to `docs/testing-guide.md` (demos/ports,
+  `--workers=1` + warm-up, SSR starter flow). Full fresh evidence: 711 unit
+  + integration tests, 242 demo smoke tests, 118 Playwright checks, all
+  green (auditoría de cierre local, no publicada).
+- Closure (executed audit 2026-09-25, all points closed): C100 62/62, I100
+  90/90 (all E2E scenarios E2E_VERIFICADO, incl. 28 reactive cells and 6+3
+  SSR cells). New E2E fixtures: `/e2e-probe-rx` Reactive Routes probes
+  (Quarkus React/Svelte), `reactive-contracts.spec.ts` + JAX-RS rest-instant
+  twin (Vue), SSR support in all 4 React/Svelte archetypes (+`hydrateRoot`),
+  `E2E_SSR_PATH` in ssr-contracts. Fixes found by execution: reactive CSRF
+  single-token adoption (dual-issuer 303s), protocol-exact SSR assembly (no
+  nested `#app`), Spring `inertia.ssr.*` dotted keys do not bind (docs now
+  canonical hyphenated). Quality gates blocking: PIT minion fixed (add-opens
+  + aligned junit-platform-launcher; core 82%/70%), SpotBugs failOnError,
+  per-module JaCoCo floors, SCA fail-closed (release tags + CI push job).
+  Protocol decisions extracted to `inertia-core.protocol` (VersionPolicy,
+  RedirectClassifier, PartialFilter, MergeLabels, ErrorWire; -447 lines in
+  adapters, +36 core tests); documented divergences kept per adapter.
+  Full evidence: 761 unit/integration + 242 demo smoke + 181 Playwright
+  checks green on final code (4 intentional skips of the reactive-only CSRF
+  test on the classic base; full evidence in the unpublished closing audit).
+
 ## 0.0.4
 
 - Fase 0 (PLAN_MEJORA v4, H1–H5): versión única `0.0.4` con fuente central

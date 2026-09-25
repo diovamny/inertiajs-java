@@ -17,6 +17,8 @@ class InertiaConfigUnitTest {
             @Override public String rootTemplate() { return rootTemplate; }
             @Override public boolean ssrEnabled() { return false; }
             @Override public String ssrUrl() { return "http://localhost:13714"; }
+            @Override public boolean ssrRemoteEnabled() { return false; }
+            @Override public java.util.Optional<java.util.List<String>> ssrAllowedHosts() { return java.util.Optional.empty(); }
             @Override public java.time.Duration ssrConnectTimeout() { return java.time.Duration.ofSeconds(5); }
             @Override public java.time.Duration ssrReadTimeout() { return java.time.Duration.ofSeconds(10); }
             @Override public int ssrBreakerFailureThreshold() { return 5; }
@@ -40,6 +42,7 @@ class InertiaConfigUnitTest {
             @Override public Optional<String> rootView() { return rootView; }
             @Override public Optional<java.util.List<String>> flashKeys() { return Optional.empty(); }
             @Override public boolean alwaysIncludeErrors() { return true; }
+            @Override public boolean validationAllErrors() { return false; }
             @Override public int errorStatus() { return 500; }
             @Override public String errorComponent() { return "ErrorPage"; }
             @Override public boolean lazyEtagEnabled() { return true; }

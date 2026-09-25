@@ -236,15 +236,37 @@ java.time.Duration.ofSeconds(10);
             pageTitle = String.valueOf(meta.get("title"));
         }
         pageTitle = escapeHtml(pageTitle);
-        String ssrBodySafe = ssrBody != null ? ssrBody : "";
         String ssrHeadSafe = ssrHead != null ? ssrHead : "";
-          String rendered = template
-             .replace("__INERTIA_PAGE_JSON__", jsonRaw)
-             .replace("__INERTIA_PAGE__", "")
-              .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
-              .replace("__INERTIA_SSR_BODY__", ssrBodySafe)
-             .replace("__INERTIA_PAGE_TITLE__", pageTitle)
-             .replace("__INERTIA_CSP_NONCE__", nonceAttribute(currentNonce()));
+        String rendered;
+        if (template.contains("__INERTIA_ROOT__")) {
+            // Protocol-exact root region (same contract as the Spring
+            // adapter): on SSR success the sidecar body takes the place of
+            // the script tag and root div (single data-page script, single
+            // #app with data-server-rendered); otherwise the classic CSR
+            // shell, byte-identical to the legacy template output.
+            String rootHtml;
+            if (ssrBody != null) {
+                rootHtml = ssrBody;
+            } else {
+                rootHtml = "<div id=\"app\"></div>\n    <script type=\"application/json\" data-page=\"app\">"
+                    + jsonRaw + "</script>";
+            }
+            rendered = template
+                .replace("__INERTIA_ROOT__", rootHtml)
+                .replace("__INERTIA_PAGE__", "")
+                .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
+                .replace("__INERTIA_PAGE_TITLE__", pageTitle)
+                .replace("__INERTIA_CSP_NONCE__", nonceAttribute(currentNonce()));
+        } else {
+            String ssrBodySafe = ssrBody != null ? ssrBody : "";
+            rendered = template
+               .replace("__INERTIA_PAGE_JSON__", jsonRaw)
+               .replace("__INERTIA_PAGE__", "")
+                .replace("__INERTIA_SSR_HEAD__", ssrHeadSafe)
+                .replace("__INERTIA_SSR_BODY__", ssrBodySafe)
+               .replace("__INERTIA_PAGE_TITLE__", pageTitle)
+               .replace("__INERTIA_CSP_NONCE__", nonceAttribute(currentNonce()));
+        }
 
         var viewData = getViewData();
         if (viewData != null && !viewData.isEmpty()) {

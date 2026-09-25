@@ -1,9 +1,7 @@
 package io.github.diovamny.quarkus.inertia.protocol;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +19,9 @@ import io.github.diovamny.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.quarkus.inertia.api.RenderContext;
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
 import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.OnceProp;
 import io.github.diovamny.inertia.core.model.PageObject;
+import io.github.diovamny.inertia.core.protocol.MergeLabels;
 import io.github.diovamny.inertia.core.spi.ComponentTransformer;
 import io.github.diovamny.inertia.core.spi.FlashStore;
 import io.github.diovamny.inertia.core.spi.UrlResolver;
@@ -104,9 +104,25 @@ public class PageObjectBuilder {
     }
 
     public Uni<PageObject> build(String component, Map<String, Object> props, boolean isPartial) {
-        var resolvedComponent = resolveComponent(component);
-        var partialContext = buildPartialReloadContext();
-        var renderContext = createRenderContext(resolvedComponent, isPartial, partialContext);
+        var state = assemble(component, props, isPartial);
+        var propsSample = metrics.startPropsResolution();
+        return resolveSupplierProps(state.allProps, state.partialContext)
+            .onTermination().invoke(() -> metrics.stopPropsResolution(propsSample, state.resolvedComponent))
+            .map(resolvedProps -> finish(state, resolvedProps));
+    }
+
+    /**
+     * Shared assembly for {@link #build(String, Map, boolean)} and
+     * {@link #buildSync(String, Map, boolean)}: resolves the component, gathers
+     * props (explicit/instance/shared/once/optional) and computes every page-level
+     * flag. Supplier-backed values stay unresolved here; resolution is the only
+     * sync/async divergence (see {@link #finish(Assembly, Map)}).
+     */
+    private Assembly assemble(String component, Map<String, Object> props, boolean isPartial) {
+        var state = new Assembly();
+        state.resolvedComponent = resolveComponent(component);
+        state.partialContext = buildPartialReloadContext();
+        var renderContext = createRenderContext(state.resolvedComponent, isPartial, state.partialContext);
 
         var allProps = new HashMap<String, Object>();
         if (props != null && !props.isEmpty()) {
@@ -117,15 +133,16 @@ public class PageObjectBuilder {
         allProps.putAll(sharedData.getAll());
         injectSharedProviders(allProps, renderContext);
         allProps = new HashMap<>(resolvePropertyProviders(allProps, renderContext));
+        state.allProps = allProps;
 
-        var flashOut = resolveFlashData(allProps);
+        state.flashOut = resolveFlashData(allProps);
 
-        var onceMetadata = oncePropRegistry.metadata();
+        state.onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
-        if (isPartial && partialContext != null && partialContext.hasData()) {
-            var onlyData = partialContext.data();
+        if (isPartial && state.partialContext != null && state.partialContext.hasData()) {
+            var onlyData = state.partialContext.data();
             var filtered = new java.util.HashSet<>(exceptOnceKeys);
-            for (var entry : onceMetadata.entrySet()) {
+            for (var entry : state.onceMetadata.entrySet()) {
                 if (onlyData.contains(entry.getValue().prop())) {
                     filtered.remove(entry.getKey());
                 }
@@ -139,7 +156,7 @@ public class PageObjectBuilder {
             // Except-Once-Props too (parity with Spring's applyOnceProps
             // removal): the drain above only withholds registry values.
             var suppressed = new java.util.HashSet<>(exceptOnceKeys);
-            for (var entry : onceMetadata.entrySet()) {
+            for (var entry : state.onceMetadata.entrySet()) {
                 if (suppressed.contains(entry.getKey()) && entry.getValue() != null
                         && entry.getValue().prop() != null) {
                     allProps.remove(entry.getValue().prop());
@@ -157,9 +174,8 @@ public class PageObjectBuilder {
             }
         }
 
-        var url = resolveUrl(currentUrl());
-        var version = versionProvider.getVersion();
-
+        state.url = resolveUrl(currentUrl());
+        state.version = versionProvider.getVersion();
         var deferredGroups = sharedData.getDeferredPropGroups();
         var deferredKeys = deferredGroups.values().stream()
             .flatMap(List::stream)
@@ -172,10 +188,10 @@ public class PageObjectBuilder {
         if (isPartial) {
             for (var entry : sharedData.getOptionalProps().entrySet()) {
                 boolean selected;
-                if (partialContext.hasData()) {
-                    selected = partialContext.data().contains(entry.getKey());
-                } else if (partialContext.hasExcept()) {
-                    selected = !partialContext.except().contains(entry.getKey());
+                if (state.partialContext.hasData()) {
+                    selected = state.partialContext.data().contains(entry.getKey());
+                } else if (state.partialContext.hasExcept()) {
+                    selected = !state.partialContext.except().contains(entry.getKey());
                 } else {
                     selected = true;
                 }
@@ -185,54 +201,80 @@ public class PageObjectBuilder {
             }
         }
 
-        var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
+        state.deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
         var resetKeys = resetProps();
-        var mergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getMergePropKeys()), resetKeys);
-        var prependProps = pruneReset(new java.util.ArrayList<>(sharedData.getPrependPropKeys()), resetKeys);
-        var deepMergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getDeepMergePropKeys()), resetKeys);
-        var matchPropsOn = pruneReset(new java.util.ArrayList<>(sharedData.getMatchPropKeys()), resetKeys);
-        var onceProps = onceMetadata.isEmpty() ? null : onceMetadata;
-        var scrollProps = sharedData.hasScrollProps()
+        var mergeProps = MergeLabels.pruneReset(new java.util.ArrayList<>(sharedData.getMergePropKeys()), resetKeys);
+        var prependProps = MergeLabels.pruneReset(new java.util.ArrayList<>(sharedData.getPrependPropKeys()), resetKeys);
+        var deepMergeProps = MergeLabels.pruneReset(new java.util.ArrayList<>(sharedData.getDeepMergePropKeys()), resetKeys);
+        var matchPropsOn = MergeLabels.pruneReset(new java.util.ArrayList<>(sharedData.getMatchPropKeys()), resetKeys);
+        state.onceProps = state.onceMetadata.isEmpty() ? null : state.onceMetadata;
+        state.scrollProps = sharedData.hasScrollProps()
             ? buildScrollProps(mergeProps, prependProps, matchPropsOn)
             : null;
-        var mergePropsOut = mergeProps.isEmpty() ? null : mergeProps;
-        var prependPropsOut = prependProps.isEmpty() ? null : prependProps;
-        var deepMergePropsOut = deepMergeProps.isEmpty() ? null : java.util.Collections.unmodifiableList(deepMergeProps);
-        var matchPropsOnOut = matchPropsOn.isEmpty() ? null : matchPropsOn;
-        var sharedKeys = sharedData.getSharedKeys();
-        var meta = sharedData.hasMeta() ? sharedData.getMeta() : null;
+        state.mergePropsOut = mergeProps.isEmpty() ? null : mergeProps;
+        state.prependPropsOut = prependProps.isEmpty() ? null : prependProps;
+        state.deepMergePropsOut = deepMergeProps.isEmpty() ? null : java.util.Collections.unmodifiableList(deepMergeProps);
+        state.matchPropsOnOut = matchPropsOn.isEmpty() ? null : matchPropsOn;
+        state.sharedKeys = sharedData.getSharedKeys();
+        state.meta = sharedData.hasMeta() ? sharedData.getMeta() : null;
 
-        var encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
-        var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
-        var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
+        state.encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
+        state.clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
+        state.preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
+        return state;
+    }
 
-        var propsSample = metrics.startPropsResolution();
-        return resolveSupplierProps(allProps, partialContext)
-            .onTermination().invoke(() -> metrics.stopPropsResolution(propsSample, resolvedComponent))
-            .map(resolvedProps -> {
-            var rescuedProps = sharedData.hasRescuedProps()
-                ? sharedData.getActuallyRescuedProps()
-                : null;
+    /**
+     * Shared finish for {@link #build(String, Map, boolean)} and
+     * {@link #buildSync(String, Map, boolean)}: wraps the resolved props with
+     * head/flash/metadata and applies partial, always-prop and camelize stages.
+     */
+    private PageObject finish(Assembly state, Map<String, Object> resolvedProps) {
+        var rescuedProps = sharedData.hasRescuedProps()
+            ? sharedData.getActuallyRescuedProps()
+            : null;
 
-            var page = new PageObject(resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), url, version,
-                flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
-                onceProps, scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
-                encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
+        var page = new PageObject(state.resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), state.url, state.version,
+            state.flashOut, state.deferredProps, state.mergePropsOut, state.prependPropsOut, state.deepMergePropsOut, state.matchPropsOnOut,
+            state.onceProps, state.scrollProps, state.sharedKeys.isEmpty() ? null : state.sharedKeys, rescuedProps, state.meta,
+            state.encryptHistoryVal, state.clearHistoryVal, state.preserveFragmentVal);
 
-            page = expandDotNotation(page);
+        page = expandDotNotation(page);
 
-            if (partialContext != null) {
-                page = partialReloadProcessor.apply(page, partialContext);
-            }
+        if (state.partialContext != null) {
+            page = partialReloadProcessor.apply(page, state.partialContext);
+        }
 
-            page = unwrapAlwaysProps(page);
+        page = unwrapAlwaysProps(page);
 
-            if (config.camelizeProps()) {
-                page = camelizeProps(page);
-            }
+        if (config.camelizeProps()) {
+            page = camelizeProps(page);
+        }
 
-            return page;
-        });
+        return page;
+    }
+
+    /** Mutable assembly state shared by {@link #build} and {@link #buildSync}. */
+    static final class Assembly {
+        String resolvedComponent;
+        PartialReloadProcessor.PartialReloadContext partialContext;
+        Map<String, Object> allProps;
+        Map<String, Object> flashOut;
+        Map<String, OnceProp> onceMetadata;
+        String url;
+        String version;
+        Map<String, List<String>> deferredProps;
+        List<String> mergePropsOut;
+        List<String> prependPropsOut;
+        List<String> deepMergePropsOut;
+        List<String> matchPropsOnOut;
+        Map<String, OnceProp> onceProps;
+        Map<String, Map<String, Object>> scrollProps;
+        List<String> sharedKeys;
+        Map<String, Object> meta;
+        Boolean encryptHistoryVal;
+        Boolean clearHistoryVal;
+        Boolean preserveFragmentVal;
     }
 
     // ========================================================================
@@ -257,139 +299,18 @@ public class PageObjectBuilder {
      * Build a page object synchronously with explicit partial flag.
      */
     public PageObject buildSync(String component, Map<String, Object> props, boolean isPartial) {
-        var resolvedComponent = resolveComponent(component);
-        var partialContext = buildPartialReloadContext();
-        var renderContext = createRenderContext(resolvedComponent, isPartial, partialContext);
-
-        var allProps = new HashMap<String, Object>();
-        if (props != null && !props.isEmpty()) {
-            allProps.putAll(props);
-        } else {
-            allProps.putAll(instanceProps());
-        }
-        allProps.putAll(sharedData.getAll());
-        injectSharedProviders(allProps, renderContext);
-        allProps = new HashMap<>(resolvePropertyProviders(allProps, renderContext));
-
-        var flashOut = resolveFlashData(allProps);
-
-        var onceMetadata = oncePropRegistry.metadata();
-        var exceptOnceKeys = exceptOncePropKeys();
-        if (isPartial && partialContext != null && partialContext.hasData()) {
-            var onlyData = partialContext.data();
-            var filtered = new java.util.HashSet<>(exceptOnceKeys);
-            for (var entry : onceMetadata.entrySet()) {
-                if (onlyData.contains(entry.getValue().prop())) {
-                    filtered.remove(entry.getKey());
-                }
-            }
-            exceptOnceKeys = filtered;
-        }
-        if (oncePropRegistry.hasProps()) {
-            var onceValues = oncePropRegistry.drain(exceptOnceKeys);
-            allProps.putAll(mergePropProcessor.merge(allProps, onceValues));
-            // Same Except-Once suppression for eager values as the async path above.
-            var suppressed = new java.util.HashSet<>(exceptOnceKeys);
-            for (var entry : onceMetadata.entrySet()) {
-                if (suppressed.contains(entry.getKey()) && entry.getValue() != null
-                        && entry.getValue().prop() != null) {
-                    allProps.remove(entry.getValue().prop());
-                }
-            }
-        }
-
-        wrapScrollPropValues(allProps);
-
-        var errors = resolveErrors();
-        if (!allProps.containsKey("errors")) {
-            boolean hasErrors = errors instanceof Map<?, ?> errs && !errs.isEmpty();
-            if (config.alwaysIncludeErrors() || hasErrors) {
-                allProps.put("errors", AlwaysProp.of(errors));
-            }
-        }
-
-        var url = resolveUrl(currentUrl());
-        var version = versionProvider.getVersion();
-
-
-        var deferredGroups = sharedData.getDeferredPropGroups();
-        var deferredKeys = deferredGroups.values().stream()
-            .flatMap(List::stream)
-            .collect(java.util.stream.Collectors.toSet());
-
-        if (!isPartial) {
-            deferredKeys.forEach(allProps::remove);
-        }
-
-        if (isPartial) {
-            for (var entry : sharedData.getOptionalProps().entrySet()) {
-                boolean selected;
-                if (partialContext.hasData()) {
-                    selected = partialContext.data().contains(entry.getKey());
-                } else if (partialContext.hasExcept()) {
-                    selected = !partialContext.except().contains(entry.getKey());
-                } else {
-                    selected = true;
-                }
-                if (selected) {
-                    allProps.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-
-        var deferredProps = isPartial || deferredGroups.isEmpty() ? null : deferredGroups;
-        var resetKeys = resetProps();
-        var mergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getMergePropKeys()), resetKeys);
-        var prependProps = pruneReset(new java.util.ArrayList<>(sharedData.getPrependPropKeys()), resetKeys);
-        var deepMergeProps = pruneReset(new java.util.ArrayList<>(sharedData.getDeepMergePropKeys()), resetKeys);
-        var matchPropsOn = pruneReset(new java.util.ArrayList<>(sharedData.getMatchPropKeys()), resetKeys);
-        var onceProps = onceMetadata.isEmpty() ? null : onceMetadata;
-        var scrollProps = sharedData.hasScrollProps()
-            ? buildScrollProps(mergeProps, prependProps, matchPropsOn)
-            : null;
-        var mergePropsOut = mergeProps.isEmpty() ? null : mergeProps;
-        var prependPropsOut = prependProps.isEmpty() ? null : prependProps;
-        var deepMergePropsOut = deepMergeProps.isEmpty() ? null : java.util.Collections.unmodifiableList(deepMergeProps);
-        var matchPropsOnOut = matchPropsOn.isEmpty() ? null : matchPropsOn;
-        var sharedKeys = sharedData.getSharedKeys();
-        var meta = sharedData.hasMeta() ? sharedData.getMeta() : null;
-
-        var encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
-        var clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
-        var preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
+        var state = assemble(component, props, isPartial);
 
         // Check for async props that would need resolution
-        checkAsyncProps(allProps, partialContext);
+        checkAsyncProps(state.allProps, state.partialContext);
 
         // Use props as-is without resolving suppliers
         var propsSample = metrics.startPropsResolution();
-        var resolvedProps = stripSupplierProps(allProps);
-        metrics.stopPropsResolution(propsSample, resolvedComponent);
+        var resolvedProps = stripSupplierProps(state.allProps);
+        metrics.stopPropsResolution(propsSample, state.resolvedComponent);
+        return finish(state, resolvedProps);
 
-        var rescuedProps = sharedData.hasRescuedProps()
-            ? sharedData.getActuallyRescuedProps()
-            : null;
-
-        var page = new PageObject(resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), url, version,
-            flashOut, deferredProps, mergePropsOut, prependPropsOut, deepMergePropsOut, matchPropsOnOut,
-            onceProps, scrollProps, sharedKeys.isEmpty() ? null : sharedKeys, rescuedProps, meta,
-            encryptHistoryVal, clearHistoryVal, preserveFragmentVal);
-
-        page = expandDotNotation(page);
-
-        if (partialContext != null) {
-            page = partialReloadProcessor.apply(page, partialContext);
-        }
-
-        page = unwrapAlwaysProps(page);
-
-        if (config.camelizeProps()) {
-            page = camelizeProps(page);
-        }
-
-        return page;
     }
-
     private void checkAsyncProps(Map<String, Object> props, PartialReloadProcessor.PartialReloadContext partialContext) {
         var requestedKeys = requestedKeys(partialContext);
         for (var entry : props.entrySet()) {
@@ -558,28 +479,8 @@ public class PageObjectBuilder {
         var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
         var raw = (String) InertiaContextLocals.get(ctx, "inertia-reset");
-        if (raw == null || raw.isBlank()) return java.util.Set.of();
-        var keys = new HashSet<String>();
-        for (var part : raw.split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isEmpty()) keys.add(trimmed);
-        }
-        return keys;
-    }
-
-    /**
-     * Drop the reset keys from a merge metadata list. A reset of a parent
-     * prop ({@code contacts}) also prunes its dotted descendants
-     * ({@code contacts.data}) so the client replaces the whole subtree
-     * instead of merging it with the stale cached value.
-     */
-    private static List<String> pruneReset(List<String> keys, java.util.Set<String> resetKeys) {
-        if (resetKeys.isEmpty()) {
-            return keys;
-        }
-        keys.removeIf(key -> resetKeys.stream()
-            .anyMatch(reset -> key.equals(reset) || key.startsWith(reset + ".")));
-        return keys;
+        // CSV parsing lives in inertia-core (MergeLabels).
+        return io.github.diovamny.inertia.core.protocol.MergeLabels.resetSet(raw);
     }
 
     private void wrapScrollPropValues(Map<String, Object> allProps) {
@@ -627,23 +528,22 @@ public class PageObjectBuilder {
         if (ctx == null) return false;
         if (!InertiaContextLocals.isTrue(ctx, "inertia-request")) return false;
         var method = (String) InertiaContextLocals.get(ctx, "request-method");
-        if (!"GET".equalsIgnoreCase(method)) return false;
         var clientVersion = (String) InertiaContextLocals.get(ctx, "inertia-version");
         if (clientVersion == null || clientVersion.isBlank()) return false;
-        return !clientVersion.equals(versionProvider.getVersion());
+        // Staleness decided in inertia-core (VersionPolicy); prefetch is a
+        // first-class input here so a stale prefetch keeps its flash (no 409
+        // is ever emitted for prefetches).
+        return io.github.diovamny.inertia.core.protocol.VersionPolicy.isStale(
+            method, clientVersion, versionProvider.getVersion(),
+            InertiaContextLocals.isTrue(ctx, "inertia-prefetch"));
     }
 
     private java.util.Set<String> exceptOncePropKeys() {
         var ctx = Vertx.currentContext();
         if (ctx == null) return java.util.Set.of();
         var raw = (String) InertiaContextLocals.get(ctx, "inertia-except-once-props");
-        if (raw == null || raw.isBlank()) return java.util.Set.of();
-        var keys = new HashSet<String>();
-        for (var part : raw.split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isEmpty()) keys.add(trimmed);
-        }
-        return keys;
+        // CSV parsing lives in inertia-core (MergeLabels).
+        return io.github.diovamny.inertia.core.protocol.MergeLabels.resetSet(raw);
     }
 
     private void mergeFlashed(Map<String, Object> target, Map<String, Object> flashed) {
@@ -767,15 +667,8 @@ public class PageObjectBuilder {
      * @return a set of keys; never contains duplicates or blank entries
      */
     private static Set<String> splitToSet(String raw) {
-        if (raw == null || raw.isBlank()) return Set.of();
-        var keys = new LinkedHashSet<String>();
-        for (var part : raw.split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isEmpty()) {
-                keys.add(trimmed);
-            }
-        }
-        return keys;
+        // CSV parsing lives in inertia-core (PartialFilter).
+        return io.github.diovamny.inertia.core.protocol.PartialFilter.parseCsv(raw);
     }
 
     private PartialReloadProcessor.PartialReloadContext buildPartialReloadFromRequest(HttpServerRequest request) {
@@ -850,12 +743,10 @@ public class PageObjectBuilder {
     }
 
     private io.vertx.ext.web.Session session() {
-        var ctx = Vertx.currentContext();
-        if (ctx != null) {
-            var local = ctx.getLocal("inertia-routing-context");
-            if (local instanceof io.vertx.ext.web.RoutingContext rc) {
-                return rc.session();
-            }
+        // Hardened resolution (M7): never trust worker-thread ctx locals.
+        var rc = InertiaContextLocals.routingContext(Vertx.currentContext());
+        if (rc != null) {
+            return rc.session();
         }
         try {
             var routingContext = currentVertxRequest.getCurrent();

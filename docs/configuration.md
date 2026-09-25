@@ -9,7 +9,9 @@ each property.
 | `inertia.root-template` | `index.html` | ✅ | ✅ | Root HTML template resolved from the classpath (`templates/`). |
 | `inertia.template-cache-enabled` | `true` | ✅ | ✅ | Cache the root template in memory (disable in dev for live reload). |
 | `inertia.ssr-enabled` | `false` | ✅ | ✅ | Render pages through the Node.js SSR sidecar (see [ssr](ssr-setup.md)). |
-| `inertia.ssr-url` | Spring: `http://localhost:13714/render` · Quarkus: `http://localhost:13714` | ✅ | ✅ | SSR endpoint. |
+| `inertia.ssr-url` | Spring: `http://localhost:13714/render` · Quarkus: `http://localhost:13714` | ✅ | ✅ | SSR endpoint (validated at startup by `SsrEndpointPolicy`; see [ssr](ssr-setup.md#trust-boundary)). |
+| `inertia.ssr-remote-enabled` | `false` | ✅ | ✅ | Allow a remote (non-localhost) sidecar. Remote additionally requires `https` + `ssr-allowed-hosts`. |
+| `inertia.ssr-allowed-hosts` | _(empty)_ | ✅ | ✅ | Comma-separated allowlist of remote SSR hosts (host only, case-insensitive). |
 | `inertia.ssr-exclude-paths` | _(empty)_ | ✅ | ✅ | Comma-separated paths excluded from SSR (fall back to client rendering). |
 | `inertia.ssr-connect-timeout` | `5s` | ✅ | ✅ | SSR HTTP connect timeout. |
 | `inertia.ssr-read-timeout` | `10s` | ✅ | ✅ | SSR HTTP read timeout. |
@@ -22,6 +24,7 @@ each property.
 | `inertia.root-view` | _(unset)_ | ✅ | ✅ | Explicit view name for the root view; defaults to `root-template`. |
 | `inertia.flash-keys` | _(empty)_ | ✅ | ✅ | Comma-separated session keys flashed with every page. |
 | `inertia.always-include-errors` | `true` | ✅ | ✅ | Always inject validation `errors` into props (Laravel-compatible). |
+| `inertia.validation.all-errors` | `false` | ✅ | ✅ | Multi-message errors: `false` = legacy `Map<field,message>`; `true` = `Map<field,List<message>>` ordered arrays (Inertia `withAllErrors` parity) in flash, bags and Precognition 422. Explicit `withValidationErrors`/`withErrorMessages` always emit arrays. |
 | `inertia.error-status` | `500` | ✅ | ✅ | HTTP status used for error pages. |
 | `inertia.error-component` | `ErrorPage` | ✅ | ✅ | Component rendered for error pages. |
 | `inertia.error-details-enabled` | `false` | ✅ | ✅ | Include exception details in error responses (development only). |

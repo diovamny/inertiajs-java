@@ -8,7 +8,7 @@ Quarkus 3.39 JAX-RS adapter (`quarkus-inertia`), Java 21+.
 <dependency>
   <groupId>io.github.diovamny.quarkus.inertia</groupId>
   <artifactId>quarkus-inertia</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
 </dependency>
 <dependency>
   <groupId>io.quarkus</groupId>

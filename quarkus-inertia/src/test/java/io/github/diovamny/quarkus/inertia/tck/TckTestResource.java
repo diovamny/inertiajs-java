@@ -61,6 +61,12 @@ public class TckTestResource {
         return inertia.redirect("/tck/page");
     }
 
+    @POST
+    @Path("/submit-multi")
+    public Uni<Object> submitMulti() {
+        return inertia.back().withErrorMessages(Map.of("name", List.of("required", "must be valid")));
+    }
+
     @GET
     @Path("/redirect-me")
     public Uni<Object> redirectMe() {
@@ -136,6 +142,20 @@ public class TckTestResource {
             "items", List.of(Map.of("id", 1, "name", "One")),
             "tags", List.of("a", "b"),
             "config", Map.of("theme", "dark")));
+    }
+
+    @GET
+    @Path("/merge-nested")
+    public Uni<Object> mergeNested() {
+        var posts = Map.of("data", List.of(Map.of("id", 1, "title", "One")),
+            "pinned", List.of(Map.of("id", 9, "title", "Nine")));
+        var value = inertia.mergeable("posts", posts)
+            .append("data")
+            .prepend("pinned")
+            .matchOn("data.id")
+            .value();
+        var config = inertia.mergeable("config", Map.of("theme", "dark")).deep("theme").value();
+        return inertia.render("Tck/MergeNested", Map.of("posts", value, "config", config));
     }
 
     @GET

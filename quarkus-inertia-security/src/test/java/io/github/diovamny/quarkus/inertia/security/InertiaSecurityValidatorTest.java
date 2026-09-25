@@ -45,16 +45,16 @@ class InertiaSecurityValidatorTest {
             .thenReturn(Optional.empty());
         when(raw.getOptionalValue("quarkus.rest-csrf.require-form-url-encoded", Boolean.class))
             .thenReturn(Optional.of(false));
-        // Plain unit tests run with LaunchMode NORMAL, so the prod guardrail
-        // applies: a 32+ char signature key must be present to pass.
+        // Inertia SPAs use plain double-submit: no signature key (a signed
+        // cookie can never be echoed back by official clients).
         when(raw.getOptionalValue("quarkus.rest-csrf.token-signature-key", String.class))
-            .thenReturn(Optional.of("0123456789abcdef0123456789abcdef"));
+            .thenReturn(Optional.empty());
         var validator = new InertiaSecurityValidator(config, raw);
         assertDoesNotThrow(() -> validator.onStart(null));
     }
 
     @Test
-    void frameworkWithoutSignatureKeyFailsFast() {
+    void frameworkWithSignatureKeyWarnsButPasses() {
         var config = mock(InertiaConfig.class);
         when(config.securityMode()).thenReturn(Optional.of("framework"));
         var raw = mock(Config.class);
@@ -63,9 +63,9 @@ class InertiaSecurityValidatorTest {
         when(raw.getOptionalValue("quarkus.rest-csrf.require-form-url-encoded", Boolean.class))
             .thenReturn(Optional.of(false));
         when(raw.getOptionalValue("quarkus.rest-csrf.token-signature-key", String.class))
-            .thenReturn(Optional.empty());
+            .thenReturn(Optional.of("0123456789abcdef0123456789abcdef"));
         var validator = new InertiaSecurityValidator(config, raw);
-        assertThrows(IllegalStateException.class, () -> validator.onStart(null));
+        assertDoesNotThrow(() -> validator.onStart(null));
     }
 
     @Test

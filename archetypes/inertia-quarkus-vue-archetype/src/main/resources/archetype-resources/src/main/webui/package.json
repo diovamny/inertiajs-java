@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ssr": "vite build --ssr src/ssr.ts --outDir dist-ssr",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/vue3": "^3.7.0",
+    "@inertiajs/vue3": "3.7.1",
     "@inertiajs/vite": "^3.7.0",
     "vue": "^3.5.39"
   },

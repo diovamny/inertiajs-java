@@ -99,7 +99,7 @@ public class PingCrmSvelteApplication implements WebMvcConfigurer {
                 .authenticationEntryPoint(entryPoint)
                 .accessDeniedHandler(deniedHandler))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/assets/**", "/favicon.svg").permitAll()
+                .requestMatchers("/login", "/e2e-probe/**", "/assets/**", "/favicon.svg").permitAll()
                 .anyRequest().authenticated()
             );
         return http.build();

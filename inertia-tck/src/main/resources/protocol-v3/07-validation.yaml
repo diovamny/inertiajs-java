@@ -54,3 +54,31 @@
     jsonContains:
       # Field presence (not the message text: validator messages are locale-dependent).
       props.errors.loginForm: name
+
+- id: multi-message-submit-redirects-back
+  description: Explicit multi-message errors redirect back with flash (PROTO-053B).
+  request:
+    method: POST
+    path: /tck/submit-multi
+    headers:
+      X-Inertia: "true"
+      Referer: ${baseUri}/tck/form
+    contentType: application/json
+    body: '{}'
+  expect:
+    status: 303
+    locationEndsWith: /tck/form
+    withCsrfToken: true
+
+- id: multi-message-errors-are-ordered-arrays-on-reload
+  description: Each field carries its messages as an ordered array (runs after multi-message-submit-redirects-back).
+  request:
+    method: GET
+    path: /tck/page
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    json:
+      props.errors.name[0]: required
+      props.errors.name[1]: must be valid

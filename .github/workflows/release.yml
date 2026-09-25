@@ -38,17 +38,17 @@ jobs:
         # Checkstyle and SpotBugs (thresholds in the root pom). OWASP stays
         # in its conditional step below (needs NVD_API_KEY). Skip flags are
         # for local development only.
-        run: mvn clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=true -DskipDependencyCheck=true
+        run: ./mvnw clean verify -Pquality-gates -DskipStaticAnalysis=false -DskipMutationAnalysis=true -DskipDependencyCheck=true
 
-      - name: PIT mutation testing (report only)
-        # NOT blocking: the pitest 1.16.3 coverage minion aborts with
-        # UNKNOWN_ERROR on JDK 21 (reproduced on Linux CI and Windows, with
-        # and without JaCoCo, serial and parallel) before running a single
-        # mutant — a toolchain bug, not a code-quality signal. The report is
-        # still published for review. Follow-up: retry with pitest >= 1.17
-        # and/or an isolated argLine, then flip this step back to blocking.
-        continue-on-error: true
-        run: mvn verify -Pquality-gates -DskipStaticAnalysis=true -DskipMutationAnalysis=false -DskipDependencyCheck=true
+      - name: PIT mutation testing (blocking)
+        # Blocking since the P100-14 root causes were fixed and verified:
+        # explicit --add-opens for the coverage minion on JDK 17+ plus an
+        # aligned junit-platform-launcher on the minion classpath (it aborted
+        # with UNKNOWN_ERROR / "OutputDirectoryProvider not available"
+        # before). Verified 2026-09-24 on inertia-core: 82% line coverage,
+        # 70% mutation killed, thresholds 5%/20% green. Raises are follow-up
+        # work once Linux numbers exist per module.
+        run: ./mvnw verify -Pquality-gates -DskipStaticAnalysis=true -DskipMutationAnalysis=false -DskipDependencyCheck=true -Djacoco.skip=true
 
       - name: Diagnose Central server wiring (lengths only, values stay masked)
         # Prints whether the `central` server entry exists and the LENGTH of
@@ -106,15 +106,31 @@ jobs:
             --passphrase "$GPG_PASSPHRASE" --clearsign -o /dev/null
           echo "GPG signing setup OK"
 
+      - name: Require NVD_API_KEY on tags (fail-closed SCA)
+        # Releases must not skip dependency vulnerability scanning. On tag
+        # pushes the key is mandatory; manual dispatches (trials) may run
+        # without it but then skip the scan explicitly loud, never silently.
+        # NOTE: the secrets context is not allowed in `if:`, so the secret is
+        # mapped to env first and the condition reads env instead.
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              echo "::error::NVD_API_KEY is required for releases (fail-closed SCA, Dependency-Check 12.1.0)"
+              exit 1
+            fi
+            echo "NVD_API_KEY unset: OWASP scan will be skipped (non-tag trial run only)"
+          fi
+
       - name: OWASP Dependency Check
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
-        # NOTE: the secrets context is not allowed in `if:`, so the secret is
-        # mapped to env first and the condition reads env instead.
+        # The previous step guarantees the key exists on tags (fail-closed).
         if: ${{ env.NVD_API_KEY != '' }}
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: mvn verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
+        run: ./mvnw verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
 
       - name: Write Maven Central server credentials
         # actions/setup-java does not reliably leave a `central` server entry
@@ -160,13 +176,13 @@ jobs:
         # below is kept for explicitness but no longer switches the mode.
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=false
+        run: ./mvnw clean deploy -Prelease,archetypes -DskipTests -Dcentral.autoPublish=false
 
       - name: Generate aggregate SBOM (outside the parallel reactor)
         # makeAggregateBom is a reactor aggregator and must NOT run inside
         # the parallel deploy above (it deadlocks against central-publishing's
         # end-of-reactor wait). A single standalone invocation is safe.
-        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+        run: ./mvnw -B org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
 
       - name: Compute release artifact hashes (SLSA subjects)
         # Runs on tag pushes only; manual dispatches skip it, and the

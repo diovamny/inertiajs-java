@@ -46,17 +46,15 @@ public class OncePropRegistry {
     private final OnceEntryMap fallback = new OnceEntryMap();
 
     private OnceEntryMap getCurrent() {
-        var ctx = Vertx.currentContext();
-        if (ctx != null) {
-            var rc = ctx.getLocal("inertia-routing-context");
-            if (rc instanceof RoutingContext routingContext) {
-                var data = (OnceEntryMap) routingContext.get(ROUTING_CONTEXT_KEY);
-                if (data == null) {
-                    data = new OnceEntryMap();
-                    routingContext.put(ROUTING_CONTEXT_KEY, data);
-                }
-                return data;
+        // Hardened resolution (M7): never trust worker-thread ctx locals.
+        var resolved = InertiaContextLocals.routingContext(Vertx.currentContext());
+        if (resolved != null) {
+            var data = (OnceEntryMap) resolved.get(ROUTING_CONTEXT_KEY);
+            if (data == null) {
+                data = new OnceEntryMap();
+                resolved.put(ROUTING_CONTEXT_KEY, data);
             }
+            return data;
         }
         try {
             var routingContext = currentVertxRequest.getCurrent();
@@ -224,12 +222,10 @@ public class OncePropRegistry {
     }
 
     private Session getSession() {
-        var ctx = Vertx.currentContext();
-        if (ctx != null) {
-            var rc = ctx.getLocal("inertia-routing-context");
-            if (rc instanceof RoutingContext routingContext) {
-                return routingContext.session();
-            }
+        // Hardened resolution (M7): never trust worker-thread ctx locals.
+        var rc = InertiaContextLocals.routingContext(Vertx.currentContext());
+        if (rc != null) {
+            return rc.session();
         }
         try {
             var routingContext = currentVertxRequest.getCurrent();

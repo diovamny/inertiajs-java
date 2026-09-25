@@ -1,5 +1,14 @@
 # Migration
 
+## 0.0.4 → 0.0.5
+
+- v3-only reaffirmed: no `2.x` client row, no legacy `<div data-page>` mode.
+- New: `docs/COMPATIBILITY_POLICY.md`, `specs/inertia-v3-baseline-2026-09-23.yaml`,
+  split rows PROTO-053B/054B/057B (PARCIAL/IMPLEMENTADO at branch start, closed
+  inside 0.0.5). No breaking API in M0; M2/M3 migration notes land with code.
+- Build now via Maven Wrapper (`./mvnw` / `.\mvnw.cmd`); clean-clone CI on
+  Windows + Linux.
+
 ## 0.0.x → 0.0.4
 
 - **Breaking:** the root template `<div id="app">` no longer carries

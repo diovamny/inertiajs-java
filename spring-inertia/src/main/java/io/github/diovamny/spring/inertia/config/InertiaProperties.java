@@ -59,6 +59,16 @@ public class InertiaProperties {
     /** URL of the SSR server endpoint. */
     private String ssrUrl = "http://localhost:13714/render";
 
+    /**
+     * Allow a remote (non-localhost) SSR sidecar. Default {@code false}:
+     * localhost-only posture. Remote additionally requires {@code https} and
+     * {@code ssrAllowedHosts}.
+     */
+    private boolean ssrRemoteEnabled = false;
+
+    /** Allowlisted remote SSR hosts (compared case-insensitively, host only). */
+    private List<String> ssrAllowedHosts = List.of();
+
     /** Paths excluded from SSR. */
     private List<String> ssrExcludePaths = List.of();
 
@@ -283,6 +293,34 @@ public class InertiaProperties {
     /** Whether validation errors are always injected into the props. */
     private boolean alwaysIncludeErrors = true;
 
+    /** Validation semantics (prefix {@code inertia.validation}). */
+    private Validation validation = new Validation();
+
+    /** Validation semantics. */
+    public static class Validation {
+        /**
+         * Emit arrays of messages per field ({@code Map<field, List<message>>}).
+         * Default {@code false} preserves the legacy {@code Map<field, message>} wire.
+         */
+        private boolean allErrors = false;
+
+        public boolean isAllErrors() {
+            return allErrors;
+        }
+
+        public void setAllErrors(boolean allErrors) {
+            this.allErrors = allErrors;
+        }
+    }
+
+    public Validation getValidation() {
+        return validation;
+    }
+
+    public void setValidation(Validation validation) {
+        this.validation = validation;
+    }
+
     /** HTTP status used for error pages. */
     private int errorStatus = 500;
 
@@ -337,6 +375,22 @@ public class InertiaProperties {
 
     public void setSsrUrl(String ssrUrl) {
         this.ssrUrl = ssrUrl;
+    }
+
+    public boolean isSsrRemoteEnabled() {
+        return ssrRemoteEnabled;
+    }
+
+    public void setSsrRemoteEnabled(boolean ssrRemoteEnabled) {
+        this.ssrRemoteEnabled = ssrRemoteEnabled;
+    }
+
+    public List<String> getSsrAllowedHosts() {
+        return ssrAllowedHosts;
+    }
+
+    public void setSsrAllowedHosts(List<String> ssrAllowedHosts) {
+        this.ssrAllowedHosts = ssrAllowedHosts != null ? ssrAllowedHosts : List.of();
     }
 
     public List<String> getSsrExcludePaths() {

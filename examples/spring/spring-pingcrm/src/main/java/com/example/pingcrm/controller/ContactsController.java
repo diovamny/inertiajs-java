@@ -6,6 +6,7 @@ import java.util.Map;
 import jakarta.validation.Validator;
 
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -25,7 +26,7 @@ import com.example.pingcrm.service.ContactService;
 import com.example.pingcrm.service.OrganizationService;
 import io.github.diovamny.spring.inertia.api.Inertia;
 
-@RestController
+@Controller
 public class ContactsController {
 
     private final Inertia inertia;

@@ -287,6 +287,27 @@ public interface InertiaProps {
      */
     void prepend(String key, Object value);
 
+    /**
+     * Start an explicit per-path merge plan (Inertia {@code append} parity).
+     *
+     * <pre>{@code
+     * inertia.mergeable("posts", posts).append("data").prepend("pinned").matchOn("data.id").value()
+     * }</pre>
+     *
+     * @param key   the prop key
+     * @param value the value
+     * @return bound builder; call {@code value()} to register and receive the value
+     */
+    io.github.diovamny.inertia.core.model.MergeableBuilder mergeable(String key, Object value);
+
+    /**
+     * Apply a prebuilt {@link io.github.diovamny.inertia.core.model.MergePlan}.
+     *
+     * @param plan the plan
+     * @return the plan value, so it can be returned from helpers
+     */
+    Object applyMergePlan(io.github.diovamny.inertia.core.model.MergePlan plan);
+
     // ---------------------------------------------------------------------
     // Scroll Props
     // ---------------------------------------------------------------------

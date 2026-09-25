@@ -1,0 +1,41 @@
+name: Reactive stress (nightly)
+
+# M7 stabilization profile for Quarkus Reactive Routes: repeats the
+# concurrency isolation suite (sessions/flash, CSRF, 303/409, bags,
+# once/deferred/partial/reset, nested merge) on a schedule and on demand.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  reactive-stress:
+    name: ReactiveStressTest + reactive TCK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - name: Run reactive stabilization suite via Maven Wrapper
+        run: ./mvnw -B -pl quarkus-inertia -am test -Dtest='ReactiveStressTest,TckReactiveTest,InertiaContextLocalsTest' -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false
+
+      - name: Upload stress evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: reactive-stress-reports
+          path: |
+            quarkus-inertia/target/surefire-reports/
+          if-no-files-found: ignore

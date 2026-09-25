@@ -35,17 +35,16 @@ public class SharedDataRegistry {
     Instance<RoutingContext> routingContext;
 
     private SharedDataRegistry getCurrent() {
-        var ctx = Vertx.currentContext();
-        if (ctx != null) {
-            var rc = ctx.getLocal("inertia-routing-context");
-            if (rc instanceof RoutingContext routingContext) {
-                var data = (SharedDataRegistry) routingContext.get(ROUTING_CONTEXT_KEY);
-                if (data == null) {
-                    data = new SharedDataRegistry();
-                    routingContext.put(ROUTING_CONTEXT_KEY, data);
-                }
-                return data;
+        // Hardened resolution (M7): never trust worker-thread ctx locals.
+        var resolved = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals
+            .routingContext(Vertx.currentContext());
+        if (resolved != null) {
+            var data = (SharedDataRegistry) resolved.get(ROUTING_CONTEXT_KEY);
+            if (data == null) {
+                data = new SharedDataRegistry();
+                resolved.put(ROUTING_CONTEXT_KEY, data);
             }
+            return data;
         }
         try {
             var routingContext = currentVertxRequest.getCurrent();

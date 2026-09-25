@@ -1,6 +1,5 @@
 package io.github.diovamny.quarkus.inertia.vertx;
 
-import java.util.HashMap;
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -55,11 +54,21 @@ public class InertiaVertxHandler {
     @Inject
     io.github.diovamny.quarkus.inertia.config.InertiaConfig config;
 
+    @Inject
+    io.github.diovamny.quarkus.inertia.protocol.RequestRoutingContext requestRoutingContext;
+
     void setup(@Observes Router router) {
         router.route().order(-1).handler(this::handle).failureHandler(this::handleFailure);
     }
 
     private void handle(RoutingContext rc) {
+        // Request-scoped holder first: it travels with the request's CDI
+        // context, so readers on any thread resolve this request's rc (M7).
+        try {
+            requestRoutingContext.setRoutingContext(rc);
+        } catch (Exception ignored) {
+            // No request context (should not happen on the event loop).
+        }
         var ctx = Vertx.currentContext();
         // Bind the routing context BEFORE extracting headers so every
         // InertiaContextLocals.put() mirrors into rc (request-scoped) instead
@@ -209,7 +218,7 @@ public class InertiaVertxHandler {
                     ctx, "inertia-precognition-validate-fields")
                 : null;
 
-        var errors = new HashMap<String, String>();
+        var bag = io.github.diovamny.inertia.core.model.ValidationErrors.builder();
         for (var violation : exception.getConstraintViolations()) {
             var propertyPath = violation.getPropertyPath().toString();
             var field = propertyPath.contains(".")
@@ -219,8 +228,10 @@ public class InertiaVertxHandler {
                     && !matchesValidateOnly(validateFields, field)) {
                 continue;
             }
-            errors.put(field, violation.getMessage());
+            bag.add(field, violation.getMessage());
         }
+        var allErrors = config != null && config.validationAllErrors();
+        var errors = bag.build().toWireMap(allErrors);
 
         var isPrecognition = isTrue(rc, ctx, "inertia-precognition");
         if (isPrecognition) {

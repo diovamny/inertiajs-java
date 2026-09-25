@@ -1,0 +1,85 @@
+# E2E compliance matrix — generated-source companion (release-0.0.5, P100-03).
+# Maps every E2E scenario to client x transport x fixture x Playwright spec.
+# 9 cells in 0.0.5: Vue/React/Svelte x Spring MVC / Quarkus REST / Quarkus Reactive.
+# Status ladder: NO_EVALUADO | PARCIAL | IMPLEMENTADO | TCK_VERIFICADO | E2E_VERIFICADO | NO_APLICA.
+# verified_cells lists proven client/transport cells. Single truth: a cell is
+# listed only with a green browser run on this branch (spec + demo pinned).
+# Fixtures: kitchen-sink (Vue, feature pages), pingcrm-* (login flows per
+# client), /e2e-probe pages in pingcrm-react/svelte (feature-matrix per
+# client), generated starters (SSR). Quarkus kitchen-sink serves
+# /features/navigation/* via Reactive Routes (@Route), forms/data via JAX-RS.
+version: 1
+updated: 2026-09-25
+clients: [vue, react, svelte]
+transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+fixtures:
+  vue: examples/spring+quarkus kitchen-sink (official @inertiajs/vue3 3.7.1)
+  react: examples/spring+quarkus pingcrm-react (official @inertiajs/react 3.7.1)
+  svelte: examples/spring+quarkus pingcrm-svelte (official @inertiajs/svelte 3.7.1)
+  ssr: generated spring/quarkus vue/react/svelte starters + node sidecar (3.7.1)
+scenarios:
+  - id: E2E-01-bootstrap
+    description: "v3 script JSON parses once, app mounts, zero console errors"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/pingcrm-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+  - id: E2E-02-navigation-version
+    description: "Inertia visit, Vary, 409 on stale version + correct reload"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+  - id: E2E-03-partials
+    description: "only/except/dot-paths/always/reset update only expected state"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+  - id: E2E-04-forms
+    description: "303 + flash, default/named bags, multi-message, Precognition"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/pingcrm-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+    notes: "M4b-01 closed: unsigned rest-csrf for cookie-echo SPAs; bags observed on both stacks + wrong-creds on all 6 pingcrm cells. Fase E: manual back().withErrors(...) now honors X-Inertia-Error-Bag on both stacks (ErrorBags + unit tests), proven by feature-matrix named-bag 15/15 x4"
+  - id: E2E-05-modern-props
+    description: "deferred/once/rescue/merge/append/prepend/deep-merge/matchOn/scroll"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+    notes: "Append observed on both stacks. Fase E: deferred exclusion+metadata, except-once omission + client retention, merge-append-dedup-by-id proven on React/Svelte x Spring/REST (15/15 x4); rescue/scroll client depth pending"
+  - id: E2E-06-instant-visits
+    description: "sharedProps persist/update/exclude/collision (PROTO-057B)"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+    notes: "Placeholder-with-sharedProps before 2s server response + server greeting; Quarkus Vue cell runs on Reactive Routes (@Route). Fase E: instant callback text <1.5s on React/Svelte x Spring/REST. Closure: /e2e-probe-rx reactive probes (React/Svelte) + JAX-RS rest-instant twin (Vue/REST) + reactive-contracts browser proof"
+  - id: E2E-07-redirects
+    description: "GET/POST redirects, external URL, preserved fragments"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/pingcrm-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+    notes: "Login navigation on all 6 pingcrm cells + redirect-back flash on Spring MVC and Reactive Routes. Fase E: redirect-back flash via /e2e-probe on React/Svelte x Spring/REST"
+  - id: E2E-08-upload
+    description: "Real multipart file input + error handling"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/feature-matrix.spec.ts (/e2e-probe)"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+  - id: E2E-09-ssr
+    description: "Sidecar HTML + hydration without mismatch + CSR fallback"
+    spec: "e2e/ssr-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO
+    notes: "Starter fixtures (Vue/React/Svelte 3.7.1): no-JS SSR proof + hydration + fallback on Spring MVC and Quarkus REST; protocol-exact root assembly (no nested #app). Reactive cells: same starters plus a documented /ssr-rx @Route twin per Quarkus starter (E2E_SSR_PATH), proving the identical SsrHandler/sidecar contract through Reactive Routes"
+  - id: E2E-10-security
+    description: "No script breakout, no SSR leak, CSRF contract denied as documented"
+    spec: "e2e/inertia-contracts.spec.ts + e2e/pingcrm-contracts.spec.ts"
+    cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
+    status: E2E_VERIFICADO

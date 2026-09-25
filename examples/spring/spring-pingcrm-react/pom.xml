@@ -7,20 +7,34 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>spring-pingcrm-react</artifactId>
     <packaging>jar</packaging>
     <name>Spring Boot PingCRM Demo (React)</name>
-    <description>PingCRM demo with Spring Boot, React 18, Inertia.js</description>
+    <description>PingCRM demo with Spring Boot, React 19, Inertia.js v3</description>
 
     <properties>
         <java.version>21</java.version>
+        <spring-boot.version>4.1.0</spring-boot.version>
+        <inertia.version>0.0.5</inertia.version>
         <frontend-maven-plugin.version>1.12.1</frontend-maven-plugin.version>
         <node.version>v24.21.0</node.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Boot -->
@@ -53,20 +67,20 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
 
         <!-- Inertia Spring -->
         <dependency>
             <groupId>io.github.diovamny.spring.inertia</groupId>
             <artifactId>spring-inertia</artifactId>
-            <version>${project.version}</version>
+            <version>${inertia.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.diovamny.spring.inertia</groupId>
             <artifactId>spring-inertia-security</artifactId>
-            <version>${project.version}</version>
+            <version>${inertia.version}</version>
         </dependency>
 
         <!-- Lombok -->
@@ -107,6 +121,14 @@
                         </exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage-demo</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Frontend build (React + Vite) -->
@@ -126,7 +148,7 @@
                         </goals>
                         <configuration>
                             <nodeVersion>${node.version}</nodeVersion>
-                            <npmVersion>10.2.4</npmVersion>
+                            <npmVersion>11.17.0</npmVersion>
                         </configuration>
                     </execution>
                     <execution>

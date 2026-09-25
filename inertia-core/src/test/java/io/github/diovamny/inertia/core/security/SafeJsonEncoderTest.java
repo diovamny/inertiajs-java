@@ -105,4 +105,13 @@ class SafeJsonEncoderTest {
     void handlesNullInput() {
         assertEquals("", SafeJsonEncoder.encodeForScript(null));
     }
+
+    @Test
+    void escapesLeadingLessThanPerInertia371() {
+        // Parity with inertiajs/inertia v3.7.1 (#3253): no raw '<' may reach
+        // the initial page JSON, even at the start of a prop value.
+        var result = SafeJsonEncoder.encodeForScript("<div>hello</div>");
+        assertFalse(result.contains("<"));
+        assertTrue(result.startsWith("\\u003c"));
+    }
 }

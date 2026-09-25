@@ -41,6 +41,17 @@ public class InertiaConfigValidator {
         validateSecurity();
         validateCsrfRefreshPolicy(config.csrfRefreshPolicy());
         validateMaxPageBytes(config.maxPageBytes());
+        validateSsrEndpoint();
+    }
+
+    private void validateSsrEndpoint() {
+        if (!config.ssrEnabled()) {
+            return;
+        }
+        // Fail fast: insecure remote sidecars can never boot (M5).
+        io.github.diovamny.inertia.core.ssr.SsrEndpointPolicy.validate(
+            config.ssrUrl(), config.ssrRemoteEnabled(),
+            config.ssrAllowedHosts().orElse(java.util.List.of()));
     }
 
     private static void validateMaxPageBytes(long maxPageBytes) {

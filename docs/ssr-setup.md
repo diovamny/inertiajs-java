@@ -139,7 +139,7 @@ vite build --ssr resources/js/ssr.js --outDir bootstrap/ssr  # SSR bundle (Vue/R
 ```
 
 Point the adapter at the sidecar (`inertia.ssr-enabled=true`,
-`inertia.ssr-url=http://localhost:13714`) as described below.
+`inertia.ssr-url=http://localhost:13714/render`) as described below.
 
 ---
 
@@ -148,22 +148,26 @@ Point the adapter at the sidecar (`inertia.ssr-enabled=true`,
 In `application.properties` or `application.yml`:
 
 ```properties
-# Enable SSR
-inertia.ssr.enabled=true
+# Enable SSR (canonical hyphenated keys: dotted inertia.ssr.* does NOT bind
+# to these flat fields and is silently ignored — verified 2026-09-24)
+inertia.ssr-enabled=true
 
-# URL of the Node.js SSR sidecar
-inertia.ssr.url=http://localhost:13714
+# URL of the Node.js SSR sidecar (must include the /render path, as the
+# adapter posts to this URL verbatim)
+inertia.ssr-url=http://localhost:13714/render
 
-# Timeout for SSR requests (milliseconds)
-inertia.ssr.timeout=3000
+# Timeouts for SSR requests (durations)
+inertia.ssr-connect-timeout=5s
+inertia.ssr-read-timeout=10s
 ```
 
 ```yaml
+# Flat hyphenated keys under inertia (a nested ssr: block does NOT bind)
 inertia:
-  ssr:
-    enabled: true
-    url: http://localhost:13714
-    timeout: 3000
+  ssr-enabled: true
+  ssr-url: http://localhost:13714/render
+  ssr-connect-timeout: 5s
+  ssr-read-timeout: 10s
 ```
 
 ---
@@ -173,14 +177,15 @@ inertia:
 In `application.properties`:
 
 ```properties
-# Enable SSR
+# Enable SSR (canonical hyphenated keys)
 quarkus.inertia.ssr-enabled=true
 
-# URL of the Node.js SSR sidecar
-quarkus.inertia.ssr-url=http://localhost:13714
+# URL of the Node.js SSR sidecar (the adapter appends /render when missing)
+quarkus.inertia.ssr-url=http://localhost:13714/render
 
-# Timeout for SSR requests (milliseconds)
-quarkus.inertia.ssr-timeout=3000
+# Timeouts for SSR requests (durations; there is no ssr-timeout key)
+quarkus.inertia.ssr-connect-timeout=5s
+quarkus.inertia.ssr-read-timeout=10s
 ```
 
 ---
@@ -212,8 +217,8 @@ For Spring Boot, you can add a custom `HealthIndicator`:
 ```java
 @Component
 public class SsrHealthIndicator implements HealthIndicator {
-    @Value("${inertia.ssr.url:}") String ssrUrl;
-    @Value("${inertia.ssr.enabled:false}") boolean ssrEnabled;
+    @Value("${inertia.ssr-url:}") String ssrUrl;
+    @Value("${inertia.ssr-enabled:false}") boolean ssrEnabled;
 
     @Override
     public Health health() {
@@ -230,16 +235,45 @@ public class SsrHealthIndicator implements HealthIndicator {
 
 The Node.js sidecar is a **trust boundary**:
 
-- Bind it to `localhost` (or a Unix socket) — never expose it to the network.
-  It receives the full page object (including server props) and returns raw
-  HTML that the adapter injects without sanitization.
+- **Local by default.** Bind it to `localhost` — never expose it to the
+  network. It receives the full page object (including server props) and
+  returns raw HTML that the adapter injects without sanitization.
+  `http://localhost`, `http://127.0.0.1` and `http://[::1]` boot without
+  extra config.
+- **Remote requires explicit opt-in (validated at startup, M5).** A
+  non-local `inertia.ssr-url` boots only when **all** hold:
+  `inertia.ssr-remote-enabled=true` **and** an `https` URL **and** the host
+  listed in `inertia.ssr-allowed-hosts`. Anything else fails fast with a
+  safe message (scheme/host/port only — never tokens or payloads).
+  URLs with credentials (`user:pass@`) or fragments never boot. Example:
+
+  ```properties
+  inertia.ssr-enabled=true
+  inertia.ssr-url=https://ssr.internal.example.com/render
+  inertia.ssr-remote-enabled=true
+  inertia.ssr-allowed-hosts=ssr.internal.example.com
+  ```
+
+- **No redirect-following.** Both HTTP clients disable redirects: any `3xx`
+  from the sidecar is a CSR fallback, never a new request to a
+  non-validated host.
 - Connection/read timeouts apply (`inertia.ssr-connect-timeout`,
-  `inertia.ssr-read-timeout`); failures fall back to client-side rendering
-  and are logged server-side as structured `unreachable / timeout /
-  error-status / unknown` events — never rendered to the client.
+  `inertia.ssr-read-timeout`); circuit breaker + CSR fallback stay intact —
+  validation never turns an ordinary sidecar outage into a `500`.
+  Failures are logged server-side as structured `unreachable / timeout /
+  error-status / unknown` events with scheme/host/port only — never
+  rendered to the client.
 - Cap the sidecar response size at the reverse proxy; on the adapter side,
   `inertia.max-page-bytes` bounds every served page with `413`.
-- Never point `inertia.ssr-url` at a remote host without explicit validation.
+
+## First-render note (Quarkus)
+
+The first SSR render after boot may log a one-off Vert.x
+`BlockedThreadChecker` warning (~2 s) while the JVM warms up serialization
+classes on the event-loop thread. It is self-healing: subsequent renders are
+fully non-blocking (verified: 1 warning, then 3 consecutive renders clean).
+No action needed; pre-warming the sidecar (`curl` one render after deploy)
+moves the warmup out of the first user request.
 
 ## Production Tips
 

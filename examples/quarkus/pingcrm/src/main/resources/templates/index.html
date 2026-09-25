@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="/assets/app.css" />
 </head>
 <body class="font-sans leading-none text-gray-700 antialiased">
-    <div id="app" {#if ssrBody}data-server-rendered="true"{/if}>{#if ssrBody}{ssrBody}{/if}</div>
-    <script type="application/json" data-page="app">{dataPage}</script>
+    {#if ssrBody}{ssrBody}{#else}<div id="app" ></div>
+    <script type="application/json" data-page="app">{dataPage}</script>{/if}
     <script src="/assets/app.js"></script>
 </body>
 </html>

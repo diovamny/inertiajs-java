@@ -8,7 +8,7 @@ Spring Boot 4.1 + Spring MVC adapter (`spring-inertia`), Java 21+.
 <dependency>
   <groupId>io.github.diovamny.spring.inertia</groupId>
   <artifactId>spring-inertia</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
 </dependency>
 ```
 
@@ -44,4 +44,4 @@ answers `422`. Named bags via `X-Inertia-Error-Bag`.
 
 ## Configuration
 
-All 24 `inertia.*` settings: [configuration reference](https://github.com/diovamny/inertiajs-java/blob/release-0.0.4/docs/configuration.md).
+All 24 `inertia.*` settings: [configuration reference](https://github.com/diovamny/inertiajs-java/blob/release-0.0.5/docs/configuration.md).

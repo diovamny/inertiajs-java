@@ -163,7 +163,10 @@ public class SsrHandler {
                                 return;
                             }
                             var body = bodyAr.result().toString();
-                            if (resp.statusCode() >= 400) {
+                            if (resp.statusCode() >= 300) {
+                                // No redirect-following (M5): any 3xx/4xx/5xx
+                                // from the sidecar is a CSR fallback, never a
+                                // new request to a non-validated host.
                                 fail.accept(new IllegalStateException(
                                     "SSR server responded with " + resp.statusCode()));
                                 return;

@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ssr": "vite build --ssr src/ssr.ts --outDir dist-ssr",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/svelte": "^3.7.0",
+    "@inertiajs/svelte": "3.7.1",
     "svelte": "^5.46.4"
   },
   "devDependencies": {

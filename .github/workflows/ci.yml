@@ -41,6 +41,11 @@ jobs:
         # Fails when version.properties, poms, README, CHANGELOG or ROADMAP disagree.
         run: node scripts/check-versions.mjs
 
+      - name: Verify pinned official clients
+        # Fails unless every template + demo package.json declares exactly
+        # 3.7.1 and every lockfile resolves 3.7.1 (Fase A).
+        run: node scripts/check-client-versions.mjs
+
       - name: Verify generated compliance matrix
         # Regenerates docs/protocol-compatibility.md from the YAML source of
         # truth and fails on any diff (the markdown is a build artifact).
@@ -48,13 +53,49 @@ jobs:
           node scripts/generate-compatibility-matrix.mjs
           git diff --exit-code docs/protocol-compatibility.md
 
+      - name: Verify PIT exclusions cover all @QuarkusTest classes
+        # @QuarkusTest needs the QuarkusClassLoader and crashes PIT minions;
+        # every such class must match an excludedTestClasses pattern.
+        run: node scripts/check-pit-exclusions.mjs
+
       - name: Run Maven unit/integration tests
-        run: mvn clean test -T 1C
+        run: ./mvnw clean test -T 1C
 
       - name: Run quality gates
-        # Static analysis (Checkstyle/SpotBugs) executes and reports; OWASP stays
-        # skipped here (it needs NVD_API_KEY) and runs in the release workflow.
-        run: mvn verify -Pquality-gates -DskipDependencyCheck=true -DskipStaticAnalysis=false
+        # Static analysis (Checkstyle/SpotBugs/JaCoCo-check) executes and
+        # blocks; PIT stays skipped here (runs blocking in the release
+        # workflow); OWASP runs in the dedicated sca job below on pushes.
+        run: ./mvnw verify -Pquality-gates -DskipDependencyCheck=true -DskipStaticAnalysis=false
+
+  sca:
+    name: OWASP Dependency Check (fail-closed)
+    runs-on: ubuntu-latest
+    # Pushes to main only: PRs (especially forks) have no NVD_API_KEY, and
+    # releases re-scan on tags. Missing key on a push fails the job.
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Require NVD_API_KEY (fail-closed)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "::error::NVD_API_KEY is required for the SCA gate (fail-closed); set the repo secret"
+            exit 1
+          fi
+
+      - name: OWASP Dependency Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: ./mvnw verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
 
   examples:
     name: Demo smoke tests
@@ -76,13 +117,118 @@ jobs:
         # module (core, both adapters, both security integrations and the
         # TCK): the demos need the security artifacts and the adapters'
         # test classpath needs the TCK, none of which is published yet.
-        run: mvn -B -q -DskipTests install
+        run: ./mvnw -B -q -DskipTests install
 
       - name: Spring demo smoke
-        run: mvn clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-kitchen-sink -Pexamples
+        run: ./mvnw clean test -pl examples/spring/spring-pingcrm,examples/spring/spring-pingcrm-react,examples/spring/spring-pingcrm-svelte,examples/spring/spring-kitchen-sink -Pexamples
 
       - name: Quarkus demo smoke
-        run: mvn clean test -pl examples/quarkus/pingcrm,examples/quarkus/kitchen-sink -Pexamples
+        run: ./mvnw clean test -pl examples/quarkus/pingcrm,examples/quarkus/pingcrm-react,examples/quarkus/quarkus-pingcrm-svelte,examples/quarkus/kitchen-sink,examples/quarkus/demo-app -Pexamples
+
+  demo-visit:
+    name: Demo visit (${{ matrix.demo }})
+    runs-on: ubuntu-latest
+    needs: examples
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - demo: spring-pingcrm
+            module: examples/spring/spring-pingcrm
+            jar: spring-pingcrm-*.jar
+            port: 8080
+            path: /login
+            component: Auth/Login
+          - demo: spring-pingcrm-react
+            module: examples/spring/spring-pingcrm-react
+            jar: spring-pingcrm-react-*.jar
+            port: 8080
+            path: /login
+            component: Auth/Login
+          - demo: spring-pingcrm-svelte
+            module: examples/spring/spring-pingcrm-svelte
+            jar: spring-pingcrm-svelte-*.jar
+            port: 8181
+            path: /login
+            component: Auth/Login
+          - demo: spring-kitchen-sink
+            module: examples/spring/spring-kitchen-sink
+            jar: spring-kitchen-sink-*.jar
+            port: 8080
+            path: /login
+            component: Auth/Login
+          - demo: quarkus-demo-app
+            module: examples/quarkus/demo-app
+            jar: quarkus-app/quarkus-run.jar
+            port: 8080
+            path: /persons
+            component: Persons/Index
+          - demo: quarkus-kitchen-sink
+            module: examples/quarkus/kitchen-sink
+            jar: quarkus-app/quarkus-run.jar
+            port: 8081
+            path: /login
+            component: Auth/Login
+          - demo: quarkus-pingcrm
+            module: examples/quarkus/pingcrm
+            jar: quarkus-app/quarkus-run.jar
+            port: 8081
+            path: /login
+            component: Auth/Login
+          - demo: quarkus-pingcrm-react
+            module: examples/quarkus/pingcrm-react
+            jar: quarkus-app/quarkus-run.jar
+            port: 8080
+            path: /login
+            component: Auth/Login
+          - demo: quarkus-pingcrm-svelte
+            module: examples/quarkus/quarkus-pingcrm-svelte
+            jar: quarkus-app/quarkus-run.jar
+            port: 8082
+            path: /login
+            component: Auth/Login
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Package demo
+        # Boot with CWD = module dir: H2 file DBs (./data/…) and uploads
+        # resolve relative to CWD, and same-named DBs must not mix (Fase C).
+        run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
+
+      - name: Boot and certify visit (Fase C)
+        working-directory: ${{ matrix.module }}
+        run: |
+          JAR=$(ls target/${{ matrix.jar }} | grep -v '\.original$' | head -n 1)
+          echo "Starting $JAR"
+          nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/demo-visit.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/demo-visit.pid"
+          for i in $(seq 1 48); do
+            if curl -sf "http://localhost:${{ matrix.port }}${{ matrix.path }}" > /dev/null; then
+              echo "Demo is up"
+              break
+            fi
+            sleep 5
+          done
+          curl -sf "http://localhost:${{ matrix.port }}${{ matrix.path }}" | grep -q 'id="app"'
+          curl -sf -H 'X-Inertia: true' "http://localhost:${{ matrix.port }}${{ matrix.path }}" | grep -q '"component":"${{ matrix.component }}"'
+          echo "Visit certified: HTML shell + Inertia JSON ${{ matrix.component }}"
+          kill "$(cat $GITHUB_WORKSPACE/demo-visit.pid)" || true
+          rm -f "$GITHUB_WORKSPACE/demo-visit.pid"
+
+      - name: Upload demo log
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: demo-visit-${{ matrix.demo }}
+          path: demo-visit.log
+          if-no-files-found: ignore
 
   archetypes:
     name: Archetype ${{ matrix.archetype }}
@@ -94,16 +240,28 @@ jobs:
         include:
           - archetype: inertia-spring-vue-archetype
             framework-version: 4.1.0
+            starter-kind: spring
+            starter-jar: hello-inertia-*.jar
           - archetype: inertia-spring-react-archetype
             framework-version: 4.1.0
+            starter-kind: spring
+            starter-jar: hello-inertia-*.jar
           - archetype: inertia-spring-svelte-archetype
             framework-version: 4.1.0
+            starter-kind: spring
+            starter-jar: hello-inertia-*.jar
           - archetype: inertia-quarkus-vue-archetype
             framework-version: 3.39.2
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
           - archetype: inertia-quarkus-react-archetype
             framework-version: 3.39.2
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
           - archetype: inertia-quarkus-svelte-archetype
             framework-version: 3.39.2
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
     steps:
       - uses: actions/checkout@v5
 
@@ -120,27 +278,59 @@ jobs:
           node-version: 24.21.0
 
       - name: Install adapters and archetypes
-        run: mvn -B -q -DskipTests clean install -P archetypes
+        run: ./mvnw -B -q -DskipTests clean install -P archetypes
 
       - name: Generate starter from archetype
         run: >
-          mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.4
+          -DarchetypeVersion=0.0.5
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.4
+          -DinertiaAdapterVersion=0.0.5
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp
 
       - name: Build and test generated starter (Java + frontend)
-        run: mvn -B test
+        run: ./mvnw -B test
         working-directory: /tmp/hello-inertia
+
+      - name: Boot smoke + visit certification (Fase B)
+        # Proves the generated app (with explicit inertia-core) boots and
+        # serves the Welcome visit as HTML shell and Inertia JSON page.
+        # Starters use adapter-mode CSRF (no signature key needed).
+        working-directory: /tmp/hello-inertia
+        run: |
+          ./mvnw -B -q -DskipTests package
+          JAR=$(ls target/${{ matrix.starter-jar }} | grep -v '\.original$' | head -n 1)
+          echo "Starting $JAR"
+          nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/starter-app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/starter-app.pid"
+          for i in $(seq 1 48); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              echo "Starter is up"
+              break
+            fi
+            sleep 5
+          done
+          curl -sf http://localhost:8080/ | grep -q 'id="app"'
+          curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
+          echo "Starter serves HTML shell and Inertia JSON (inertia-core wired)"
+          kill "$(cat $GITHUB_WORKSPACE/starter-app.pid)" || true
+          rm -f "$GITHUB_WORKSPACE/starter-app.pid"
+
+      - name: Upload starter boot log
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: archetype-${{ matrix.archetype }}-boot
+          path: starter-app.log
+          if-no-files-found: ignore
 
       - name: Upload starter test reports
         if: failure()
@@ -157,10 +347,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: examples
     env:
-      # Test-only HMAC key: Quarkus fails fast in prod (mode=framework)
-      # without a 32+ char rest-csrf signature key. This value is not a
-      # secret; length is all the guardrail checks.
-      INERTIA_CSRF_HMAC_KEY: 0123456789abcdef0123456789abcdef
+      # E2E runs over plain http: Secure cookies would never be stored by the
+      # browser, so browser logins cannot complete. Production (https) keeps
+      # %prod.cookie-force-secure=true. No signature key: rest-csrf signed
+      # cookies cannot be echoed by official clients (M4b-01).
+      QUARKUS_REST_CSRF_COOKIE_FORCE_SECURE: "false"
     strategy:
       fail-fast: false
       matrix:
@@ -170,11 +361,73 @@ jobs:
             base-url: http://localhost:8080
             health-url: http://localhost:8080/actuator/health
             jar: spring-kitchen-sink-*.jar
+            spec: inertia-contracts.spec.ts
           - demo: quarkus
             module: examples/quarkus/kitchen-sink
             base-url: http://localhost:8081
             health-url: http://localhost:8081/q/health
             jar: quarkus-app/quarkus-run.jar
+            spec: inertia-contracts.spec.ts
+          - demo: spring-pingcrm
+            module: examples/spring/spring-pingcrm
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/actuator/health
+            jar: spring-pingcrm-*.jar
+            spec: pingcrm-contracts.spec.ts
+          - demo: spring-pingcrm-react
+            module: examples/spring/spring-pingcrm-react
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/actuator/health
+            jar: spring-pingcrm-react-*.jar
+            spec: pingcrm-contracts.spec.ts
+          - demo: spring-pingcrm-svelte
+            module: examples/spring/spring-pingcrm-svelte
+            base-url: http://localhost:8181
+            health-url: http://localhost:8181/actuator/health
+            jar: spring-pingcrm-svelte-*.jar
+            spec: pingcrm-contracts.spec.ts
+          - demo: quarkus-pingcrm
+            module: examples/quarkus/pingcrm
+            base-url: http://localhost:8081
+            health-url: http://localhost:8081/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: pingcrm-contracts.spec.ts
+          - demo: quarkus-pingcrm-react
+            module: examples/quarkus/pingcrm-react
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: pingcrm-contracts.spec.ts
+          - demo: quarkus-pingcrm-svelte
+            module: examples/quarkus/quarkus-pingcrm-svelte
+            base-url: http://localhost:8082
+            health-url: http://localhost:8082/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: pingcrm-contracts.spec.ts
+          - demo: matrix-spring-pingcrm-react
+            module: examples/spring/spring-pingcrm-react
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/actuator/health
+            jar: spring-pingcrm-react-*.jar
+            spec: feature-matrix.spec.ts
+          - demo: matrix-spring-pingcrm-svelte
+            module: examples/spring/spring-pingcrm-svelte
+            base-url: http://localhost:8181
+            health-url: http://localhost:8181/actuator/health
+            jar: spring-pingcrm-svelte-*.jar
+            spec: feature-matrix.spec.ts
+          - demo: matrix-quarkus-pingcrm-react
+            module: examples/quarkus/pingcrm-react
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: feature-matrix.spec.ts
+          - demo: matrix-quarkus-pingcrm-svelte
+            module: examples/quarkus/quarkus-pingcrm-svelte
+            base-url: http://localhost:8082
+            health-url: http://localhost:8082/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: feature-matrix.spec.ts
     steps:
       - uses: actions/checkout@v5
 
@@ -195,7 +448,7 @@ jobs:
         run: npm ci && npx playwright install --with-deps chromium
 
       - name: Package demo
-        run: mvn -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
+        run: ./mvnw -B -q -DskipTests package -pl ${{ matrix.module }} -Pexamples -am
 
       - name: Start demo
         working-directory: ${{ matrix.module }}
@@ -221,7 +474,7 @@ jobs:
         working-directory: e2e
         env:
           E2E_BASE_URL: ${{ matrix.base-url }}
-        run: npx playwright test --config playwright.config.ts --reporter=line
+        run: npx playwright test --config playwright.config.ts --reporter=line ${{ matrix.spec }}
 
       - name: Stop demo
         if: always()
@@ -239,4 +492,167 @@ jobs:
           path: |
             e2e/test-results/
             e2e-app.log
+          if-no-files-found: ignore
+
+  ssr-e2e:
+    name: SSR E2E (${{ matrix.archetype }})
+    runs-on: ubuntu-latest
+    needs: unit-and-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - archetype: inertia-spring-vue-archetype
+            framework-version: 4.1.0
+            starter-jar: hello-inertia-*.jar
+          - archetype: inertia-quarkus-vue-archetype
+            framework-version: 3.39.2
+            starter-jar: quarkus-app/quarkus-run.jar
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - name: Install Playwright
+        working-directory: e2e
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Install adapters and archetypes
+        run: ./mvnw -B -q -DskipTests clean install -P archetypes
+
+      - name: Generate starter from archetype
+        run: >
+          ./mvnw -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate
+          -DarchetypeCatalog=local
+          -DarchetypeGroupId=io.github.diovamny
+          -DarchetypeArtifactId=${{ matrix.archetype }}
+          -DarchetypeVersion=0.0.5
+          -DgroupId=com.acme
+          -DartifactId=hello-inertia
+          -Dpackage=com.acme.hello
+          -DappName="Hello Inertia"
+          -DinertiaAdapterVersion=0.0.5
+          -DjavaVersion=21
+          -DframeworkVersion=${{ matrix.framework-version }}
+        working-directory: /tmp
+
+      - name: Build client + SSR bundle
+        # NOTE: generated starters deliberately ship no package-lock.json, so
+        # `npm ci` cannot run here (EUSAGE). `npm install` resolves the pinned
+        # @inertiajs/* 3.7.1 range from the archetype template (verified
+        # 2026-09-24: resolves vue3/react/svelte 3.7.1).
+        working-directory: /tmp/hello-inertia/src/main/webui
+        run: npm install && npm run build && npm run build:ssr
+
+      - name: Package starter
+        working-directory: /tmp/hello-inertia
+        run: ./mvnw -B -q -DskipTests package
+
+      - name: Run SSR render + hydration specs
+        working-directory: e2e
+        env:
+          E2E_SSR_URL: http://localhost:8080
+        run: |
+          (cd /tmp/hello-inertia/src/main/webui && nohup node ssr-server.mjs > "$GITHUB_WORKSPACE/ssr-sidecar.log" 2>&1 & echo $! > "$GITHUB_WORKSPACE/ssr-sidecar.pid")
+          JAR=$(ls /tmp/hello-inertia/target/${{ matrix.starter-jar }} | grep -v '\.original$' | head -n 1)
+          INERTIA_SSR_ENABLED=true nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/ssr-app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/ssr-app.pid"
+          for i in $(seq 1 48); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              echo "Starter is up"
+              break
+            fi
+            sleep 5
+          done
+          npx playwright test --config playwright.config.ts --reporter=line ssr-contracts.spec.ts -g "server-rendered|hydrates"
+          kill "$(cat $GITHUB_WORKSPACE/ssr-app.pid)" "$(cat $GITHUB_WORKSPACE/ssr-sidecar.pid)" || true
+          rm -f "$GITHUB_WORKSPACE/ssr-app.pid" "$GITHUB_WORKSPACE/ssr-sidecar.pid"
+
+      - name: Run CSR fallback spec (sidecar down)
+        working-directory: e2e
+        env:
+          E2E_SSR_URL: http://localhost:8080
+        run: |
+          JAR=$(ls /tmp/hello-inertia/target/${{ matrix.starter-jar }} | grep -v '\.original$' | head -n 1)
+          INERTIA_SSR_ENABLED=true nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/ssr-fallback.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/ssr-fallback.pid"
+          for i in $(seq 1 48); do
+            if curl -sf http://localhost:8080/ > /dev/null; then
+              echo "Starter is up"
+              break
+            fi
+            sleep 5
+          done
+          npx playwright test --config playwright.config.ts --reporter=line ssr-contracts.spec.ts -g "fallback"
+          kill "$(cat $GITHUB_WORKSPACE/ssr-fallback.pid)" || true
+          rm -f "$GITHUB_WORKSPACE/ssr-fallback.pid"
+
+      - name: Upload SSR evidence
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ssr-e2e-${{ matrix.archetype }}-evidence
+          path: |
+            e2e/test-results/
+            ssr-sidecar.log
+            ssr-app.log
+            ssr-fallback.log
+          if-no-files-found: ignore
+
+  clean-checkout:
+    name: Clean checkout (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Verify versions + matrices (no Maven needed)
+        run: |
+          node scripts/check-versions.mjs
+          node scripts/generate-compatibility-matrix.mjs
+          git diff --exit-code docs/protocol-compatibility.md
+          node scripts/check-conformance-matrix.mjs
+
+      - name: Unit/integration via Maven Wrapper (no global Maven)
+        run: ./mvnw -B clean test -T 1C
+        shell: bash
+
+      - name: Upload Surefire evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: clean-checkout-${{ matrix.os }}-surefire
+          path: |
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
           if-no-files-found: ignore

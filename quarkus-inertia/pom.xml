@@ -8,7 +8,7 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.4</version>
+        <version>0.0.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -21,6 +21,15 @@
 
     <properties>
         <surefire.version>3.5.2</surefire.version>
+        <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 58.8%). -->
+        <jacoco.line.minimum>0.55</jacoco.line.minimum>
+        <!-- PIT floors, calibrated 2026-09-25 (measured 39% line, 28% kill;
+             @QuarkusTest integration tests cannot run in minions). -->
+        <pit.mutation.minimum>20</pit.mutation.minimum>
+        <pit.coverage.minimum>30</pit.coverage.minimum>
+        <!-- Quarkus BOM uses JUnit 6: the PIT minion launcher must match
+             the engine line (1.13.4 crashes discovery on 6.x). -->
+        <junit-platform.version>6.1.3</junit-platform.version>
     </properties>
 
     <dependencies>

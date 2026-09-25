@@ -55,6 +55,27 @@ public interface InertiaConfig {
     String ssrUrl();
 
     /**
+     * Allow a remote (non-localhost) SSR sidecar. Default {@code false}:
+     * localhost-only posture. Remote additionally requires {@code https} and
+     * {@code ssr.allowed-hosts}.
+     * <p>Property: {@code inertia.ssr.remote-enabled}.</p>
+     *
+     * @return {@code true} to allow remote sidecars, default {@code false}
+     */
+    @WithName("ssr-remote-enabled")
+    @WithDefault("false")
+    boolean ssrRemoteEnabled();
+
+    /**
+     * Allowlisted remote SSR hosts (compared case-insensitively, host only).
+     * <p>Property: {@code inertia.ssr.allowed-hosts} (comma separated).</p>
+     *
+     * @return the allowed hosts, empty when unset
+     */
+    @WithName("ssr-allowed-hosts")
+    java.util.Optional<java.util.List<String>> ssrAllowedHosts();
+
+    /**
      * Paths excluded from server-side rendering; those requests fall back
      * to the client-side root template.
      * <p>Property: {@code inertia.ssr-exclude-paths} (comma separated).</p>
@@ -439,6 +460,17 @@ public interface InertiaConfig {
      */
     @WithDefault("true")
     boolean alwaysIncludeErrors();
+
+    /**
+     * Emit arrays of messages per field ({@code Map<field, List<message>>}).
+     * Default {@code false} preserves the legacy {@code Map<field, message>} wire.
+     * <p>Property: {@code inertia.validation.all-errors}.</p>
+     *
+     * @return {@code true} for multi-message arrays, default {@code false}
+     */
+    @WithName("validation.all-errors")
+    @WithDefault("false")
+    boolean validationAllErrors();
 
     /**
      * HTTP status used for Inertia error pages when an unhandled exception

@@ -635,6 +635,33 @@ public class InertiaImpl implements Inertia {
     }
 
     @Override
+    public io.github.diovamny.inertia.core.model.MergeableBuilder mergeable(String key, Object value) {
+        return io.github.diovamny.inertia.core.model.MergeableBuilder.of(key, value, this::applyMergePlan);
+    }
+
+    @Override
+    public Object applyMergePlan(io.github.diovamny.inertia.core.model.MergePlan plan) {
+        if (plan == null) {
+            throw new IllegalArgumentException("MergePlan must not be null");
+        }
+        for (var path : plan.qualifiedMergePaths()) {
+            sharedData.addMergePropKey(path);
+        }
+        for (var path : plan.qualifiedPrependPaths()) {
+            sharedData.addMergePropKey(path);
+            sharedData.addPrependPropKey(path);
+        }
+        for (var path : plan.qualifiedDeepMergePaths()) {
+            sharedData.addMergePropKey(path);
+            sharedData.addDeepMergePropKey(path);
+        }
+        for (var path : plan.qualifiedMatchPaths()) {
+            sharedData.addMatchPropKey(path);
+        }
+        return plan.value();
+    }
+
+    @Override
     public void scroll(String key, Map<String, Object> metadata) {
         sharedData.addScrollProp(key, metadata);
     }
@@ -729,18 +756,11 @@ public class InertiaImpl implements Inertia {
     }
 
     private io.vertx.ext.web.RoutingContext resolveRoutingContext() {
-        var ctx = io.vertx.core.Vertx.currentContext();
-        if (ctx != null) {
-            var rc = io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.routingContext(ctx);
-            if (rc != null) {
-                return rc;
-            }
-            var local = ctx.getLocal("inertia-routing-context");
-            if (local instanceof io.vertx.ext.web.RoutingContext fallback) {
-                return fallback;
-            }
-        }
-        return null;
+        // Hardened resolution (M7): the helper never trusts worker-thread ctx
+        // locals, so no raw ctx.getLocal fallback here (it could return a
+        // concurrent request's routing context).
+        return io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals
+            .routingContext(io.vertx.core.Vertx.currentContext());
     }
 
     private io.vertx.ext.web.Session session() {

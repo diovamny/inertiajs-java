@@ -138,12 +138,13 @@ public class PageObjectBuilder {
         InertiaRequestContext.set(CONTEXT_PAGE_VERSION, version);
         var clientVersion = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_VERSION);
         var isPrefetch = "true".equals(InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PREFETCH));
+        // Staleness decided in inertia-core (VersionPolicy).
         InertiaRequestContext.set(CONTEXT_VERSION_MISMATCH,
-            !isPrefetch
-                && "GET".equalsIgnoreCase(InertiaRequestContext.method())
-                && clientVersion != null
-                && version != null
-                && !version.equals(String.valueOf(clientVersion)));
+            io.github.diovamny.inertia.core.protocol.VersionPolicy.isStale(
+                InertiaRequestContext.method(),
+                clientVersion == null ? null : String.valueOf(clientVersion),
+                version,
+                isPrefetch));
 
         var flash = resolveFlashData(merged);
 
@@ -548,17 +549,8 @@ public class PageObjectBuilder {
 
     private java.util.Set<String> resetKeys() {
         var value = InertiaRequestContext.get(InertiaHeaderExtractor.CONTEXT_PARTIAL_RESET);
-        if (value == null) {
-            return java.util.Set.of();
-        }
-        var keys = new java.util.HashSet<String>();
-        for (var part : String.valueOf(value).split(",")) {
-            var trimmed = part.trim();
-            if (!trimmed.isBlank()) {
-                keys.add(trimmed);
-            }
-        }
-        return keys;
+        return io.github.diovamny.inertia.core.protocol.MergeLabels.resetSet(
+            value == null ? null : String.valueOf(value));
     }
 
     /**
@@ -568,12 +560,8 @@ public class PageObjectBuilder {
      * instead of merging it with the stale cached value.
      */
     private static List<String> pruneReset(List<String> keys, java.util.Set<String> resetKeys) {
-        if (resetKeys.isEmpty()) {
-            return keys;
-        }
-        return keys.stream()
-            .filter(key -> resetKeys.stream().noneMatch(reset -> key.equals(reset) || key.startsWith(reset + ".")))
-            .toList();
+        // Reset pruning lives in inertia-core (MergeLabels).
+        return io.github.diovamny.inertia.core.protocol.MergeLabels.pruneReset(keys, resetKeys);
     }
 
     @SuppressWarnings("unchecked")

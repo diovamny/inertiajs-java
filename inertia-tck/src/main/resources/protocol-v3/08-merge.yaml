@@ -50,3 +50,39 @@
       props.items[0].id: 1
     jsonContains:
       mergeProps: items
+
+- id: merge-nested-append-prepend-metadata
+  description: Explicit append()/prepend() with nested routes emit dotted metadata (PROTO-054B).
+  request:
+    method: GET
+    path: /tck/merge-nested
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/MergeNested
+    json:
+      props.posts.data[0].id: 1
+      props.config.theme: dark
+    jsonContains:
+      mergeProps: posts.data
+      prependProps: posts.pinned
+      deepMergeProps: config.theme
+      matchPropsOn: posts.data.id
+
+- id: merge-nested-reset-clears-child-path
+  description: X-Inertia-Reset of a child path drops it from merge metadata only.
+  request:
+    method: GET
+    path: /tck/merge-nested
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Reset: posts.data
+  expect:
+    status: 200
+    jsonMissing:
+      mergeProps: posts.data
+      matchPropsOn: posts.data.id
+    jsonContains:
+      prependProps: posts.pinned
+      deepMergeProps: config.theme
