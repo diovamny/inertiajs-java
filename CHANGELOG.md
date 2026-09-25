@@ -60,8 +60,7 @@
   adapters, +36 core tests); documented divergences kept per adapter.
   Full evidence: 761 unit/integration + 242 demo smoke + 181 Playwright
   checks green on final code (4 intentional skips of the reactive-only CSRF
-  test on the classic base) — see
-  `docs/audits/AUDITORIA_CIERRE_RELEASE_0.0.5_2026-09-25.md`.
+  test on the classic base; full evidence in the unpublished closing audit).
 
 ## 0.0.4
 
