@@ -44,7 +44,11 @@
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.version>3.39.2</quarkus.version>
-    <spring-boot.version>4.1.0</spring-boot.version>
+    <spring-boot.version>4.1.1</spring-boot.version>
+    <!-- NOTE: do NOT use <tomcat.version> here: with BOM *import* scope
+         (this project has no Boot parent) the property does not propagate
+         into spring-boot-dependencies (verified: managed stays 11.0.24).
+         Tomcat is pinned explicitly below instead. -->
         <central-publishing.version>0.11.0</central-publishing.version>
     <!-- Set -Dcentral.autoPublish=false for upload-only trial runs. -->
     <central.autoPublish>true</central.autoPublish>
@@ -54,6 +58,12 @@
          modules. Demos/archetypes opt out explicitly (own smoke suites). -->
     <jacoco.line.minimum>0.50</jacoco.line.minimum>
     <pitest.version>1.17.4</pitest.version>
+    <!-- Per-module PIT floors for the blocking gate (calibrated 2026-09-25
+         from full runs; default guards new modules). Quarkus modules score
+         lower because @QuarkusTest integration tests cannot run in minions
+         (see excludedTestClasses); JaCoCo holds their line coverage. -->
+    <pit.mutation.minimum>5</pit.mutation.minimum>
+    <pit.coverage.minimum>20</pit.coverage.minimum>
     <!-- Must match the junit-platform-engine version on the test classpath
          (Spring Boot BOM); the PIT minion crashes discovery otherwise. -->
     <junit-platform.version>1.13.4</junit-platform.version>
@@ -79,6 +89,40 @@
         <version>${spring-boot.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- CVE-2026-65xxx Tomcat series: explicit pins because the
+           ${tomcat.version} property override does not propagate into the
+           imported Boot BOM in this build (verified: managed stays 11.0.24).
+           Aligned to 11.0.26 (first fixed line per NVD). -->
+      <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-core</artifactId>
+        <version>11.0.26</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-el</artifactId>
+        <version>11.0.26</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-websocket</artifactId>
+        <version>11.0.26</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tomcat</groupId>
+        <artifactId>tomcat-annotations-api</artifactId>
+        <version>11.0.26</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tomcat</groupId>
+        <artifactId>tomcat-jdbc</artifactId>
+        <version>11.0.26</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tomcat</groupId>
+        <artifactId>tomcat-jsp-api</artifactId>
+        <version>11.0.26</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -270,12 +314,23 @@
               <targetTests>
                 <param>io.github.diovamny.*Test</param>
               </targetTests>
+              <!-- @QuarkusTest classes cannot run inside PIT minions (they
+                   require the QuarkusClassLoader). Suffix *QuarkusTest is
+                   excluded by convention; the rest is listed explicitly.
+                   scripts/check-pit-exclusions.mjs enforces the rule. -->
               <excludedTestClasses>
                 <param>io.github.diovamny.*QuarkusTest</param>
                 <param>io.github.diovamny.quarkus.inertia.reactive.ReactiveRouteInertiaTest</param>
+                <param>io.github.diovamny.quarkus.inertia.api.InertiaIspInjectionTest</param>
+                <param>io.github.diovamny.quarkus.inertia.tck.ReactiveStressTest</param>
+                <param>io.github.diovamny.quarkus.inertia.tck.TckReactiveTest</param>
+                <param>io.github.diovamny.quarkus.inertia.security.InertiaQuarkusSecurityTest</param>
+                <param>io.github.diovamny.quarkus.inertia.security.InertiaSecuritySuiteTest</param>
+                <param>io.github.diovamny.quarkus.inertia.csrf.CsrfRefreshPolicyTest</param>
+                <param>io.github.diovamny.quarkus.inertia.security.OversizedPageProfileTest</param>
               </excludedTestClasses>
-              <mutationThreshold>5</mutationThreshold>
-              <coverageThreshold>20</coverageThreshold>
+              <mutationThreshold>${pit.mutation.minimum}</mutationThreshold>
+              <coverageThreshold>${pit.coverage.minimum}</coverageThreshold>
               <failWhenNoMutationsFound>false</failWhenNoMutationsFound>
               <threads>2</threads>
               <!-- P100-14: the coverage minion needs explicit opens on JDK 17+
@@ -345,6 +400,11 @@
             <configuration>
               <skip>${skipDependencyCheck}</skip>
               <failBuildOnCVSS>8</failBuildOnCVSS>
+              <!-- Documented, expiring suppressions only (see the file).
+                   Root-anchored: the check runs per module. -->
+              <suppressionFiles>
+                <suppressionFile>${maven.multiModuleProjectDirectory}/config/dependency-check-suppressions.xml</suppressionFile>
+              </suppressionFiles>
               <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
               <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
               <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>

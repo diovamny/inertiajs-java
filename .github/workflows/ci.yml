@@ -53,6 +53,11 @@ jobs:
           node scripts/generate-compatibility-matrix.mjs
           git diff --exit-code docs/protocol-compatibility.md
 
+      - name: Verify PIT exclusions cover all @QuarkusTest classes
+        # @QuarkusTest needs the QuarkusClassLoader and crashes PIT minions;
+        # every such class must match an excludedTestClasses pattern.
+        run: node scripts/check-pit-exclusions.mjs
+
       - name: Run Maven unit/integration tests
         run: ./mvnw clean test -T 1C
 

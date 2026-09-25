@@ -78,3 +78,47 @@ Regenerate is not required: starters are plain Maven projects. To pick up a
 new adapter, update the `inertia-adapter.version` property; to pick up new
 starter files (e.g. `Dockerfile` improvements), compare with a fresh
 generation and copy what you need.
+
+## From Laravel / Rails (PHP/Ruby Inertia adapters)
+
+The frontend does not change: keep your pages/components and the
+`@inertiajs/*@3.7.1` client. Only the server side is rewritten. Generate a
+starter and port controllers one by one (both adapters verified with the
+SSR contract suite on 2026-09-25: server-render + hydrate + CSR fallback).
+
+```bash
+# Spring Boot 4.1.x (use -DframeworkVersion=4.1.0) or Quarkus 3.39.2;
+# svelte/vue archetypes exist with the same properties.
+mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate \
+  -DarchetypeCatalog=local \
+  -DarchetypeGroupId=io.github.diovamny \
+  -DarchetypeArtifactId=inertia-spring-react-archetype -DarchetypeVersion=0.0.5 \
+  -DgroupId=com.acme -DartifactId=hello-inertia -Dpackage=com.acme.hello \
+  -DappName="Hello Inertia" -DinertiaAdapterVersion=0.0.5 \
+  -DjavaVersion=21 -DframeworkVersion=4.1.0
+cd hello-inertia/src/main/webui && npm install && npm run build && npm run build:ssr
+```
+
+| Laravel / Rails | Spring (`@Inject Inertia inertia`) | Quarkus (JAX-RS, `Uni<Object>`) |
+|---|---|---|
+| `Inertia::render('Welcome', [...])` / `render inertia: 'Welcome', props:` | `inertia.render("Welcome", Map.of(...))` | same call, return the `Uni` |
+| `Inertia::share('key', $v)` in a ServiceProvider / `inertia_share` | `inertia.share("key", value)`, `share(map)` or `share(provider)` | same |
+| `withErrors(...)` / validation errors + bags | `back().withErrors(...)` / `withValidationErrors(...)` / `withErrorMessages(...)`; `X-Inertia-Error-Bag` honored exactly like the exception path | same |
+| `Inertia::version($v)` / asset versioning | version provider SPI (default manifest/hash chain) | same |
+| `Route::get(...)` closures returning Inertia responses | `@Controller` methods returning `inertia.render(...)` | `@Path` resource methods; Reactive Routes `@Route` needs `@Blocking` + the `quarkus-reactive-routes` dependency (`quarkus-vertx-web` does not exist on Quarkus 3.39) |
+| `config/inertia.php` (`ssr.enabled`, `ssr.url`) | `inertia.ssr-enabled=true`, `inertia.ssr-url=http://localhost:13714/render` (hyphenated keys; dotted `inertia.ssr.*` is silently ignored) | same keys in `application.properties` |
+
+SSR keeps working through the sidecar: `npm run build:ssr`, then
+`node src/main/webui/ssr-server.mjs` (`:13714`) next to the app booted with
+`INERTIA_SSR_ENABLED=true`. If the sidecar is down or unreachable, pages fall
+back to CSR automatically (never fatal).
+
+Gotchas verified during certification:
+
+- `-DappName` is baked into the generated code (Spring: `@Value` literal),
+  so pick the display name at generation time or edit the controller after.
+- The root template (`index.html`) must not carry a `data-page` attribute;
+  the page object travels in `<script type="application/json"
+  data-page="app">` only.
+- CSRF is single-token with a `303 + flash` refresh contract on both
+  adapters; no per-framework wiring is needed beyond the starter defaults.

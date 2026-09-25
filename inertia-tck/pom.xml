@@ -22,6 +22,9 @@
         <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 31.9%;
              mostly fixtures; the normative assertions live in adapters). -->
         <jacoco.line.minimum>0.25</jacoco.line.minimum>
+        <!-- PIT floors, calibrated 2026-09-25 (measured 32% line, 32% kill). -->
+        <pit.mutation.minimum>25</pit.mutation.minimum>
+        <pit.coverage.minimum>25</pit.coverage.minimum>
     </properties>
     <description>Executable normative protocol suite (YAML) plus a stack-agnostic
         HTTP runner used to certify the Spring and Quarkus adapters</description>
@@ -57,7 +60,8 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.18.2</version>
+            <!-- 2.18.11: fixes CVE-2026-54512/13/14/15 (gate failBuildOnCVSS=8) -->
+            <version>2.18.11</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

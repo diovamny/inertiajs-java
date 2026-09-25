@@ -111,24 +111,13 @@ public class InertiaFilter extends OncePerRequestFilter {
     }
 
     private static boolean isExternal(String location, HttpServletRequest request) {
-        if (location.startsWith("/")) {
-            return false;
-        }
-        try {
-            var uri = new java.net.URI(location);
-            if (!uri.isAbsolute()) {
-                return false;
-            }
-            var host = request.getServerName();
-            var port = request.getServerPort();
-            var isDefaultPort = ("http".equalsIgnoreCase(uri.getScheme()) && port == 80)
-                || ("https".equalsIgnoreCase(uri.getScheme()) && port == 443);
-            var expectedAuthority = isDefaultPort ? host : host + ":" + port;
-            return !request.getScheme().equalsIgnoreCase(uri.getScheme())
-                || !expectedAuthority.equalsIgnoreCase(uri.getAuthority());
-        } catch (Exception e) {
-            return true;
-        }
+        // URL identity lives in inertia-core (UrlIdentity): RFC
+        // case-insensitivity plus default-port normalization on both sides
+        // (this also fixes explicit :80/:443 mismatching the same origin);
+        // unparseable targets fail closed.
+        return io.github.diovamny.inertia.core.protocol.UrlIdentity.isExternal(
+            location, request.getScheme(),
+            request.getServerName() + ":" + request.getServerPort());
     }
 
     private void applyEmptyResponseRedirect(HttpServletRequest request, ContentCachingResponseWrapper response) {

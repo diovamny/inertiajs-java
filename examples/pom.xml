@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.39.2</quarkus.platform.version>
-        <spring-boot.version>4.1.0</spring-boot.version>
+        <spring-boot.version>4.1.1</spring-boot.version>
         <!-- Demos opt out of the line gate (own smoke suites are the quality
              evidence here); ratchet per demo if JaCoCo baselines are added. -->
         <jacoco.line.minimum>0.00</jacoco.line.minimum>

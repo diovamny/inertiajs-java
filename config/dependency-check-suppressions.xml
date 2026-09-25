@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check suppressions (fail-closed gate: every entry needs
+  a justification and an expiry; the gate still fails on anything unlisted
+  with CVSS >= 8). Re-evaluate each entry before its `until` date.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <suppress until="2027-03-25">
+    <notes><![CDATA[
+    CVE-2026-53571 (Vite dev-server server.fs.deny bypass on Windows,
+    NTFS ADS / 8.3 short names): vite@5.4.21 arrives transitively via
+    vitepress@1.6.4 (range ^5.4.14), which is docs tooling only — never
+    shipped in any artifact, never executed outside local `npm run docs:*`
+    on the maintainer machine. No 5.x fix exists (fixed in 6.4.3 / 7.3.5 /
+    8.0.16); forcing vite 6 under vitepress 1.6 breaks the docs build.
+    Exposure requires a local network attacker plus sensitive files next
+    to a docs dev server: accepted residual risk.
+    Re-evaluate when vitepress supports vite >= 6.4.3 (then drop this).
+    ]]></notes>
+    <packageUrl regex="true">^pkg:npm/vite@.*$</packageUrl>
+    <cve>CVE-2026-53571</cve>
+  </suppress>
+  <suppress until="2027-03-25">
+    <notes><![CDATA[
+    GHSA-fx2h-pf6j-xcff (same Windows server.fs.deny bypass family as
+    CVE-2026-53571, NVD CVSS >= 8 per Dependency-Check 12.1.0): same package
+    (vite@5.4.21 via vitepress@1.6.4), same docs-tooling-only exposure, same
+    residual-risk acceptance and re-evaluation condition. Suppressed
+    separately because the scanner tracks the NVD and GHSA identifiers
+    independently.
+    ]]></notes>
+    <packageUrl regex="true">^pkg:npm/vite@.*$</packageUrl>
+    <vulnerabilityName>GHSA-fx2h-pf6j-xcff</vulnerabilityName>
+  </suppress>
+</suppressions>

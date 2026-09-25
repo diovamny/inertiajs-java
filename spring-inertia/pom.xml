@@ -21,6 +21,12 @@
     <properties>
         <!-- JaCoCo line floor, calibrated 2026-09-24 (measured 74.0%). -->
         <jacoco.line.minimum>0.70</jacoco.line.minimum>
+        <!-- PIT floors, calibrated 2026-09-25 (measured 73% line, 55% kill). -->
+        <pit.mutation.minimum>45</pit.mutation.minimum>
+        <pit.coverage.minimum>65</pit.coverage.minimum>
+        <!-- Spring Boot BOM uses JUnit 6: the PIT minion launcher must match
+             the engine line (1.13.4 crashes discovery on 6.x). -->
+        <junit-platform.version>6.1.3</junit-platform.version>
     </properties>
     <description>Inertia.js v3 adapter for Spring Boot 4 (Spring MVC / AOT / GraalVM Native)</description>
 

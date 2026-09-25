@@ -351,20 +351,15 @@ public class RedirectProcessor {
     }
 
     private boolean isExternal(String url) {
-        if (url == null || url.isBlank()) return false;
-        if (url.startsWith("/")) return false;
-        try {
-            var redirectUri = java.net.URI.create(url);
-            if (!redirectUri.isAbsolute()) return false;
-            var request = resolveRequest();
-            if (request == null) return true;
-            var requestScheme = request.scheme();
-            var requestAuthority = request.authority().toString();
-            return !requestScheme.equals(redirectUri.getScheme())
-                || !java.util.Objects.equals(requestAuthority, redirectUri.getAuthority());
-        } catch (Exception e) {
-            return true;
-        }
+        // URL identity lives in inertia-core (UrlIdentity): RFC
+        // case-insensitivity plus default-port normalization (previously this
+        // method compared case-sensitively without port normalization);
+        // unparseable targets fail closed.
+        if (url == null || url.isBlank() || url.startsWith("/")) return false;
+        var request = resolveRequest();
+        if (request == null) return true;
+        return io.github.diovamny.inertia.core.protocol.UrlIdentity.isExternal(
+            url, request.scheme(), request.authority().toString());
     }
 
     private boolean isInertiaRequest() {
