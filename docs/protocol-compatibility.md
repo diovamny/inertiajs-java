@@ -1,13 +1,13 @@
 # Inertia v3 Conformance Matrix
 
-**Date:** 2026-09-23
+**Date:** 2026-10-18
 **Scope:** Spring Boot Inertia.js v3 Adapter & Quarkus Inertia.js v3 Adapter
 **Reference:** [Inertia v3 Protocol](https://inertiajs.com/docs/v3/core-concepts/the-protocol)
 **Source of truth:** [`specs/inertia-v3-compliance.yaml`](../specs/inertia-v3-compliance.yaml) + [`specs/e2e-compliance.yaml`](../specs/e2e-compliance.yaml) — this file is GENERATED, do not edit by hand (see `scripts/generate-compatibility-matrix.mjs`).
 
-[![C100 contract](https://img.shields.io/badge/C100-62%2F62%20contract--verified-brightgreen)](../specs/inertia-v3-compliance.yaml)
+[![C100 contract](https://img.shields.io/badge/C100-65%2F65%20contract--verified-brightgreen)](../specs/inertia-v3-compliance.yaml)
 [![I100 interop](https://img.shields.io/badge/I100-90%2F90%20cells-green)](../specs/e2e-compliance.yaml)
-**C100 contract: 62/62 TCK-verified. I100 interop: 90/90 E2E cells green with official clients.**
+**C100 contract: 65/65 TCK-verified. I100 interop: 90/90 E2E cells green with official clients.**
 
 Status semantics (contract vs interop are separate): ✅ = normative test green on all 3 transports (counts for C100 only); 🧪 = officially observed by a real client in the listed transports (partial I100 evidence); 🔄 = code exists with indirect coverage and a tracked test; ❌ = known but untested; `N/A` = not applicable. A contract ✅ never counts as interop.
 
@@ -77,3 +77,6 @@ Important: this file is now evidence-based and generated. Claims of 100% compati
 | 60 | Shared | Instant-visit sharedProps behavior observed by official client | https://inertiajs.com/docs/v3/the-basics/instant-visits | E2E_VERIFICADO | ✅ | ✅ | ✅ spring-mvc, quarkus-rest, quarkus-reactive | InertiaPageTest (both), e2e/inertia-contracts.spec.ts (057B), e2e/feature-matrix.spec.ts (instant), e2e/reactive-contracts.spec.ts (rest-instant) | Observed on all 9 client x transport cells: Vue via kitchen-sink (@Route, JAX-RS twin and Spring MVC), React/Svelte via /e2e-probe (Spring/JAX-RS) and /e2e-probe-rx (Reactive Routes); placeholder with shared+current props before server 2s response, then server greeting; no TCK applies (client behavior) |
 | 61 | HTML | SSR failure uses structured error contract | Protocol | TESTED | ✅ | ✅ | — | SsrFailureClassifierTest, SsrHandlerUnitTest | Failures classify as unreachable/timeout/error-status/unknown with hints (server-side only, CSR fallback); sidecar-reported browserApi/sourceLocation travel in render payloads |
 | 62 | HTML | Bootstrap v3 structural: payload once in script, div without data-page | https://inertiajs.com/docs/v3/core-concepts/the-protocol | TESTED (+E2E spring-mvc, quarkus-rest) | ✅ | ✅ | 🧪 spring-mvc, quarkus-rest | HtmlRendererTest, RenderPageIntegrationTest, TckSpringTest, TckQuarkusTest, TckReactiveTest | v3-pure (59% smaller bootstrap); legacy v1/v2 data-page attribute intentionally unsupported, no opt-in; Playwright e2e parses the script JSON on Spring/Quarkus demos (reactive cell lands in M4) |
+| 63 | Types | Per-response BigInt opt-in (TCK PROTO-BigInt-03): unsafe longs as $bigint markers + preserveBigIntegers flag | Protocol | TESTED | ✅ | ✅ | — | BigIntPerResponseIntegrationTest, BigIntQuarkusTest, JacksonJsonProviderTest, JacksonBigIntProviderTest | Laravel preserveBigIntegers()/Rails preserve_big_integers parity; precedence request override > page flag > global inertia.bigint-enabled; Spring facade + fluent re-serialization, Quarkus facade |
+| 64 | Types | Per-response BigInt opt-out (TCK PROTO-BigInt-04): global flag on, page stays plain and omits preserveBigIntegers | Protocol | TESTED | ✅ | ✅ | — | BigIntGlobalEnabledIntegrationTest, BigIntGlobalEnabledQuarkusTest, JacksonJsonProviderTest, JacksonBigIntProviderTest | Explicit preserveBigIntegers(false) overrides inertia.bigint-enabled=true for the response; wire falls back to plain JSON numbers with no flag |
+| 65 | Types | java.math.BigInteger beyond JavaScript precision travels as $bigint marker (TCK PROTO-BigInt-05) | Protocol | TESTED | ✅ | ✅ | — | BigIntSerializerTest, JacksonJsonProviderTest, JacksonBigIntProviderTest | isUnsafe(BigInteger)/encode(BigInteger)/marker(BigInteger) in inertia-core; Jackson 3 ValueSerializer (Spring) and Jackson 2 StdSerializer (Quarkus); safe values stay plain numbers |

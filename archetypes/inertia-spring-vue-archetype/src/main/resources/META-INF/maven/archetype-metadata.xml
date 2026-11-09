@@ -8,13 +8,13 @@
             <defaultValue>Hello Inertia</defaultValue>
         </requiredProperty>
         <requiredProperty key="inertiaAdapterVersion">
-            <defaultValue>0.0.5</defaultValue>
+            <defaultValue>0.0.6</defaultValue>
         </requiredProperty>
         <requiredProperty key="javaVersion">
             <defaultValue>21</defaultValue>
         </requiredProperty>
         <requiredProperty key="frameworkVersion">
-            <defaultValue>4.1.0</defaultValue>
+            <defaultValue>4.1.1</defaultValue>
         </requiredProperty>
     </requiredProperties>
     <fileSets>

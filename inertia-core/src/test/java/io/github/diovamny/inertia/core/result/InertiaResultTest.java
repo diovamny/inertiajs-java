@@ -11,10 +11,11 @@ class InertiaResultTest {
 
     @Test
     void pageResultNormalizesNulls() {
-        var page = new InertiaPageResult("Home", null, null);
+        var page = new InertiaPageResult("Home", null, null, false);
         assertThat(page.component()).isEqualTo("Home");
         assertThat(page.props()).isEmpty();
         assertThat(page.meta()).isEmpty();
+        assertThat(page.preserveBigIntegers()).isFalse();
     }
 
     @Test
@@ -22,6 +23,15 @@ class InertiaResultTest {
         assertThat(InertiaPageResult.of("Home").props()).isEmpty();
         assertThat(InertiaPageResult.of("Home", Map.of("a", 1)).props())
             .containsEntry("a", 1);
+        assertThat(InertiaPageResult.of("Home", Map.of("a", 1)).preserveBigIntegers())
+            .isFalse();
+    }
+
+    @Test
+    void pageResultFactoryOptsIntoBigIntRevival() {
+        var page = InertiaPageResult.of("Orders/Show", Map.of("id", Long.MAX_VALUE), true);
+        assertThat(page.preserveBigIntegers()).isTrue();
+        assertThat(page.props()).containsEntry("id", Long.MAX_VALUE);
     }
 
     @Test

@@ -221,6 +221,7 @@ public class PageObjectBuilder {
         state.encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
         state.clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
         state.preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
+        state.preserveBigIntegersVal = preserveBigIntegers();
         return state;
     }
 
@@ -237,7 +238,7 @@ public class PageObjectBuilder {
         var page = new PageObject(state.resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), state.url, state.version,
             state.flashOut, state.deferredProps, state.mergePropsOut, state.prependPropsOut, state.deepMergePropsOut, state.matchPropsOnOut,
             state.onceProps, state.scrollProps, state.sharedKeys.isEmpty() ? null : state.sharedKeys, rescuedProps, state.meta,
-            state.encryptHistoryVal, state.clearHistoryVal, state.preserveFragmentVal);
+            state.encryptHistoryVal, state.clearHistoryVal, state.preserveFragmentVal, state.preserveBigIntegersVal);
 
         page = expandDotNotation(page);
 
@@ -275,6 +276,7 @@ public class PageObjectBuilder {
         Boolean encryptHistoryVal;
         Boolean clearHistoryVal;
         Boolean preserveFragmentVal;
+        Boolean preserveBigIntegersVal;
     }
 
     // ========================================================================
@@ -740,6 +742,17 @@ public class PageObjectBuilder {
             }
         }
         return false;
+    }
+
+    private Boolean preserveBigIntegers() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var val = InertiaContextLocals.get(ctx, "inertia-preserve-bigint");
+            if (val instanceof Boolean flag) {
+                return flag;
+            }
+        }
+        return null;
     }
 
     private io.vertx.ext.web.Session session() {

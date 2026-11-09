@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased — camino a 1.0.0
+
+- BigInt per-response opt-in: `inertia.preserveBigIntegers(true/false)` en ambos
+  adaptadores (Spring facade + `InertiaRender` fluent con re-serialización del
+  body; Quarkus facade), precedencia request > página > global
+  (`inertia.bigint-enabled`); paridad Laravel `preserveBigIntegers()` / Rails
+  `preserve_big_integers`.
+- Soporte `java.math.BigInteger` en `BigIntSerializer`
+  (`isUnsafe`/`encode`/`marker`) y en los módulos Jackson de ambos adaptadores.
+- `PageObject` gana el componente `preserveBigIntegers` (tristate) e
+  `InertiaPageResult` la factory `of(component, props, preserveBigIntegers)`.
+- TCK `PROTO-BigInt-03/04/05`; matriz C100 65/65 (PROTO-060/061/062), I100
+  90/90; `docs/configuration.md` con la sección "BigInt & large numbers" y guía
+  de sesiones/clúster en `docs/getting-started-quarkus.md`.
+
+## 0.0.6
+
+- Inertia.js client alignment: `@inertiajs/{core,vue3,react,svelte}` pinned to
+  `3.8.0` (core now a direct dependency), `@inertiajs/vite` `^3.8.0`,
+  TypeScript `^6.0.3`.
+- SSR oficial: los seis starters eliminan el sidecar `ssr-server.mjs` (bug UTF-8
+  en `raw += chunk`) y usan `createServer` oficial de `@inertiajs/*/server`;
+  `npm run build:ssr` emite `dist-ssr/ssr.js` y `npm run ssr` lo arranca en
+  `:13714`.
+- Quarkus `3.40.1` LTS como default (matrix CI dual con `3.39.2`); Spring CI
+  `framework-version` alineada a `4.1.1`.
+- Sesión Vert.x auto-provisionada en Quarkus (`inertia.session.enabled=true`,
+  `order(-2)`): flash y CSRF por sesión funcionan sin configuración manual;
+  `false` documentado con WARN de diagnóstico.
+- Starter CRUD de `Contact` in-memory en los 6 arquetipos (list/create/edit/
+  update/delete), `ErrorPage`, `useForm` con errores por campo, flash
+  `success`, y `<parameters>true</parameters>` en los POMs generados
+  (records + `@PathVariable`/`@PathParam` explícitos).
+- BigInt opt-in (`inertia.bigint-enabled`, default `false`) con
+  `BigIntSerializer` en `inertia-core`; TCK `PROTO-BigInt-01/02` y
+  `PROTO-Version-History-01`.
+- Tests: ciclo CRUD MockMvc/RestAssured por arquetipo, tests de sesión
+  auto-provisionada, gates de typecheck TS 6 y smoke CRUD en CI.
+
 ## 0.0.5
 
 - M0 (P100-01): v3-only policy (`docs/COMPATIBILITY_POLICY.md`, frozen snapshot

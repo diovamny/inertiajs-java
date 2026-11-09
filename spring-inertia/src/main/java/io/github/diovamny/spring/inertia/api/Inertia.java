@@ -541,6 +541,25 @@ public interface Inertia {
     void preserveFragment(boolean preserve);
 
     /**
+     * Preserve 64-bit integer precision for the current response only,
+     * overriding the global {@code inertia.bigint-enabled} setting. Unsafe
+     * values then travel as {@code {"$bigint":"..."}} markers and the page
+     * carries {@code preserveBigIntegers: true} so the client revives them
+     * as native {@code BigInt}.
+     *
+     * @param preserve {@code true} to opt in, {@code false} to opt out
+     */
+    void preserveBigIntegers(boolean preserve);
+
+    /**
+     * Preserve 64-bit integer precision for the current response only
+     * (alias of {@code preserveBigIntegers(true)}).
+     */
+    default void preserveBigIntegers() {
+        preserveBigIntegers(true);
+    }
+
+    /**
      * Merge rules for {@link #merge(String, Object, MergeRule)}.
      */
     enum MergeRule {

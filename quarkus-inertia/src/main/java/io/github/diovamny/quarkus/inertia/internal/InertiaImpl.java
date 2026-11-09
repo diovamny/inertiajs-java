@@ -282,6 +282,13 @@ public class InertiaImpl implements Inertia {
 
     @Override
     public InertiaRender render(io.github.diovamny.inertia.core.result.InertiaPageResult result) {
+        if (result.preserveBigIntegers()) {
+            var ctx = io.vertx.core.Vertx.currentContext();
+            if (ctx != null) {
+                io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                    ctx, "inertia-preserve-bigint", Boolean.TRUE);
+            }
+        }
         if (!result.meta().isEmpty()) {
             sharedData.addMeta(result.meta());
         }
@@ -740,6 +747,15 @@ public class InertiaImpl implements Inertia {
             } else {
                 session.remove(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
             }
+        }
+    }
+
+    @Override
+    public void preserveBigIntegers(boolean preserve) {
+        var ctx = io.vertx.core.Vertx.currentContext();
+        if (ctx != null) {
+            io.github.diovamny.quarkus.inertia.protocol.InertiaContextLocals.put(
+                ctx, "inertia-preserve-bigint", preserve);
         }
     }
 

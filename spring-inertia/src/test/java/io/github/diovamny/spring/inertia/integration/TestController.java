@@ -165,4 +165,27 @@ public class TestController {
     public Object bigPage() {
         return inertia.render("BigPage", Map.of("bulk", "x".repeat(100_000)));
     }
+
+    @GetMapping("/bigint-default")
+    public Object bigintDefault() {
+        return inertia.render("BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L));
+    }
+
+    @GetMapping("/bigint-facade")
+    public Object bigintFacade() {
+        inertia.preserveBigIntegers(true);
+        return inertia.render("BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L));
+    }
+
+    @GetMapping("/bigint-fluent")
+    public Object bigintFluent() {
+        return ((io.github.diovamny.spring.inertia.api.InertiaRender) inertia.render(
+            "BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L))).preserveBigIntegers();
+    }
+
+    @GetMapping("/bigint-optout")
+    public Object bigintOptOut() {
+        inertia.preserveBigIntegers(false);
+        return inertia.render("BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L));
+    }
 }

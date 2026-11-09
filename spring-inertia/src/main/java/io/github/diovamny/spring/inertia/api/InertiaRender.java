@@ -4,7 +4,11 @@ import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 
+import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
+import io.github.diovamny.spring.inertia.protocol.PageObjectBuilder;
+import io.github.diovamny.spring.inertia.protocol.ResponseProcessor;
 import io.github.diovamny.spring.inertia.support.ErrorBags;
 
 /**
@@ -19,6 +23,9 @@ public class InertiaRender extends InertiaResponse {
 
     private final FlashStore flashStore;
     private final io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy;
+    private final PageObject page;
+    private final int status;
+    private final ResponseProcessor responseProcessor;
 
     public InertiaRender(InertiaResponse response, FlashStore flashStore) {
         this(response, flashStore, null);
@@ -26,9 +33,18 @@ public class InertiaRender extends InertiaResponse {
 
     public InertiaRender(InertiaResponse response, FlashStore flashStore,
             io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy) {
+        this(response, flashStore, ssrCachePolicy, null, 200, null);
+    }
+
+    public InertiaRender(InertiaResponse response, FlashStore flashStore,
+            io.github.diovamny.spring.inertia.renderer.SsrCachePolicy ssrCachePolicy,
+            PageObject page, int status, ResponseProcessor responseProcessor) {
         super(response.getStatusCode(), copyHeaders(response), response.getBody());
         this.flashStore = flashStore;
         this.ssrCachePolicy = ssrCachePolicy;
+        this.page = page;
+        this.status = status;
+        this.responseProcessor = responseProcessor;
     }
 
     public InertiaRender(HttpStatusCode status, HttpHeaders headers, String body,
@@ -42,6 +58,9 @@ public class InertiaRender extends InertiaResponse {
         super(status, headers, body);
         this.flashStore = flashStore;
         this.ssrCachePolicy = ssrCachePolicy;
+        this.page = null;
+        this.status = status != null ? status.value() : 200;
+        this.responseProcessor = null;
     }
 
     /**
@@ -118,6 +137,35 @@ public class InertiaRender extends InertiaResponse {
         }
         ssrCachePolicy.setTtlMillis(ttl != null ? ttl.toMillis() : null);
         return this;
+    }
+
+    /**
+     * Preserve 64-bit integer precision for this response only, overriding
+     * the global {@code inertia.bigint-enabled} setting. The response body is
+     * re-serialized in place; unsafe values travel as
+     * {@code {"$bigint":"..."}} markers and the page carries
+     * {@code preserveBigIntegers: true}.
+     *
+     * @param preserve {@code true} to opt in, {@code false} to opt out
+     * @return the re-serialized render for chaining
+     */
+    public InertiaRender preserveBigIntegers(boolean preserve) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_PRESERVE_BIG_INTEGERS, preserve);
+        if (page != null && responseProcessor != null) {
+            var reserialized = responseProcessor.serialize(page, status);
+            return new InertiaRender(reserialized, flashStore, ssrCachePolicy,
+                page, status, responseProcessor);
+        }
+        return this;
+    }
+
+    /**
+     * Alias of {@link #preserveBigIntegers(boolean)} with {@code true}.
+     *
+     * @return the re-serialized render for chaining
+     */
+    public InertiaRender preserveBigIntegers() {
+        return preserveBigIntegers(true);
     }
 
     private static HttpHeaders copyHeaders(InertiaResponse response) {

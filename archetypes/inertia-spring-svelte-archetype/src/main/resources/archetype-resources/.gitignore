@@ -3,6 +3,8 @@ node_modules/
 src/main/webui/node_modules/
 src/main/webui/dist/
 dist-ssr/
+src/main/resources/static/assets/
+src/main/resources/static/.vite/
 .mvite/
 *.log
 .DS_Store

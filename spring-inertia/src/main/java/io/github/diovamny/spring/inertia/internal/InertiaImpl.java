@@ -97,9 +97,20 @@ public class InertiaImpl implements Inertia {
     public Object render(String component, Map<String, Object> props) {
         var result = responseProcessor.process(component, props);
         if (result instanceof InertiaResponse response) {
-            return new InertiaRender(response, flashStore, ssrCachePolicy);
+            return new InertiaRender(response, flashStore, ssrCachePolicy,
+                lastPage(), pageStatus(), responseProcessor);
         }
         return result;
+    }
+
+    private PageObject lastPage() {
+        var stored = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_LAST_PAGE);
+        return stored instanceof PageObject page ? page : null;
+    }
+
+    private int pageStatus() {
+        var stored = InertiaRequestContext.get(PageObjectBuilder.CONTEXT_PAGE_STATUS);
+        return stored instanceof Integer status ? status : 200;
     }
 
     @Override
@@ -194,6 +205,9 @@ public class InertiaImpl implements Inertia {
 
     @Override
     public Object render(io.github.diovamny.inertia.core.result.InertiaPageResult result) {
+        if (result.preserveBigIntegers()) {
+            InertiaRequestContext.set(PageObjectBuilder.CONTEXT_PRESERVE_BIG_INTEGERS, Boolean.TRUE);
+        }
         if (!result.meta().isEmpty()) {
             InertiaRequestContext.set(PageObjectBuilder.CONTEXT_META, result.meta());
         }
@@ -472,6 +486,11 @@ public class InertiaImpl implements Inertia {
                 session.removeAttribute(PageObjectBuilder.SESSION_PRESERVE_FRAGMENT);
             }
         }
+    }
+
+    @Override
+    public void preserveBigIntegers(boolean preserve) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_PRESERVE_BIG_INTEGERS, preserve);
     }
 
     @SuppressWarnings("unchecked")

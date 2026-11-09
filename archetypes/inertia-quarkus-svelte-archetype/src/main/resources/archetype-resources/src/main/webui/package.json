@@ -7,18 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "build:ssr": "vite build --ssr src/ssr.ts --outDir dist-ssr",
+    "ssr": "node dist-ssr/ssr.js",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/svelte": "3.7.1",
+    "@inertiajs/svelte": "3.8.0",
+    "@inertiajs/core": "3.8.0",
+    "@inertiajs/vite": "^3.8.0",
     "svelte": "^5.46.4"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@types/node": "^22.20.0",
     "svelte-check": "^4.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vite": "^8.2.2"
   }
 }

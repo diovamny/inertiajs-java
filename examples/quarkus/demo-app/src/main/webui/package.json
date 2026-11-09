@@ -9,8 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/vite": "^3.6.1",
-    "@inertiajs/vue3": "3.7.1",
+    "@inertiajs/core": "3.8.0",
+    "@inertiajs/vite": "^3.8.0",
+    "@inertiajs/vue3": "3.8.0",
     "@primevue/themes": "^4.3.3",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",

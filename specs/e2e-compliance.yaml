@@ -9,14 +9,14 @@
 # client), generated starters (SSR). Quarkus kitchen-sink serves
 # /features/navigation/* via Reactive Routes (@Route), forms/data via JAX-RS.
 version: 1
-updated: 2026-09-25
+updated: 2026-10-18
 clients: [vue, react, svelte]
 transports: [spring-mvc, quarkus-rest, quarkus-reactive]
 fixtures:
-  vue: examples/spring+quarkus kitchen-sink (official @inertiajs/vue3 3.7.1)
-  react: examples/spring+quarkus pingcrm-react (official @inertiajs/react 3.7.1)
-  svelte: examples/spring+quarkus pingcrm-svelte (official @inertiajs/svelte 3.7.1)
-  ssr: generated spring/quarkus vue/react/svelte starters + node sidecar (3.7.1)
+  vue: examples/spring+quarkus kitchen-sink (official @inertiajs/vue3 3.8.0)
+  react: examples/spring+quarkus pingcrm-react (official @inertiajs/react 3.8.0)
+  svelte: examples/spring+quarkus pingcrm-svelte (official @inertiajs/svelte 3.8.0)
+  ssr: generated spring/quarkus vue/react/svelte starters + node sidecar (3.8.0)
 scenarios:
   - id: E2E-01-bootstrap
     description: "v3 script JSON parses once, app mounts, zero console errors"
@@ -76,7 +76,7 @@ scenarios:
     cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
     verified_cells: [vue/spring-mvc, vue/quarkus-rest, vue/quarkus-reactive, react/spring-mvc, react/quarkus-rest, react/quarkus-reactive, svelte/spring-mvc, svelte/quarkus-rest, svelte/quarkus-reactive]
     status: E2E_VERIFICADO
-    notes: "Starter fixtures (Vue/React/Svelte 3.7.1): no-JS SSR proof + hydration + fallback on Spring MVC and Quarkus REST; protocol-exact root assembly (no nested #app). Reactive cells: same starters plus a documented /ssr-rx @Route twin per Quarkus starter (E2E_SSR_PATH), proving the identical SsrHandler/sidecar contract through Reactive Routes"
+    notes: "Starter fixtures (Vue/React/Svelte 3.8.0): no-JS SSR proof + hydration + fallback on Spring MVC and Quarkus REST; protocol-exact root assembly (no nested #app). Reactive cells: same starters plus a documented /ssr-rx @Route twin per Quarkus starter (E2E_SSR_PATH), proving the identical SsrHandler/sidecar contract through Reactive Routes"
   - id: E2E-10-security
     description: "No script breakout, no SSR leak, CSRF contract denied as documented"
     spec: "e2e/inertia-contracts.spec.ts + e2e/pingcrm-contracts.spec.ts"

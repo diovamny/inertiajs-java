@@ -75,6 +75,7 @@ public class ResponseProcessor {
      * @return the final response
      */
     public ResponseEntity<String> process(PageObject page) {
+        InertiaRequestContext.set(PageObjectBuilder.CONTEXT_LAST_PAGE, page);
         var sample = metrics.startRender();
         var type = InertiaRequestContext.isInertiaRequest() ? "json" : "html";
         try {

@@ -6,7 +6,7 @@
 
     <groupId>io.github.diovamny</groupId>
     <artifactId>inertia-examples-quarkus</artifactId>
-    <version>0.0.5</version>
+    <version>0.0.6</version>
     <packaging>pom</packaging>
 
     <name>Inertia.js Quarkus Demos</name>
@@ -26,7 +26,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.39.2</quarkus.platform.version>
+        <quarkus.platform.version>3.40.1</quarkus.platform.version>
     </properties>
 
     <dependencyManagement>

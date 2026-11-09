@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 
 const root = import.meta.dirname
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [
     vue({
       template: {
@@ -29,7 +29,7 @@ export default defineConfig({
     rollupOptions: {
       input: path.resolve(root, 'src/app.ts'),
       output: {
-        entryFileNames: 'assets/[name].js',
+        entryFileNames: isSsrBuild ? '[name].js' : 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name][extname]',
       },
@@ -37,5 +37,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Proxy API calls to the backend during `npm run dev` when needed:
+    // proxy: { '/api': 'http://localhost:8080' },
   },
-})
+}))

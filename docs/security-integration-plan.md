@@ -318,7 +318,8 @@ Implementar en este orden:
    %prod.quarkus.rest-csrf.cookie-force-secure=true
    # NO token-signature-key for Inertia SPAs: rest-csrf requires
    # cookie == sign(header), which no cookie-echo client can satisfy
-   # (verified against quarkus-rest-csrf 3.39.2 bytecode, M4b-01).
+   # (verified against quarkus-rest-csrf 3.40.1 bytecode, M4b-01; the class
+   # contract is byte-identical to 3.39.2).
    ```
 
    La comprobación de configuración debe avisar (no fallar) si hay clave

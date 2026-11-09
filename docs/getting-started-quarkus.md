@@ -11,7 +11,7 @@ Generate a runnable app (Vue 3 or React 19, TypeScript, Vite, tests):
 mvn -B archetype:generate \
   -DarchetypeGroupId=io.github.diovamny \
   -DarchetypeArtifactId=inertia-quarkus-vue-archetype \
-  -DarchetypeVersion=0.0.5 \
+  -DarchetypeVersion=0.0.6 \
   -DgroupId=com.example \
   -DartifactId=hello-inertia \
   -Dpackage=com.example.hello
@@ -34,7 +34,7 @@ Open `http://localhost:8080/`.
 <dependency>
     <groupId>io.github.diovamny.quarkus.inertia</groupId>
     <artifactId>quarkus-inertia</artifactId>
-    <version>0.0.5</version>
+    <version>0.0.6</version>
 </dependency>
 ```
 
@@ -129,6 +129,25 @@ public class ContactsController {
 > **Note:** `@Blocking` is shown because classic repository access blocks. If
 > your database client is reactive (Hibernate Reactive, MongoDB reactive),
 > drop `@Blocking` and stay on the event loop.
+
+## Production notes — sessions & clustering
+
+`inertia.session.enabled=true` (default) auto-registers a Vert.x
+`SessionHandler` backed by the in-memory `LocalSessionStore`. That store lives
+in a single JVM, so in a clustered deployment (or with more than one replica)
+flash messages and session-based CSRF may be lost when a request lands on a
+node that does not hold the session.
+
+For clustered deployments either:
+
+- register your own distributed `SessionHandler` (e.g. Redis or Infinispan
+  session stores) and set `inertia.session.enabled=false` — a startup WARN
+  reminds you why the auto-provisioning is off; or
+- stay stateless: do not use flash nor session-based CSRF.
+
+Spring Boot needs no equivalent setting: the HTTP session is provided by the
+servlet container, and `spring-session` with Redis/Infinispan works out of the
+box.
 
 ## Test it
 

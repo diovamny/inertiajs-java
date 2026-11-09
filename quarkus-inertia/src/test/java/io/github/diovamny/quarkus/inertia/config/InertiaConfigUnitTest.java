@@ -8,6 +8,9 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.diovamny.quarkus.inertia.security.InertiaSecurityModes;
+import io.github.diovamny.quarkus.inertia.support.SmallRyeInertiaConfig;
+
 class InertiaConfigUnitTest {
 
     private InertiaConfig makeConfig(String rootTemplate, String versionStrategy,
@@ -38,7 +41,7 @@ class InertiaConfigUnitTest {
             @Override public boolean serverHead() { return false; }
             @Override public String metaTitleTemplate() { return "%s"; }
             @Override public boolean camelizeProps() { return camelizeProps; }
-            @Override public boolean csrfEnabled() { return true; }
+            @Override public java.util.Optional<Boolean> csrfEnabled() { return Optional.empty(); }
             @Override public Optional<String> rootView() { return rootView; }
             @Override public Optional<java.util.List<String>> flashKeys() { return Optional.empty(); }
             @Override public boolean alwaysIncludeErrors() { return true; }
@@ -67,6 +70,8 @@ class InertiaConfigUnitTest {
             @Override public Optional<String> securityCookieDomain() { return Optional.empty(); }
             @Override public Optional<java.util.List<String>> securityReactiveCsrfPaths() { return Optional.empty(); }
             @Override public boolean authPropsEnabled() { return false; }
+            @Override public boolean bigintEnabled() { return false; }
+            @Override public boolean sessionEnabled() { return true; }
         };
     }
 
@@ -132,5 +137,62 @@ class InertiaConfigUnitTest {
         assertThat(config.errorStatus()).isEqualTo(500);
         assertThat(config.errorComponent()).isEqualTo("ErrorPage");
         assertThat(config.alwaysIncludeErrors()).isTrue();
+    }
+
+    @Test
+    void shouldBindBigintEnabledProperty() {
+        var config = SmallRyeInertiaConfig.build("inertia.bigint-enabled", "true");
+        assertThat(config.bigintEnabled()).isTrue();
+    }
+
+    @Test
+    void shouldDefaultBigintDisabled() {
+        assertThat(SmallRyeInertiaConfig.defaults().bigintEnabled()).isFalse();
+    }
+
+    @Test
+    void shouldDefaultSessionEnabled() {
+        assertThat(SmallRyeInertiaConfig.defaults().sessionEnabled()).isTrue();
+    }
+
+    @Test
+    void shouldBindSessionEnabledProperty() {
+        var config = SmallRyeInertiaConfig.build("inertia.session.enabled", "false");
+        assertThat(config.sessionEnabled()).isFalse();
+    }
+
+    @Test
+    void shouldTreatUnsetLegacyAliasAsAuto() {
+        var config = SmallRyeInertiaConfig.defaults();
+        assertThat(config.csrfEnabled()).isEmpty();
+        assertThat(InertiaSecurityModes.isLegacyAliasInUse(config)).isFalse();
+        assertThat(InertiaSecurityModes.configuredMode(config))
+            .isEqualTo(InertiaSecurityModes.Mode.AUTO);
+    }
+
+    @Test
+    void shouldMapLegacyAliasToAdapter() {
+        var config = SmallRyeInertiaConfig.build("inertia.csrf-enabled", "true");
+        assertThat(InertiaSecurityModes.isLegacyAliasInUse(config)).isTrue();
+        assertThat(InertiaSecurityModes.configuredMode(config))
+            .isEqualTo(InertiaSecurityModes.Mode.ADAPTER);
+    }
+
+    @Test
+    void shouldMapLegacyAliasToDisabled() {
+        var config = SmallRyeInertiaConfig.build("inertia.csrf-enabled", "false");
+        assertThat(InertiaSecurityModes.isLegacyAliasInUse(config)).isTrue();
+        assertThat(InertiaSecurityModes.configuredMode(config))
+            .isEqualTo(InertiaSecurityModes.Mode.DISABLED);
+    }
+
+    @Test
+    void shouldPreferExplicitModeOverLegacyAlias() {
+        var config = SmallRyeInertiaConfig.build(
+            "inertia.security.mode", "framework",
+            "inertia.csrf-enabled", "true");
+        assertThat(InertiaSecurityModes.isLegacyAliasInUse(config)).isFalse();
+        assertThat(InertiaSecurityModes.configuredMode(config))
+            .isEqualTo(InertiaSecurityModes.Mode.FRAMEWORK);
     }
 }

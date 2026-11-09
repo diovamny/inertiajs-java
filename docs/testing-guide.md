@@ -275,7 +275,7 @@ page.assertComponent("Dashboard")
 ## End-to-End — Playwright
 
 Browser contracts against the real demos with the official `@inertiajs/*`
-clients (pinned `3.7.1`). Specs live in `e2e/` (`inertia-contracts`,
+clients (pinned `3.8.0`). Specs live in `e2e/` (`inertia-contracts`,
 `pingcrm-contracts`, `feature-matrix`, `ssr-contracts`); each run targets
 **one booted demo** selected with `E2E_BASE_URL`. This is the procedure the
 `e2e` CI job follows, verified end-to-end on 2026-09-24 (118/118 green).
@@ -306,7 +306,7 @@ examples/quarkus/pingcrm-react,examples/quarkus/quarkus-pingcrm-svelte
 
 ```bash
 cd examples/spring/spring-pingcrm-react
-java -jar target/spring-pingcrm-react-0.0.5.jar
+java -jar target/spring-pingcrm-react-0.0.6.jar
 # Quarkus over plain http needs:
 #   QUARKUS_REST_CSRF_COOKIE_FORCE_SECURE=false java -jar target/quarkus-app/quarkus-run.jar
 ```
@@ -331,13 +331,13 @@ contention, not product behavior). CI sets `workers: 1` via `$CI`.
 # generate (archetype default appName is already "Hello Inertia")
 ./mvnw -B archetype:generate -DarchetypeCatalog=local \
   -DarchetypeGroupId=io.github.diovamny \
-  -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.5 \
+  -DarchetypeArtifactId=inertia-spring-vue-archetype -DarchetypeVersion=0.0.6 \
   -DgroupId=com.acme -DartifactId=hello-inertia -Dpackage=com.acme.hello \
-  -DinertiaAdapterVersion=0.0.5 -DjavaVersion=21 -DframeworkVersion=4.1.0
+  -DinertiaAdapterVersion=0.0.6 -DjavaVersion=21 -DframeworkVersion=4.1.1
 cd hello-inertia/src/main/webui
 npm install && npm run build && npm run build:ssr   # NOT `npm ci`: starters ship no lockfile
 cd ../../.. && ./mvnw -B -DskipTests package
-# terminal 1: node src/main/webui/ssr-server.mjs    # sidecar :13714
+# terminal 1: (cd src/main/webui && node dist-ssr/ssr.js)   # sidecar :13714
 # terminal 2: INERTIA_SSR_ENABLED=true java -jar target/hello-inertia-*.jar
 cd <repo>/e2e
 E2E_SSR_URL=http://localhost:8080 npx playwright test --config playwright.config.ts \
@@ -383,7 +383,7 @@ public class RxWelcomeRoute {
         return inertia.render("Welcome", Map.of(
             "appName", appName,
             "framework", "Quarkus",
-            "frameworkVersion", "3.39.2",
+            "frameworkVersion", "3.40.1",
             "inertiaUrl", "https://inertiajs.com/"));
     }
 }
@@ -392,7 +392,7 @@ public class RxWelcomeRoute {
 ```bash
 # + quarkus-reactive-routes dependency in the generated pom, then:
 ./mvnw -B -DskipTests package
-# terminal 1: node src/main/webui/ssr-server.mjs
+# terminal 1: (cd src/main/webui && node dist-ssr/ssr.js)
 # terminal 2: INERTIA_SSR_ENABLED=true java -jar target/quarkus-app/quarkus-run.jar
 cd <repo>/e2e
 E2E_SSR_URL=http://localhost:8080 E2E_SSR_PATH=/ssr-rx npx playwright test \

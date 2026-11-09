@@ -32,6 +32,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @param encryptHistory   whether the client must encrypt history state
  * @param clearHistory     whether the client must clear its history
  * @param preserveFragment whether the client must preserve the URL fragment
+ * @param preserveBigIntegers whether the client must revive {@code $bigint}
+ *                         markers into native {@code BigInt} for this page
+ *                         ({@code null} omits the flag from the wire)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record PageObject(
@@ -52,7 +55,8 @@ public record PageObject(
     Map<String, Object> meta,
     Boolean encryptHistory,
     Boolean clearHistory,
-    Boolean preserveFragment
+    Boolean preserveFragment,
+    Boolean preserveBigIntegers
 ) {
     /**
      * Compact constructor validating the component name and normalizing a
@@ -83,7 +87,7 @@ public record PageObject(
             String version) {
         this(component, props, url, version,
             null, null, null, null, null, null, null, null, null, null, null,
-            false, false, false);
+            false, false, false, null);
     }
 
     /**
@@ -96,7 +100,7 @@ public record PageObject(
         return new PageObject(component, newProps, url, version,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
     }
 
     /**
@@ -113,7 +117,7 @@ public record PageObject(
         return new PageObject(component, props, url, version,
             flash, deferredProps, newMergeProps, newPrependProps, newDeepMergeProps, newMatchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
     }
 
     /**
@@ -126,7 +130,7 @@ public record PageObject(
         return new PageObject(component, props, url, newVersion,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
     }
 
     /**
@@ -139,7 +143,21 @@ public record PageObject(
         return new PageObject(component, props, newUrl, version,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
+    }
+
+    /**
+     * Return a copy of this page object with the given BigInt revival flag.
+     *
+     * @param preserve {@code true} to have the client revive {@code $bigint}
+     *                 markers, {@code null} to omit the flag from the wire
+     * @return a new page object with identical props and remaining metadata
+     */
+    public PageObject withPreserveBigIntegers(Boolean preserve) {
+        return new PageObject(component, props, url, version,
+            flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            scrollProps, sharedProps, rescuedProps, meta,
+            encryptHistory, clearHistory, preserveFragment, preserve);
     }
 
     /**
@@ -160,7 +178,8 @@ public record PageObject(
                (meta != null && !meta.isEmpty()) ||
                Boolean.TRUE.equals(encryptHistory) ||
                Boolean.TRUE.equals(clearHistory) ||
-               Boolean.TRUE.equals(preserveFragment);
+               Boolean.TRUE.equals(preserveFragment) ||
+               Boolean.TRUE.equals(preserveBigIntegers);
     }
 
     /**
