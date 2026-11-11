@@ -15,7 +15,9 @@ import io.github.diovamny.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.quarkus.inertia.cache.CachedPropStore;
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
 import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 import io.github.diovamny.inertia.core.model.RawJson;
+import io.github.diovamny.quarkus.inertia.protocol.LivePropRegistry;
 import io.github.diovamny.quarkus.inertia.protocol.PageObjectBuilder;
 import io.github.diovamny.quarkus.inertia.protocol.ResponseProcessor;
 import io.github.diovamny.quarkus.inertia.protocol.SharedDataRegistry;
@@ -545,6 +547,20 @@ public class InertiaImpl implements Inertia {
         if (!updated.contains(name)) updated.add(name);
         sharedData.addDeferredPropGroup(group, updated);
         sharedData.setWithNoTrack(name, source);
+    }
+
+    @Override
+    public void live(String key, Supplier<Uni<Object>> resolver, LivePropListener... listeners) {
+        LivePropRegistry.register(key, resolver, null, listeners);
+    }
+
+    @Override
+    public void live(String key, Supplier<Uni<Object>> resolver, int throttleMs,
+            LivePropListener... listeners) {
+        if (throttleMs < 0) {
+            throw new IllegalArgumentException("live prop throttle must not be negative");
+        }
+        LivePropRegistry.register(key, resolver, throttleMs, listeners);
     }
 
     @Override

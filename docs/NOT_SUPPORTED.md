@@ -1,6 +1,6 @@
 # What is NOT supported (yet) and why
 
-Honest scope for `0.0.5` (branch `release-0.0.5`). Each item links its tracking row in
+Honest scope for `0.0.6` (branch `release-0.0.6`). Each item links its tracking row in
 [`specs/inertia-v3-compliance.yaml`](../specs/inertia-v3-compliance.yaml)
 or its release task. Policy: [`COMPATIBILITY_POLICY.md`](COMPATIBILITY_POLICY.md).
 v3 clients only; no legacy v1/v2 mode, no `2.x` support row.
@@ -24,16 +24,24 @@ v3 clients only; no legacy v1/v2 mode, no `2.x` support row.
 - **Legacy v1/v2 root template** (`<div data-page>`): intentionally
   unsupported, not even opt-in (v3-pure, −59% bootstrap bytes). No legacy API.
 
-## Transports and platforms (0.0.5: Reactive graduates stable in this release)
+## Transports and platforms (Reactive Routes is stable since the previous release)
 
-- **Quarkus Reactive Routes**: stable target in `0.0.5`, same contract as
-  Spring MVC and Quarkus REST. Graduation completes with the Fase F fixes
-  (no event-loop blocking, no split package) + full I100 — no 30-day wait,
-  fixes now. Until then: TCK 43/43 + `reactive-stress` green, E2E Vue cells
-  in M4b. Any remaining divergence is a `NO_APLICA` row with justification
-  or an open P0/P1 bug — see [reactive parity](reactive-parity.md).
-- **Inertia DevTools module**: out of scope on purpose — the browser
-  extension already interops with any correct v3 server.
+- **Quarkus Reactive Routes**: stable target, same contract as Spring MVC and
+  Quarkus REST. Graduation completed with the Fase F fixes (no event-loop
+  blocking, no split package) plus full I100 — no 30-day wait, fixes now.
+  Evidence: TCK on 3 transports + `reactive-stress` green, E2E Vue cells in
+  M4b. Any remaining divergence is a `NO_APLICA` row with justification or
+  an open P0/P1 bug — see [reactive parity](reactive-parity.md).
+- **Inertia DevTools Server Protocol**: intentionally out of scope. The
+  Inertia DevTools browser extension defines server endpoints and internal
+  hook introspection (`/__inertia_devtools`, request-correlation headers,
+  real-time prop inspection panels) implemented specifically in the Laravel
+  and Rails adapters. The Java adapter prioritizes security, performance and
+  a minimal attack surface in corporate environments, omitting internal
+  telemetry endpoints from the production runtime. The extension's basic
+  functionality (network-level page-object inspection) works against any
+  correct v3 server without additional endpoints. **Decision documented in
+  [ADR 007](adr/007-devtools-exclusion.md).**
 - **Frontend behavior** (polling, prefetching, UI state): client-side, proven
   by E2E contracts, not implemented server-side.
 

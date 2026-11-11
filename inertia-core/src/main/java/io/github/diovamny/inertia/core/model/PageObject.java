@@ -35,6 +35,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @param preserveBigIntegers whether the client must revive {@code $bigint}
  *                         markers into native {@code BigInt} for this page
  *                         ({@code null} omits the flag from the wire)
+ * @param liveProps        live-prop metadata ({@code key -> metadata}), or
+ *                         {@code null} when the page has no live props
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record PageObject(
@@ -56,11 +58,13 @@ public record PageObject(
     Boolean encryptHistory,
     Boolean clearHistory,
     Boolean preserveFragment,
-    Boolean preserveBigIntegers
+    Boolean preserveBigIntegers,
+    Map<String, LivePropMetadata> liveProps
 ) {
     /**
-     * Compact constructor validating the component name and normalizing a
-     * {@code null} props map to an empty one.
+     * Compact constructor validating the component name, normalizing a
+     * {@code null} props map to an empty one and an empty live-prop map to
+     * {@code null} so the field is omitted from the wire.
      *
      * @throws IllegalArgumentException if {@code component} is {@code null}
      *                                  or blank
@@ -70,6 +74,7 @@ public record PageObject(
             throw new IllegalArgumentException("component must not be blank");
         }
         if (props == null) props = Map.of();
+        if (liveProps != null && liveProps.isEmpty()) liveProps = null;
     }
 
     /**
@@ -87,7 +92,7 @@ public record PageObject(
             String version) {
         this(component, props, url, version,
             null, null, null, null, null, null, null, null, null, null, null,
-            false, false, false, null);
+            false, false, false, null, null);
     }
 
     /**
@@ -100,7 +105,23 @@ public record PageObject(
         return new PageObject(component, newProps, url, version,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers, liveProps);
+    }
+
+    /**
+     * Return a copy of this page object with the given deferred-prop groups.
+     *
+     * <p>Used by the adapters to compose deferred props after a page has been
+     * built (for example the {@code defer().live()} fluent chain).</p>
+     *
+     * @param newDeferredProps deferred groups ({@code group -> member names})
+     * @return a new page object with identical props and remaining metadata
+     */
+    public PageObject withDeferredProps(Map<String, List<String>> newDeferredProps) {
+        return new PageObject(component, props, url, version,
+            flash, newDeferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            scrollProps, sharedProps, rescuedProps, meta,
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers, liveProps);
     }
 
     /**
@@ -117,7 +138,7 @@ public record PageObject(
         return new PageObject(component, props, url, version,
             flash, deferredProps, newMergeProps, newPrependProps, newDeepMergeProps, newMatchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers, liveProps);
     }
 
     /**
@@ -130,7 +151,7 @@ public record PageObject(
         return new PageObject(component, props, url, newVersion,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers, liveProps);
     }
 
     /**
@@ -143,7 +164,7 @@ public record PageObject(
         return new PageObject(component, props, newUrl, version,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers);
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers, liveProps);
     }
 
     /**
@@ -157,7 +178,23 @@ public record PageObject(
         return new PageObject(component, props, url, version,
             flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
             scrollProps, sharedProps, rescuedProps, meta,
-            encryptHistory, clearHistory, preserveFragment, preserve);
+            encryptHistory, clearHistory, preserveFragment, preserve, liveProps);
+    }
+
+    /**
+     * Return a copy of this page object with the given live-prop metadata.
+     *
+     * <p>An empty map is normalized to {@code null} so the {@code liveProps}
+     * field is omitted from the wire.</p>
+     *
+     * @param newLiveProps the live-prop metadata ({@code key -> metadata})
+     * @return a new page object with identical props and remaining metadata
+     */
+    public PageObject withLiveProps(Map<String, LivePropMetadata> newLiveProps) {
+        return new PageObject(component, props, url, version,
+            flash, deferredProps, mergeProps, prependProps, deepMergeProps, matchPropsOn, onceProps,
+            scrollProps, sharedProps, rescuedProps, meta,
+            encryptHistory, clearHistory, preserveFragment, preserveBigIntegers, newLiveProps);
     }
 
     /**
@@ -176,6 +213,7 @@ public record PageObject(
                (sharedProps != null && !sharedProps.isEmpty()) ||
                (rescuedProps != null && !rescuedProps.isEmpty()) ||
                (meta != null && !meta.isEmpty()) ||
+               (liveProps != null && !liveProps.isEmpty()) ||
                Boolean.TRUE.equals(encryptHistory) ||
                Boolean.TRUE.equals(clearHistory) ||
                Boolean.TRUE.equals(preserveFragment) ||

@@ -558,6 +558,18 @@ jobs:
             health-url: http://localhost:8082/q/health
             jar: quarkus-app/quarkus-run.jar
             spec: feature-matrix.spec.ts
+          - demo: live-props-spring
+            module: examples/spring/spring-kitchen-sink
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/actuator/health
+            jar: spring-kitchen-sink-*.jar
+            spec: live-props-contracts.spec.ts
+          - demo: live-props-quarkus
+            module: examples/quarkus/kitchen-sink
+            base-url: http://localhost:8081
+            health-url: http://localhost:8081/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: live-props-contracts.spec.ts
     steps:
       - uses: actions/checkout@v5
 

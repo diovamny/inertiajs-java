@@ -28,6 +28,7 @@ see C100/I100/R100 in the policy.
 | Merge / prepend / deepMerge   | ✅  | ✅  | ✅  | ✅  |
 | Explicit append() + nested routes | ✅  | ✅  | ✅  | ✅  |
 | Infinite scroll               | ✅  | ✅  | ✅  | ✅  |
+| Live props (channels/events/throttle) | ✅ | ✅ | ✅ | ✅* |
 | Error bags (single message)   | ✅  | ✅  | ✅  | ✅  |
 | Multiple messages per field   | ✅  | ✅  | ✅  | ✅  |
 | File uploads                  | ✅  | ✅  | ✅  | ✅  |
@@ -37,9 +38,13 @@ see C100/I100/R100 in the policy.
 | CSRF 303 + flash              | ✅  | ✅  | ✅  | ✅  |
 | Native Image (GraalVM)        | ✅  | ✅  | ✅  | ✅  |
 
+`*` Live Props E2E covers the Vue kitchen-sink on Spring MVC and Quarkus REST;
+the reactive transport is certified by the TCK (`11-live-props.yaml`) and
+`LivePropsReactiveQuarkusTest`.
+
 | inertiajs-java | Inertia.js client | Spring Boot | Quarkus | Java | Node.js (SSR) |
 |---|---|---|---|---|---|
-| 0.0.6 | 3.8.0 (pinned) | 4.1.x | 3.40.x | 21+ | 20+ |
+| 0.0.6 | 3.11.0 (pinned) | 4.1.x | 3.40.x | 21+ | 20+ |
 
 ## Your controllers. Your routes. Modern components.
 

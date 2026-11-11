@@ -19,9 +19,11 @@ import io.github.diovamny.spring.inertia.cache.CachedPropStore;
 import io.github.diovamny.spring.inertia.config.InertiaProperties;
 import io.github.diovamny.inertia.core.model.AlwaysProp;
 import io.github.diovamny.inertia.core.model.DeferredProp;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.inertia.core.model.RawJson;
 import io.github.diovamny.inertia.core.model.ScrollProp;
+import io.github.diovamny.spring.inertia.protocol.LivePropRegistry;
 import io.github.diovamny.spring.inertia.protocol.PageObjectBuilder;
 import io.github.diovamny.spring.inertia.protocol.PartialReloadProcessor;
 import io.github.diovamny.spring.inertia.protocol.RedirectProcessor;
@@ -297,6 +299,20 @@ public class InertiaImpl implements Inertia {
         deferred.putAll(props);
         InertiaRequestContext.set(PageObjectBuilder.CONTEXT_DEFERRED, deferred);
         return props;
+    }
+
+    @Override
+    public void live(String key, Supplier<Object> resolver, LivePropListener... listeners) {
+        LivePropRegistry.register(key, resolver, null, listeners);
+    }
+
+    @Override
+    public void live(String key, Supplier<Object> resolver, int throttleMs,
+            LivePropListener... listeners) {
+        if (throttleMs < 0) {
+            throw new IllegalArgumentException("live prop throttle must not be negative");
+        }
+        LivePropRegistry.register(key, resolver, throttleMs, listeners);
     }
 
     @Override

@@ -275,8 +275,9 @@ page.assertComponent("Dashboard")
 ## End-to-End — Playwright
 
 Browser contracts against the real demos with the official `@inertiajs/*`
-clients (pinned `3.8.0`). Specs live in `e2e/` (`inertia-contracts`,
-`pingcrm-contracts`, `feature-matrix`, `ssr-contracts`); each run targets
+clients (pinned `3.11.0`). Specs live in `e2e/` (`inertia-contracts`,
+`live-props-contracts`, `pingcrm-contracts`, `feature-matrix`,
+`ssr-contracts`); each run targets
 **one booted demo** selected with `E2E_BASE_URL`. This is the procedure the
 `e2e` CI job follows, verified end-to-end on 2026-09-24 (118/118 green).
 
@@ -295,8 +296,8 @@ examples/quarkus/pingcrm-react,examples/quarkus/quarkus-pingcrm-svelte
 
 | Demo | Port | Health | Spec(s) |
 |---|---|---|---|
-| `examples/spring/spring-kitchen-sink` | 8080 | `/actuator/health` | `inertia-contracts.spec.ts` |
-| `examples/quarkus/kitchen-sink` | 8081 | `/q/health` | `inertia-contracts.spec.ts` |
+| `examples/spring/spring-kitchen-sink` | 8080 | `/actuator/health` | `inertia-contracts` + `live-props-contracts` |
+| `examples/quarkus/kitchen-sink` | 8081 | `/q/health` | `inertia-contracts` + `live-props-contracts` |
 | `examples/spring/spring-pingcrm` | 8080 | `/actuator/health` | `pingcrm-contracts.spec.ts` |
 | `examples/spring/spring-pingcrm-react` | 8080 | `/actuator/health` | `pingcrm-contracts` + `feature-matrix` |
 | `examples/spring/spring-pingcrm-svelte` | 8181 | `/actuator/health` | `pingcrm-contracts` + `feature-matrix` |

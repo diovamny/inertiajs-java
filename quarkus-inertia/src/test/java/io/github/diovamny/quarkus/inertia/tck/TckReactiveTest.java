@@ -63,6 +63,12 @@ class TckReactiveTest {
         "merge-nested-reset-clears-child-path",
         "scroll-metadata-emitted",
         "scroll-prepend-intent",
+        "live-props-page-json",
+        "live-props-partial-reload-resolves",
+        "live-props-partial-reload-foreign-key-skips-resolver",
+        "live-props-throttle",
+        "live-props-empty-omitted",
+        "live-props-defer-composition",
         "multipart-upload-redirects");
 
     @Test

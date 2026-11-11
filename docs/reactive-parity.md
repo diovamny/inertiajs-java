@@ -1,7 +1,8 @@
-# Quarkus Reactive Routes — parity matrix (release-0.0.5, M7)
+# Quarkus Reactive Routes — parity matrix (release-0.0.6, M7)
 
-Reactive Routes (`@RouteBase` + `@Route`) is a stable target in `0.0.5`:
-same contract as Spring MVC and Quarkus REST. No `experimental` label.
+Reactive Routes (`@RouteBase` + `@Route`) is a stable target since the
+previous release: same contract as Spring MVC and Quarkus REST. No
+`experimental` label.
 Every difference below is either closed in this release or a justified
 `NO_APLICA` row — never a hidden note.
 
@@ -24,7 +25,7 @@ Every difference below is either closed in this release or a justified
 
 Vert.x event-loop context locals are shared across requests on the same
 loop and visible to `@Blocking` workers, so per-request header reads could
-cross-talk under load. Fixed in `0.0.5`:
+cross-talk under load. Fixed during reactive graduation:
 
 - `InertiaContextLocals.routingContext(ctx)`: resolution order is now
   request-scoped holder → Vert.x local → `CurrentVertxRequest` → CDI

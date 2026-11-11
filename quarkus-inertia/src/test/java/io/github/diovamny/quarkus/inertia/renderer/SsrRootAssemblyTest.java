@@ -51,7 +51,7 @@ class SsrRootAssemblyTest {
             "component", "Home", "props", props, "url", "/", "version", "v1"));
         assertTrue(json.contains("Home"));
         return new PageObject("Home", props, "/", "v1", null, null, null,
-            null, null, null, null, null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private static int occurrences(String html, String needle) {

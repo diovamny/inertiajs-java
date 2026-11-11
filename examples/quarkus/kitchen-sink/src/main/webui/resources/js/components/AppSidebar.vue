@@ -169,6 +169,11 @@ const featuresSection: NavSectionType = {
                     title: 'Optional Props',
                     href: '/features/data-loading/optional-props',
                 },
+                {
+                    title: 'Live Props',
+                    href: '/features/live-props',
+                    badge: 'v3',
+                },
             ],
         },
         {

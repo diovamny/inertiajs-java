@@ -178,6 +178,55 @@ class ReactiveStressTest {
         Assertions.assertTrue(resetRoot.path("prependProps").toString().contains("posts.pinned"));
     }
 
+    private void assertLivePropsIsolation(int identity) throws Exception {
+        var base = base();
+        var jar = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+        var http = client(jar);
+        xsrfToken(http, base);
+
+        // Full visit: each request owns its counter, so order -> 1 and
+        // mirror -> 1. A leaked resolver would surface a foreign counter or
+        // foreign channel metadata.
+        var full = http.send(HttpRequest.newBuilder(URI.create(base + "/tck-reactive/live-props"))
+            .header("X-Inertia", "true")
+            .GET().build(), HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(200, full.statusCode(), "identity " + identity);
+        JsonNode root = JSON.readTree(full.body());
+        Assertions.assertTrue(root.path("props").has("order"),
+            () -> "identity " + identity + " missing live order: " + full.body());
+        Assertions.assertEquals(1, root.path("props").path("order").path("revision").asInt(),
+            () -> "identity " + identity + " order resolver cross-talk: " + full.body());
+        Assertions.assertTrue(root.path("props").has("mirror"),
+            () -> "identity " + identity + " missing mirror: " + full.body());
+        Assertions.assertEquals(1, root.path("props").path("mirror").asInt(),
+            () -> "identity " + identity + " mirror resolver cross-talk: " + full.body());
+        Assertions.assertEquals("orders.1",
+            root.path("liveProps").path("order").path("listeners").path(0)
+                .path("channel").path("name").asText(),
+            () -> "identity " + identity + " metadata cross-talk: " + full.body());
+        Assertions.assertTrue(root.path("props").path("stats").isMissingNode(),
+            () -> "identity " + identity + " defer+live leaked stats: " + full.body());
+
+        // Foreign partial: the resolver must not run, so mirror stays at 0.
+        var partial = http.send(HttpRequest.newBuilder(URI.create(base + "/tck-reactive/live-props"))
+            .header("X-Inertia", "true")
+            .header("X-Inertia-Partial-Component", "Tck/LiveProps")
+            .header("X-Inertia-Partial-Data", "mirror")
+            .GET().build(), HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(200, partial.statusCode(), "identity " + identity);
+        JsonNode partialRoot = JSON.readTree(partial.body());
+        Assertions.assertTrue(partialRoot.path("props").has("mirror"),
+            () -> "identity " + identity + " missing partial mirror: " + partial.body());
+        Assertions.assertEquals(0, partialRoot.path("props").path("mirror").asInt(),
+            () -> "identity " + identity + " partial ran a foreign resolver: " + partial.body());
+        Assertions.assertTrue(partialRoot.path("props").path("order").isMissingNode(),
+            () -> "identity " + identity + " partial leaked order: " + partial.body());
+        Assertions.assertEquals("private",
+            partialRoot.path("liveProps").path("order").path("listeners").path(0)
+                .path("channel").path("type").asText(),
+            () -> "identity " + identity + " partial metadata cross-talk: " + partial.body());
+    }
+
     @Test
     void reactiveTransportIsStableUnderConcurrency() throws Exception {
         var gate = new CountDownLatch(1);
@@ -192,6 +241,7 @@ class ReactiveStressTest {
                         assertFlashIsolation(id);
                         assertCsrfContract();
                         assertVersionOnceDeferredPartialReset();
+                        assertLivePropsIsolation(id);
                     }
                     return "identity-" + id + "-ok";
                 });

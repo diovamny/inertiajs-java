@@ -181,6 +181,7 @@ public class PageObjectBuilder {
         metrics.stopPropsResolution(propsSample,
             component != null ? component : "unknown");
         merged = unwrapOptionals(merged, partial);
+        var liveProps = LivePropRegistry.resolveInto(merged, component);
 
         var rescued = rescuedKeys();
 
@@ -204,7 +205,8 @@ public class PageObjectBuilder {
             encryptHistoryEnabled(),
             clearHistoryEnabled(),
             preserveFragmentEnabled(),
-            preserveBigIntegers());
+            preserveBigIntegers(),
+            liveProps.isEmpty() ? null : liveProps);
         return page;
     }
 

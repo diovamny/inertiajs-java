@@ -185,6 +185,74 @@ test.describe('Inertia v3 contracts (/login)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('deferred rescue slot recovers with X-Force-Success (E2E-05 rescue depth)', async ({ page }) => {
+    const errors = await collectBrowserErrors(page);
+    await loginAsTestUser(page);
+    await page.goto('/features/data-loading/deferred-props');
+    // The flaky deferred prop throws on the first attempt and the official
+    // client renders the #rescue slot instead of the fallback.
+    await expect(page.getByText('Failed to load report')).toBeVisible({ timeout: 30000 });
+    // Retry sends X-Force-Success, so the same resolver returns data and the
+    // official client swaps the rescue slot for the resolved prop.
+    await page.getByRole('button', { name: 'Retry' }).click();
+    await expect(page.getByText('Report loaded')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Value:/)).toBeVisible({ timeout: 15000 });
+    expect(errors).toEqual([]);
+  });
+
+  test('infinite scroll appends pages and restores depth on history back (E2E-05 scroll depth)', async ({
+    page,
+  }) => {
+    const errors = await collectBrowserErrors(page);
+    await loginAsTestUser(page);
+
+    // Wire contract: the server emits scrollProps for the paginated prop.
+    const wire = await page.request.get('/features/data-loading/infinite-scroll', {
+      headers: { 'X-Inertia': 'true' },
+    });
+    expect(wire.status()).toBe(200);
+    const wirePage = (await wire.json()) as {
+      component: string;
+      scrollProps: Record<string, { pageName: string; currentPage: number; nextPage?: number }>;
+    };
+    expect(wirePage.component).toBe('Features/DataLoading/InfiniteScroll');
+    expect(wirePage.scrollProps.contacts.pageName).toBe('cursor');
+    expect(wirePage.scrollProps.contacts.currentPage).toBe(1);
+    expect(wirePage.scrollProps.contacts.nextPage).toBeTruthy();
+
+    await page.goto('/features/data-loading/infinite-scroll');
+    const rows = page.getByTestId('infinite-scroll-contact');
+    await expect(rows.first()).toBeVisible({ timeout: 30000 });
+    const initialRows = await rows.count();
+    expect(initialRows).toBeGreaterThan(0);
+
+    // Auto mode triggers the next cursor page when the bottom enters the
+    // 200px buffer; the official client appends the fresh page.
+    const nextPage = page.waitForResponse(
+      (response) =>
+        response.url().includes('/features/data-loading/infinite-scroll') &&
+        response.request().headers()['x-inertia'] === 'true',
+      { timeout: 30000 },
+    );
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const appendResponse = await nextPage;
+    expect(appendResponse.ok()).toBeTruthy();
+    await expect.poll(async () => rows.count(), { timeout: 15000 }).toBeGreaterThan(initialRows);
+
+    const depthBeforeLeaving = await page.evaluate(() => window.scrollY);
+    expect(depthBeforeLeaving).toBeGreaterThan(0);
+
+    // Leave through a real Inertia link and return with browser history: the
+    // official client restores the saved document scroll depth.
+    await page.locator('a[href="/dashboard"]').first().click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+    await page.goBack();
+    await expect(page).toHaveURL(/\/features\/data-loading\/infinite-scroll/, { timeout: 30000 });
+    await expect.poll(async () => page.evaluate(() => window.scrollY), { timeout: 15000 }).toBeGreaterThan(0);
+    await expect.poll(async () => rows.count(), { timeout: 15000 }).toBeGreaterThanOrEqual(initialRows + 1);
+    expect(errors).toEqual([]);
+  });
+
   test('browser renders the login page without console errors', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(String(error)));

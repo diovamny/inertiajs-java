@@ -79,5 +79,12 @@
             <version>3.27.3</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- Wire-contract assertions for the pure JSON DTOs. -->
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.11</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

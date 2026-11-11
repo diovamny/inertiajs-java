@@ -28,6 +28,17 @@ in your `pom.xml`; no code changes are needed for patch releases.
 - Quarkus manual `InertiaConfig` implementations must add
   `boolean sessionEnabled() { return true; }` (CDI-managed mappings are
   unaffected; source-level change, binary compatible).
+- **Live Props (additive)**: declare them with
+  `inertia.live("stockCount", resolver[, throttleMs], listeners...)`
+  (Spring `Supplier<Object>`, Quarkus `Supplier<Uni<Object>>`). The server
+  emits the `liveProps` map (PageObject component #20) and resolves the prop
+  on full visits and on partial reloads that select it; `defer().live()` is
+  supported for deferred+live props. Clients must be on `@inertiajs/*`
+  `3.11.0` to consume the metadata; apps without live props keep the exact
+  previous wire shape (`liveProps` is omitted).
+- **DevTools Protocol excluded**: no `/__inertia_devtools` endpoints or
+  request-correlation headers are implemented; see ADR 007. Network-level
+  page-object inspection continues to work with the official extension.
 
 ## 0.0.4 → 0.0.5
 
@@ -98,7 +109,7 @@ generation and copy what you need.
 ## From Laravel / Rails (PHP/Ruby Inertia adapters)
 
 The frontend does not change: keep your pages/components and the
-`@inertiajs/*@3.8.0` client. Only the server side is rewritten. Generate a
+`@inertiajs/*@3.11.0` client. Only the server side is rewritten. Generate a
 starter and port controllers one by one (both adapters verified with the
 SSR contract suite on 2026-09-25: server-render + hydrate + CSR fallback).
 

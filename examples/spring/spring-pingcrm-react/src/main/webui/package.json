@@ -12,9 +12,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/core": "3.8.0",
-    "@inertiajs/react": "3.8.0",
-    "@inertiajs/vite": "^3.8.0",
+    "@inertiajs/core": "3.11.0",
+    "@inertiajs/react": "3.11.0",
+    "@inertiajs/vite": "^3.11.0",
     "@popperjs/core": "^2.11.8",
     "lodash": "^4.17.21",
     "react": "^19.2.0",

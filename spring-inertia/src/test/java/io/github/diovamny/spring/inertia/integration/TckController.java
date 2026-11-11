@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.github.diovamny.inertia.core.model.LiveChannel;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 import io.github.diovamny.spring.inertia.api.Inertia;
 import io.github.diovamny.spring.inertia.api.Inertia.MergeRule;
 
@@ -167,5 +169,29 @@ public class TckController {
             return ResponseEntity.badRequest().build();
         }
         return inertia.redirect("/tck/page");
+    }
+
+    @GetMapping("/live-props")
+    public Object liveProps() {
+        var counter = new java.util.concurrent.atomic.AtomicInteger();
+        inertia.live("order", () -> Map.of(
+                "id", 1,
+                "status", "shipped",
+                "revision", counter.incrementAndGet()),
+            1000,
+            new LivePropListener(LiveChannel.privateChannel("orders.1"), "OrderUpdated"));
+        inertia.live("throttled", () -> "t", 2000,
+            new LivePropListener(LiveChannel.publicChannel("throttle"), "Tick"));
+        inertia.deferred("default", "stats", () -> Map.of("total", 42));
+        inertia.live("stats", () -> Map.of("total", 42),
+            new LivePropListener(LiveChannel.publicChannel("stats"), "StatsUpdated"));
+        inertia.live("mirror", counter::get,
+            new LivePropListener(LiveChannel.publicChannel("mirror"), "MirrorUpdated"));
+        return inertia.render("Tck/LiveProps", Map.of("other", "x"));
+    }
+
+    @GetMapping("/live-props/empty")
+    public Object livePropsEmpty() {
+        return inertia.render("Tck/LivePropsEmpty", Map.of("a", "A"));
     }
 }

@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // Pinned official-client check (release-0.0.6 Fase I).
-// Fails unless every template + demo package.json declares exactly 3.8.0
-// for @inertiajs/vue3|react|svelte AND every lockfile resolves 3.8.0.
+// Fails unless every template + demo package.json declares exactly 3.11.0
+// for @inertiajs/vue3|react|svelte AND every lockfile resolves 3.11.0.
 // Run: node scripts/check-client-versions.mjs (wired into verify:metadata).
 const root = process.cwd();
-const EXPECTED = '3.8.0';
+const EXPECTED = '3.11.0';
 const PKGS = ['@inertiajs/vue3', '@inertiajs/react', '@inertiajs/svelte'];
 const failures = [];
 const ok = (msg) => console.log(`  ok: ${msg}`);

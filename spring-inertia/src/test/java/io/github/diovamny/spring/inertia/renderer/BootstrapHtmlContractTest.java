@@ -49,7 +49,7 @@ class BootstrapHtmlContractTest {
 
         var props = adversarialProps();
         var page = new PageObject("Adversarial", props, "/adversarial", "v1", null, null, null,
-            null, null, null, null, null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
 
         // v3-pure: clean div, single script payload.

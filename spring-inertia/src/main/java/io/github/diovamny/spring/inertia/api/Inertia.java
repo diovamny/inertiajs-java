@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import io.github.diovamny.inertia.core.head.HeadBuilder;
 import io.github.diovamny.inertia.core.model.DeferredProp;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.spring.inertia.spi.ErrorMapper;
 
@@ -305,6 +306,30 @@ public interface Inertia {
      * @return the props map
      */
     Object deferred(Map<String, DeferredProp<Object>> props);
+
+    /**
+     * Register a live prop: included in the page and broadcast metadata so
+     * the client can refresh it when one of the given events fires.
+     *
+     * <p>On a full visit the resolver produces the initial value. On a
+     * partial reload the resolver runs only when the prop is selected through
+     * {@code X-Inertia-Partial-Data}/{@code X-Inertia-Partial-Except}.</p>
+     *
+     * @param key       the prop name
+     * @param resolver  produces the current value
+     * @param listeners channels and events that trigger live updates
+     */
+    void live(String key, Supplier<Object> resolver, LivePropListener... listeners);
+
+    /**
+     * Register a live prop with a minimum update interval.
+     *
+     * @param key        the prop name
+     * @param resolver   produces the current value
+     * @param throttleMs minimum interval in milliseconds between updates
+     * @param listeners  channels and events that trigger live updates
+     */
+    void live(String key, Supplier<Object> resolver, int throttleMs, LivePropListener... listeners);
 
     /**
      * Register a once-prop: rendered by the client only once per session.

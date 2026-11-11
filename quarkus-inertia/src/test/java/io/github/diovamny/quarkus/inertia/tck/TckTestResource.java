@@ -20,6 +20,8 @@ import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import io.github.diovamny.quarkus.inertia.api.Inertia;
+import io.github.diovamny.inertia.core.model.LiveChannel;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 
 /**
  * Fixed endpoints backing the executable TCK suite
@@ -182,6 +184,32 @@ public class TckTestResource {
         inertia.optional("comboOpt", () -> Uni.createFrom().item((Object) "CO"));
         inertia.deferred("slow", "comboDef", () -> Uni.createFrom().item((Object) "CD"));
         return inertia.render("Tck/OnceCombos", Map.of("combo", List.of("a")));
+    }
+
+    @GET
+    @Path("/live-props")
+    public Uni<Object> liveProps() {
+        var counter = new java.util.concurrent.atomic.AtomicInteger();
+        inertia.live("order", () -> Uni.createFrom().item((Object) Map.of(
+                "id", 1,
+                "status", "shipped",
+                "revision", counter.incrementAndGet())),
+            1000,
+            new LivePropListener(LiveChannel.privateChannel("orders.1"), "OrderUpdated"));
+        inertia.live("throttled", () -> Uni.createFrom().item((Object) "t"), 2000,
+            new LivePropListener(LiveChannel.publicChannel("throttle"), "Tick"));
+        inertia.deferred("default", "stats", () -> Uni.createFrom().item((Object) Map.of("total", 42)));
+        inertia.live("stats", () -> Uni.createFrom().item((Object) Map.of("total", 42)),
+            new LivePropListener(LiveChannel.publicChannel("stats"), "StatsUpdated"));
+        inertia.live("mirror", () -> Uni.createFrom().item((Object) counter.get()),
+            new LivePropListener(LiveChannel.publicChannel("mirror"), "MirrorUpdated"));
+        return inertia.render("Tck/LiveProps", Map.of("other", "x"));
+    }
+
+    @GET
+    @Path("/live-props/empty")
+    public Uni<Object> livePropsEmpty() {
+        return inertia.render("Tck/LivePropsEmpty", Map.of("a", "A"));
     }
 
     public record TckNameForm(@NotBlank String name) {

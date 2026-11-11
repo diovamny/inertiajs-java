@@ -110,6 +110,7 @@ function applyFilter() {
                     <div
                         v-for="contact in contacts.data"
                         :key="contact.id"
+                        data-testid="infinite-scroll-contact"
                         class="flex items-center justify-between rounded border border-black/10 px-3 py-2 dark:border-white/10"
                     >
                         <div>
@@ -161,6 +162,7 @@ function applyFilter() {
                     <div
                         v-for="contact in contacts.data"
                         :key="contact.id"
+                        data-testid="infinite-scroll-contact"
                         class="flex items-center justify-between rounded border border-black/10 px-3 py-2 dark:border-white/10"
                     >
                         <div>
@@ -221,6 +223,7 @@ function applyFilter() {
                     <div
                         v-for="contact in contacts.data"
                         :key="contact.id"
+                        data-testid="infinite-scroll-contact"
                         class="flex items-center justify-between rounded border border-black/10 px-3 py-2 dark:border-white/10"
                     >
                         <div>
@@ -296,6 +299,7 @@ function applyFilter() {
                     <div
                         v-for="contact in contacts.data"
                         :key="contact.id"
+                        data-testid="infinite-scroll-contact"
                         class="flex items-center justify-between rounded border border-black/10 px-3 py-2 dark:border-white/10"
                     >
                         <div>

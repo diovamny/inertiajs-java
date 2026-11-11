@@ -6,8 +6,11 @@ and [compatibility policy](docs/COMPATIBILITY_POLICY.md).
 
 ## Now (0.0.6 — release branch `release-0.0.6`)
 
-- Inertia.js client `3.8.0` (core/vue3/react/svelte) + SSR oficial
+- Inertia.js client `3.11.0` (core/vue3/react/svelte) + SSR oficial
   (`createServer`); adiós al sidecar ad-hoc `ssr-server.mjs`.
+- Live Props (`Inertia::live`): wire contract (`liveProps`), canales
+  public/private/presence, eventos, throttle y composición `defer().live()`
+  con resolución en partial reload en los 3 transportes.
 - Quarkus `3.40.1` LTS default con soporte dual verificado `3.39.2`; Spring
   Boot `4.1.1` en POMs y CI.
 - Sesión Vert.x auto-provisionada en Quarkus (`inertia.session.enabled`) para
@@ -16,6 +19,10 @@ and [compatibility policy](docs/COMPATIBILITY_POLICY.md).
   Spring/Quarkus) con tests MockMvc/RestAssured y smoke en CI.
 - `BigIntSerializer` opt-in (`inertia.bigint-enabled`) y regresión TCK
   `PROTO-BigInt-01/02`, `PROTO-Version-History-01`.
+- Saneamiento documental completo (erradicación de residuos `0.0.5` de
+  alcance activo) y cierre de notas pendientes E2E (rescue/scroll depth).
+- ADR formal de exclusión del DevTools Server Protocol
+  ([ADR 007](docs/adr/007-devtools-exclusion.md)).
 - Publish `0.0.6` to Maven Central (namespace `io.github.diovamny`) with signed
   artifacts and `META-INF/LICENSE`. Version single source: `version.properties`
   (`project.version=0.0.6`); `node scripts/check-versions.mjs` fails the build

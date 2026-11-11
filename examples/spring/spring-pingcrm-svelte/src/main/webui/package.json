@@ -8,8 +8,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/core": "3.8.0",
-    "@inertiajs/svelte": "3.8.0",
+    "@inertiajs/core": "3.11.0",
+    "@inertiajs/svelte": "3.11.0",
     "svelte": "^5.46.4"
   },
   "devDependencies": {

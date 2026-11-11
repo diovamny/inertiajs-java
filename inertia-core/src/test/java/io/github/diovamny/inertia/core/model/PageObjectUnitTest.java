@@ -66,7 +66,7 @@ class PageObjectUnitTest {
         var page = new PageObject("Home", Map.of(), "/", "v1",
             null, Map.of("default", List.of("lazyData")), List.of("items"), List.of("prependItem"),
             null, null, null, null, null, null, null,
-            false, false, false, null);
+            false, false, false, null, null);
         assertThat(page.deferredProps()).containsKey("default");
         assertThat(page.deferredProps().get("default")).containsExactly("lazyData");
         assertThat(page.mergeProps()).containsExactly("items");
@@ -80,7 +80,7 @@ class PageObjectUnitTest {
         var withMeta = new PageObject("Home", Map.of(), "/", "v1",
             null, Map.of("default", List.of("data")), null, null, null,
             null, null, null, null, null, null,
-            false, false, false, null);
+            false, false, false, null, null);
         assertThat(withMeta.hasMetadata()).isTrue();
     }
 
@@ -89,7 +89,7 @@ class PageObjectUnitTest {
         var page = new PageObject("Home", Map.of(), "/", "v1",
             null, null, null, List.of("items"), null,
             null, null, null, null, null, null,
-            false, false, false, null);
+            false, false, false, null, null);
         assertThat(page.hasMetadata()).isTrue();
         assertThat(page.prependProps()).containsExactly("items");
     }
@@ -99,7 +99,7 @@ class PageObjectUnitTest {
         var page = new PageObject("Home", Map.of(), "/", "v1",
             null, null, null, null, null, List.of("items.id"),
             null, null, null, null, null,
-            false, false, false, null);
+            false, false, false, null, null);
         assertThat(page.hasMetadata()).isTrue();
         assertThat(page.matchPropsOn()).containsExactly("items.id");
     }
@@ -109,7 +109,7 @@ class PageObjectUnitTest {
         var page = new PageObject("Home", Map.of(), "/", "v1",
             null, null, null, null, null,
             null, null, null, null, List.of("failedProp"), null,
-            false, false, false, null);
+            false, false, false, null, null);
         assertThat(page.hasMetadata()).isTrue();
         assertThat(page.rescuedProps()).containsExactly("failedProp");
     }
@@ -128,7 +128,7 @@ class PageObjectUnitTest {
         var page = new PageObject("Home", Map.of(), "/", "v1",
             null, null, null, null, null,
             null, null, null, null, null, null,
-            true, true, true, null);
+            true, true, true, null, null);
         assertThat(page.encryptHistory()).isTrue();
         assertThat(page.clearHistory()).isTrue();
         assertThat(page.preserveFragment()).isTrue();
@@ -163,7 +163,7 @@ class PageObjectUnitTest {
     void withPropsKeepsMetadata() {
         var page = new PageObject("Dashboard", Map.of("a", 1), "/", "v1",
             Map.of("m", "x"), Map.of("g", List.of("p")), List.of("p"),
-            null, null, null, null, null, null, null, null, false, false, false, null);
+            null, null, null, null, null, null, null, null, false, false, false, null, null);
         var updated = page.withProps(Map.of("b", 2));
         assertThat(updated.props()).containsEntry("b", 2);
         assertThat(updated.flash()).containsEntry("m", "x");
@@ -181,7 +181,7 @@ class PageObjectUnitTest {
     void oncePropsMetadata() {
         var page = new PageObject("Home", Map.of(), "/a", "v1", null,
             null, null, null, null, null, Map.of("n", new OnceProp("n", null)),
-            null, null, null, null, false, false, false, null);
+            null, null, null, null, false, false, false, null, null);
         assertThat(page.hasMetadata()).isTrue();
         assertThat(page.onceProps()).containsKey("n");
     }
