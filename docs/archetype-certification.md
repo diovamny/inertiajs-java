@@ -26,3 +26,21 @@ Every starter (Spring/Quarkus × Vue/React/Svelte) must pass, per archetype:
 | inertia-quarkus-svelte-archetype | ✅ CI | ✅ CI | ✅ CI | ✅ CI | ✅ CI |
 
 (`✅ CI` = green in `.github/workflows/ci.yml` job `archetypes` on this branch.)
+
+## Local certification (2026-11-10)
+
+The six starters were generated from the locally installed `0.0.6` catalog
+(`-DarchetypeVersion=0.0.6 -DinertiaAdapterVersion=0.0.6`). Every generated
+project passed the static contract checks: client `3.11.0`,
+`inertia-core`/adapter pinned to `0.0.6`, `<parameters>true</parameters>`,
+no `ssr-server.mjs`, Vue tsconfig without `react-jsx`, and README `3.11.0`.
+
+End-to-end spot checks, one per stack:
+
+| Starter | Build + test | Boot + visit |
+|---|:---:|:---:|
+| inertia-spring-vue-archetype | ✅ 8/8 | ✅ HTML shell + JSON `Welcome` |
+| inertia-quarkus-vue-archetype | ✅ 8/8 | ✅ HTML shell + JSON `Welcome` |
+
+The React/Svelte variants are exercised by the CI `archetypes` matrix; they
+share the same generation path and contract checks.
