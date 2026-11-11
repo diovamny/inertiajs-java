@@ -79,7 +79,7 @@ Open `http://localhost:8080/`.
 |-----------|---------|
 | Java | 21 |
 | Spring Boot | 4.1.1 |
-| Inertia.js | 3.8.0 |
+| Inertia.js | 3.11.0 |
 | TypeScript | 6.0.3 |
 | Node | 24.21+ |
 

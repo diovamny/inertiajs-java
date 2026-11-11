@@ -62,7 +62,7 @@ wire/partial/lazy contract is certified by `11-live-props.yaml` and
 ## Fixes landed in Fase C
 
 - `spring-pingcrm-react` had no `webui`: ported from `quarkus/pingcrm-react`
-  (React 3.7.1, `app.tsx`, all Pages/Shared, `tsconfig.json`), Spring-style
+  (React, `app.tsx`, all Pages/Shared, `tsconfig.json`), Spring-style
   `vite.config.ts` (outDir `static` + `.vite/manifest.json` emit),
   `templates/index.html` root template, `package.json` + fresh lockfile,
   `.npmrc` `save-exact`.

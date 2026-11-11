@@ -43,7 +43,7 @@ jobs:
 
       - name: Verify pinned official clients
         # Fails unless every template + demo package.json declares exactly
-        # 3.8.0 and every lockfile resolves 3.8.0 (Fase I).
+        # 3.11.0 and every lockfile resolves 3.11.0 (Fase I).
         run: node scripts/check-client-versions.mjs
 
       - name: Verify generated compliance matrix
@@ -411,13 +411,13 @@ jobs:
         # CI-NoSsrServer-01 / CI-Parameters-01 / CI-InertiaVersion-01 /
         # CI-TsconfigNoReactJsx-01 (Vue only): generated projects must not
         # resurrect the ad-hoc ssr-server.mjs, must compile records with
-        # -parameters, must pin @inertiajs/core 3.8.0 and Vue tsconfigs must
+        # -parameters, must pin @inertiajs/core 3.11.0 and Vue tsconfigs must
         # not inherit a react-jsx setting.
         working-directory: /tmp/hello-inertia
         run: |
           test ! -f src/main/webui/ssr-server.mjs
           grep -q '<parameters>true</parameters>' pom.xml
-          (cd src/main/webui && npm ls @inertiajs/core | grep -q '3.8.0')
+          (cd src/main/webui && npm ls @inertiajs/core | grep -q '3.11.0')
           if [[ "${{ matrix.archetype }}" == *-vue-* ]]; then
             ! grep -q 'react-jsx' src/main/webui/tsconfig.json
           fi
@@ -739,8 +739,8 @@ jobs:
       - name: Build client + SSR bundle
         # NOTE: generated starters deliberately ship no package-lock.json, so
         # `npm ci` cannot run here (EUSAGE). `npm install` resolves the pinned
-        # @inertiajs/* 3.8.0 range from the archetype template (verified
-        # 2026-10-17: resolves vue3/react/svelte 3.8.0).
+        # @inertiajs/* 3.11.0 range from the archetype template (verified
+        # resolves vue3/react/svelte 3.11.0).
         working-directory: /tmp/hello-inertia/src/main/webui
         run: npm install && npm run build && npm run build:ssr
 
