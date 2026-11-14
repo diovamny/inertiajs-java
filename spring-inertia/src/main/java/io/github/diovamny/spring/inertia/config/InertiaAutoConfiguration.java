@@ -19,7 +19,6 @@ import io.github.diovamny.spring.inertia.api.Inertia;
 import io.github.diovamny.spring.inertia.cache.CachedPropStore;
 import io.github.diovamny.spring.inertia.internal.ErrorResponseFactory;
 import io.github.diovamny.spring.inertia.internal.InertiaImpl;
-import io.github.diovamny.spring.inertia.internal.JacksonBigIntModule;
 import io.github.diovamny.spring.inertia.internal.JacksonJsonProvider;
 import io.github.diovamny.spring.inertia.internal.SpringFlashStore;
 import io.github.diovamny.spring.inertia.mvc.ConventionComponentResolver;
