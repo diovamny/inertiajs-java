@@ -19,6 +19,7 @@ import io.github.diovamny.quarkus.inertia.api.ProvidesInertiaProperties;
 import io.github.diovamny.quarkus.inertia.api.RenderContext;
 import io.github.diovamny.quarkus.inertia.config.InertiaConfig;
 import io.github.diovamny.inertia.core.model.AlwaysProp;
+import io.github.diovamny.inertia.core.model.LivePropMetadata;
 import io.github.diovamny.inertia.core.model.OnceProp;
 import io.github.diovamny.inertia.core.model.PageObject;
 import io.github.diovamny.inertia.core.protocol.MergeLabels;
@@ -104,11 +105,23 @@ public class PageObjectBuilder {
     }
 
     public Uni<PageObject> build(String component, Map<String, Object> props, boolean isPartial) {
-        var state = assemble(component, props, isPartial);
-        var propsSample = metrics.startPropsResolution();
-        return resolveSupplierProps(state.allProps, state.partialContext)
-            .onTermination().invoke(() -> metrics.stopPropsResolution(propsSample, state.resolvedComponent))
-            .map(resolvedProps -> finish(state, resolvedProps));
+        // Flash is drained eagerly: a chained render(...).flash(...) targets
+        // the NEXT page, never the page being rendered. Everything else is
+        // assembled lazily so registrations made by the fluent
+        // InertiaRender#defer(...)/#live(...) chain after render() are visible.
+        var flashSnapshot = drainFlashEagerly();
+        return Uni.createFrom().deferred(() -> {
+            var state = assemble(component, props, isPartial, flashSnapshot);
+            var propsSample = metrics.startPropsResolution();
+            return resolveSupplierProps(state.allProps, state.partialContext)
+                .chain(resolvedProps -> LivePropRegistry.resolveInto(
+                    resolvedProps, state.resolvedComponent, state.partialContext, state.deferredKeys))
+                .onTermination().invoke(() -> metrics.stopPropsResolution(propsSample, state.resolvedComponent))
+                .map(resolvedProps -> {
+                    state.livePropsOut = LivePropRegistry.metadata();
+                    return finish(state, resolvedProps);
+                });
+        });
     }
 
     /**
@@ -119,6 +132,11 @@ public class PageObjectBuilder {
      * sync/async divergence (see {@link #finish(Assembly, Map)}).
      */
     private Assembly assemble(String component, Map<String, Object> props, boolean isPartial) {
+        return assemble(component, props, isPartial, null);
+    }
+
+    private Assembly assemble(String component, Map<String, Object> props, boolean isPartial,
+            Map<String, Object> preDrainedFlash) {
         var state = new Assembly();
         state.resolvedComponent = resolveComponent(component);
         state.partialContext = buildPartialReloadContext();
@@ -135,7 +153,7 @@ public class PageObjectBuilder {
         allProps = new HashMap<>(resolvePropertyProviders(allProps, renderContext));
         state.allProps = allProps;
 
-        state.flashOut = resolveFlashData(allProps);
+        state.flashOut = resolveFlashData(allProps, preDrainedFlash);
 
         state.onceMetadata = oncePropRegistry.metadata();
         var exceptOnceKeys = exceptOncePropKeys();
@@ -176,13 +194,32 @@ public class PageObjectBuilder {
 
         state.url = resolveUrl(currentUrl());
         state.version = versionProvider.getVersion();
-        var deferredGroups = sharedData.getDeferredPropGroups();
+        var chainedDeferred = DeferredPropRegistry.entries();
+        var deferredGroups = mergeDeferredGroups(sharedData.getDeferredPropGroups(), chainedDeferred);
         var deferredKeys = deferredGroups.values().stream()
             .flatMap(List::stream)
             .collect(java.util.stream.Collectors.toSet());
+        state.deferredKeys = deferredKeys;
 
         if (!isPartial) {
             deferredKeys.forEach(allProps::remove);
+        }
+
+        // defer(...) chained after render(): the resolver is not part of
+        // sharedData, so it is injected as a supplier only when the partial
+        // reload selects it. A full visit removes the key entirely.
+        if (!chainedDeferred.isEmpty()) {
+            var partialForComponent = isPartial && state.partialContext != null
+                && state.partialContext.matchesComponent(state.resolvedComponent);
+            for (var spec : chainedDeferred.values()) {
+                boolean selected = partialForComponent
+                    && isChainedDeferredSelected(spec.key(), state.partialContext);
+                if (selected) {
+                    allProps.put(spec.key(), spec.resolver());
+                } else {
+                    allProps.remove(spec.key());
+                }
+            }
         }
 
         if (isPartial) {
@@ -221,6 +258,7 @@ public class PageObjectBuilder {
         state.encryptHistoryVal = encryptHistory() ? Boolean.TRUE : null;
         state.clearHistoryVal = clearHistory() ? Boolean.TRUE : null;
         state.preserveFragmentVal = preserveFragment() ? Boolean.TRUE : null;
+        state.preserveBigIntegersVal = preserveBigIntegers();
         return state;
     }
 
@@ -237,7 +275,8 @@ public class PageObjectBuilder {
         var page = new PageObject(state.resolvedComponent, copyOfNullTolerant(withServerHead(resolvedProps)), state.url, state.version,
             state.flashOut, state.deferredProps, state.mergePropsOut, state.prependPropsOut, state.deepMergePropsOut, state.matchPropsOnOut,
             state.onceProps, state.scrollProps, state.sharedKeys.isEmpty() ? null : state.sharedKeys, rescuedProps, state.meta,
-            state.encryptHistoryVal, state.clearHistoryVal, state.preserveFragmentVal);
+            state.encryptHistoryVal, state.clearHistoryVal, state.preserveFragmentVal, state.preserveBigIntegersVal,
+            state.livePropsOut == null || state.livePropsOut.isEmpty() ? null : state.livePropsOut);
 
         page = expandDotNotation(page);
 
@@ -275,6 +314,9 @@ public class PageObjectBuilder {
         Boolean encryptHistoryVal;
         Boolean clearHistoryVal;
         Boolean preserveFragmentVal;
+        Boolean preserveBigIntegersVal;
+        Set<String> deferredKeys;
+        Map<String, LivePropMetadata> livePropsOut;
     }
 
     // ========================================================================
@@ -303,11 +345,13 @@ public class PageObjectBuilder {
 
         // Check for async props that would need resolution
         checkAsyncProps(state.allProps, state.partialContext);
+        checkLivePropsSync(state);
 
         // Use props as-is without resolving suppliers
         var propsSample = metrics.startPropsResolution();
         var resolvedProps = stripSupplierProps(state.allProps);
         metrics.stopPropsResolution(propsSample, state.resolvedComponent);
+        state.livePropsOut = LivePropRegistry.metadata();
         return finish(state, resolvedProps);
 
     }
@@ -336,6 +380,58 @@ public class PageObjectBuilder {
         return result;
     }
 
+    /**
+     * Reject live props that a synchronous render cannot resolve: their
+     * resolvers are asynchronous, so silently dropping the value would break
+     * the wire contract. A plain synchronous value under the same key is
+     * accepted.
+     */
+    private void checkLivePropsSync(Assembly state) {
+        for (var key : LivePropRegistry.keys()) {
+            if (state.deferredKeys != null && state.deferredKeys.contains(key)) {
+                continue;
+            }
+            if (!LivePropRegistry.isSelected(key, state.resolvedComponent, state.partialContext)) {
+                continue;
+            }
+            if (!state.allProps.containsKey(key) || state.allProps.get(key) instanceof Supplier) {
+                throw new IllegalStateException(
+                    "Live prop '" + key + "' requires the reactive endpoint. " +
+                    "Return inertia.render(...) or provide a synchronous value for the prop.");
+            }
+        }
+    }
+
+    /**
+     * Merge shared deferred groups with the {@code defer(...)} calls chained
+     * after render, preserving shared registration order first.
+     */
+    private static Map<String, List<String>> mergeDeferredGroups(
+            Map<String, List<String>> shared, Map<String, DeferredPropRegistry.DeferredSpec> chained) {
+        var merged = new LinkedHashMap<String, List<String>>();
+        if (shared != null) {
+            shared.forEach((group, keys) -> merged.put(group, new java.util.ArrayList<>(keys)));
+        }
+        for (var spec : chained.values()) {
+            var members = merged.computeIfAbsent(spec.group(), group -> new java.util.ArrayList<>());
+            if (!members.contains(spec.key())) {
+                members.add(spec.key());
+            }
+        }
+        return merged;
+    }
+
+    private static boolean isChainedDeferredSelected(
+            String key, PartialReloadProcessor.PartialReloadContext partialContext) {
+        if (partialContext.hasData()) {
+            return partialContext.data().contains(key);
+        }
+        if (partialContext.hasExcept()) {
+            return !partialContext.except().contains(key);
+        }
+        return false;
+    }
+
     // ... rest of the methods unchanged from original
 
     /**
@@ -352,11 +448,17 @@ public class PageObjectBuilder {
      *                 prop contract)
      * @return the top-level flash map, or {@code null} when empty
      */
-    private Map<String, Object> resolveFlashData(Map<String, Object> allProps) {
-        if (!flashStore.hasData() || isGetVersionMismatch()) {
-            return null;
+    private Map<String, Object> resolveFlashData(Map<String, Object> allProps,
+            Map<String, Object> preDrainedFlash) {
+        Map<String, Object> flashed;
+        if (preDrainedFlash != null) {
+            flashed = preDrainedFlash;
+        } else {
+            if (!flashStore.hasData() || isGetVersionMismatch()) {
+                return null;
+            }
+            flashed = flashStore.drain();
         }
-        var flashed = flashStore.drain();
         if (flashed.isEmpty()) {
             return null;
         }
@@ -375,6 +477,22 @@ public class PageObjectBuilder {
         var flashData = new HashMap<>(target);
         flashData.remove("errors");
         return flashData.isEmpty() ? null : Map.copyOf(flashData);
+    }
+
+    /**
+     * Snapshot the flash store when the render call is made, so values stored
+     * by the fluent chain after {@code render(...)} (for example
+     * {@code render(...).flash(...)}) are delivered with the next page
+     * instead of the page being rendered.
+     *
+     * @return the drained flash data; empty (never {@code null}) when there is
+     *         nothing to deliver, so the lazy assembly never re-reads the store
+     */
+    private Map<String, Object> drainFlashEagerly() {
+        if (!flashStore.hasData() || isGetVersionMismatch()) {
+            return Map.of();
+        }
+        return flashStore.drain();
     }
 
     @SuppressWarnings("unchecked")
@@ -740,6 +858,17 @@ public class PageObjectBuilder {
             }
         }
         return false;
+    }
+
+    private Boolean preserveBigIntegers() {
+        var ctx = Vertx.currentContext();
+        if (ctx != null) {
+            var val = InertiaContextLocals.get(ctx, "inertia-preserve-bigint");
+            if (val instanceof Boolean flag) {
+                return flag;
+            }
+        }
+        return null;
     }
 
     private io.vertx.ext.web.Session session() {

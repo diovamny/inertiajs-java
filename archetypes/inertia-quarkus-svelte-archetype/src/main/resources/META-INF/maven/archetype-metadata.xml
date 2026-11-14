@@ -8,13 +8,13 @@
             <defaultValue>Hello Inertia</defaultValue>
         </requiredProperty>
         <requiredProperty key="inertiaAdapterVersion">
-            <defaultValue>0.0.5</defaultValue>
+            <defaultValue>0.0.6</defaultValue>
         </requiredProperty>
         <requiredProperty key="javaVersion">
             <defaultValue>21</defaultValue>
         </requiredProperty>
         <requiredProperty key="frameworkVersion">
-            <defaultValue>3.39.2</defaultValue>
+            <defaultValue>3.40.1</defaultValue>
         </requiredProperty>
     </requiredProperties>
     <fileSets>
@@ -29,6 +29,15 @@
         </fileSet>
         <fileSet filtered="true" packaged="false" encoding="UTF-8">
             <directory>src/main/webui</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+            <excludes>
+                <exclude>src/pages/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet filtered="false" packaged="false" encoding="UTF-8">
+            <directory>src/main/webui/src/pages</directory>
             <includes>
                 <include>**</include>
             </includes>

@@ -36,7 +36,7 @@ class DefaultVersionProviderUnitTest {
             @Override public boolean serverHead() { return false; }
             @Override public String metaTitleTemplate() { return "%s"; }
             @Override public boolean camelizeProps() { return false; }
-            @Override public boolean csrfEnabled() { return true; }
+            @Override public java.util.Optional<Boolean> csrfEnabled() { return java.util.Optional.empty(); }
             @Override public Optional<String> rootView() { return Optional.empty(); }
             @Override public Optional<java.util.List<String>> flashKeys() { return Optional.empty(); }
             @Override public boolean alwaysIncludeErrors() { return true; }
@@ -65,6 +65,8 @@ class DefaultVersionProviderUnitTest {
             @Override public Optional<String> securityCookieDomain() { return Optional.empty(); }
             @Override public Optional<java.util.List<String>> securityReactiveCsrfPaths() { return Optional.empty(); }
             @Override public boolean authPropsEnabled() { return false; }
+            @Override public boolean bigintEnabled() { return false; }
+            @Override public boolean sessionEnabled() { return true; }
         };
     }
 

@@ -8,7 +8,7 @@
     <parent>
         <groupId>io.github.diovamny</groupId>
         <artifactId>inertia-parent</artifactId>
-        <version>0.0.5</version>
+        <version>0.0.6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -77,6 +77,13 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.27.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- Wire-contract assertions for the pure JSON DTOs. -->
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

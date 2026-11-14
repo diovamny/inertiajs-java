@@ -43,7 +43,7 @@ jobs:
 
       - name: Verify pinned official clients
         # Fails unless every template + demo package.json declares exactly
-        # 3.7.1 and every lockfile resolves 3.7.1 (Fase A).
+        # 3.11.0 and every lockfile resolves 3.11.0 (Fase I).
         run: node scripts/check-client-versions.mjs
 
       - name: Verify generated compliance matrix
@@ -232,7 +232,7 @@ jobs:
           cache: maven
 
       - name: Install adapters (resolve locally, not from Central)
-        # Same as e2e job: demos need inertia-parent/adapters 0.0.5 installed,
+        # Same as e2e job: demos need inertia-parent/adapters 0.0.6 installed,
         # otherwise the job only passes on a warm Maven cache.
         run: ./mvnw -B -q -DskipTests install
 
@@ -303,17 +303,31 @@ jobs:
       matrix:
         include:
           - archetype: inertia-spring-vue-archetype
-            framework-version: 4.1.0
+            framework-version: 4.1.1
             starter-kind: spring
             starter-jar: hello-inertia-*.jar
           - archetype: inertia-spring-react-archetype
-            framework-version: 4.1.0
+            framework-version: 4.1.1
             starter-kind: spring
             starter-jar: hello-inertia-*.jar
           - archetype: inertia-spring-svelte-archetype
-            framework-version: 4.1.0
+            framework-version: 4.1.1
             starter-kind: spring
             starter-jar: hello-inertia-*.jar
+          # Quarkus default (3.40.1 LTS)
+          - archetype: inertia-quarkus-vue-archetype
+            framework-version: 3.40.1
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
+          - archetype: inertia-quarkus-react-archetype
+            framework-version: 3.40.1
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
+          - archetype: inertia-quarkus-svelte-archetype
+            framework-version: 3.40.1
+            starter-kind: quarkus
+            starter-jar: quarkus-app/quarkus-run.jar
+          # Quarkus legacy (3.39.2 retrocompat)
           - archetype: inertia-quarkus-vue-archetype
             framework-version: 3.39.2
             starter-kind: quarkus
@@ -361,12 +375,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.5
+          -DarchetypeVersion=0.0.6
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.5
+          -DinertiaAdapterVersion=0.0.6
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp
@@ -386,6 +400,27 @@ jobs:
             sleep 15
           done
           exit 1
+
+      - name: TypeScript typecheck (TS 6 gate)
+        working-directory: /tmp/hello-inertia/src/main/webui
+        run: |
+          npm install
+          npm run typecheck
+
+      - name: Archetype contract checks (Fase R)
+        # CI-NoSsrServer-01 / CI-Parameters-01 / CI-InertiaVersion-01 /
+        # CI-TsconfigNoReactJsx-01 (Vue only): generated projects must not
+        # resurrect the ad-hoc ssr-server.mjs, must compile records with
+        # -parameters, must pin @inertiajs/core 3.11.0 and Vue tsconfigs must
+        # not inherit a react-jsx setting.
+        working-directory: /tmp/hello-inertia
+        run: |
+          test ! -f src/main/webui/ssr-server.mjs
+          grep -q '<parameters>true</parameters>' pom.xml
+          (cd src/main/webui && npm ls @inertiajs/core | grep -q '3.11.0')
+          if [[ "${{ matrix.archetype }}" == *-vue-* ]]; then
+            ! grep -q 'react-jsx' src/main/webui/tsconfig.json
+          fi
 
       - name: Boot smoke + visit certification (Fase B)
         # Proves the generated app (with explicit inertia-core) boots and
@@ -408,6 +443,9 @@ jobs:
           curl -sf http://localhost:8080/ | grep -q 'id="app"'
           curl -sf -H 'X-Inertia: true' http://localhost:8080/ | grep -q '"component":"Welcome"'
           echo "Starter serves HTML shell and Inertia JSON (inertia-core wired)"
+          curl -sf http://localhost:8080/contacts | grep -q 'id="app"'
+          curl -sf -H 'X-Inertia: true' http://localhost:8080/contacts | grep -q '"component":"Contacts/Index"'
+          echo "CRUD endpoint serves HTML and Inertia JSON"
           kill "$(cat $GITHUB_WORKSPACE/starter-app.pid)" || true
           rm -f "$GITHUB_WORKSPACE/starter-app.pid"
 
@@ -520,6 +558,18 @@ jobs:
             health-url: http://localhost:8082/q/health
             jar: quarkus-app/quarkus-run.jar
             spec: feature-matrix.spec.ts
+          - demo: live-props-spring
+            module: examples/spring/spring-kitchen-sink
+            base-url: http://localhost:8080
+            health-url: http://localhost:8080/actuator/health
+            jar: spring-kitchen-sink-*.jar
+            spec: live-props-contracts.spec.ts
+          - demo: live-props-quarkus
+            module: examples/quarkus/kitchen-sink
+            base-url: http://localhost:8081
+            health-url: http://localhost:8081/q/health
+            jar: quarkus-app/quarkus-run.jar
+            spec: live-props-contracts.spec.ts
     steps:
       - uses: actions/checkout@v5
 
@@ -550,7 +600,7 @@ jobs:
           find ~/.m2/repository -name "*.lastUpdated" -delete
 
       - name: Install adapters (resolve locally, not from Central)
-        # Demos resolve inertia-parent/adapters 0.0.5, which are not published
+        # Demos resolve inertia-parent/adapters 0.0.6, which are not published
         # to Central yet; install the current reactor first (same as examples
         # job). Without this the job only passes on a warm Maven cache.
         run: ./mvnw -B -q -DskipTests install
@@ -626,8 +676,13 @@ jobs:
       matrix:
         include:
           - archetype: inertia-spring-vue-archetype
-            framework-version: 4.1.0
+            framework-version: 4.1.1
             starter-jar: hello-inertia-*.jar
+          # Quarkus default (3.40.1 LTS)
+          - archetype: inertia-quarkus-vue-archetype
+            framework-version: 3.40.1
+            starter-jar: quarkus-app/quarkus-run.jar
+          # Quarkus legacy (3.39.2 retrocompat)
           - archetype: inertia-quarkus-vue-archetype
             framework-version: 3.39.2
             starter-jar: quarkus-app/quarkus-run.jar
@@ -671,12 +726,12 @@ jobs:
           -DarchetypeCatalog=local
           -DarchetypeGroupId=io.github.diovamny
           -DarchetypeArtifactId=${{ matrix.archetype }}
-          -DarchetypeVersion=0.0.5
+          -DarchetypeVersion=0.0.6
           -DgroupId=com.acme
           -DartifactId=hello-inertia
           -Dpackage=com.acme.hello
           -DappName="Hello Inertia"
-          -DinertiaAdapterVersion=0.0.5
+          -DinertiaAdapterVersion=0.0.6
           -DjavaVersion=21
           -DframeworkVersion=${{ matrix.framework-version }}
         working-directory: /tmp
@@ -684,8 +739,8 @@ jobs:
       - name: Build client + SSR bundle
         # NOTE: generated starters deliberately ship no package-lock.json, so
         # `npm ci` cannot run here (EUSAGE). `npm install` resolves the pinned
-        # @inertiajs/* 3.7.1 range from the archetype template (verified
-        # 2026-09-24: resolves vue3/react/svelte 3.7.1).
+        # @inertiajs/* 3.11.0 range from the archetype template (verified
+        # resolves vue3/react/svelte 3.11.0).
         working-directory: /tmp/hello-inertia/src/main/webui
         run: npm install && npm run build && npm run build:ssr
 
@@ -708,7 +763,7 @@ jobs:
         env:
           E2E_SSR_URL: http://localhost:8080
         run: |
-          (cd /tmp/hello-inertia/src/main/webui && nohup node ssr-server.mjs > "$GITHUB_WORKSPACE/ssr-sidecar.log" 2>&1 & echo $! > "$GITHUB_WORKSPACE/ssr-sidecar.pid")
+          (cd /tmp/hello-inertia/src/main/webui && nohup node dist-ssr/ssr.js > "$GITHUB_WORKSPACE/ssr-sidecar.log" 2>&1 & echo $! > "$GITHUB_WORKSPACE/ssr-sidecar.pid")
           JAR=$(ls /tmp/hello-inertia/target/${{ matrix.starter-jar }} | grep -v '\.original$' | head -n 1)
           INERTIA_SSR_ENABLED=true nohup java -jar "$JAR" > "$GITHUB_WORKSPACE/ssr-app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/ssr-app.pid"

@@ -64,7 +64,7 @@ public final class InertiaSecurityModes {
         if (raw.isPresent() && !raw.get().isBlank()) {
             return parse(raw.get(), "inertia.security.mode");
         }
-        var legacy = legacyFlag();
+        var legacy = config.csrfEnabled();
         if (legacy.isPresent()) {
             return Boolean.TRUE.equals(legacy.get()) ? Mode.ADAPTER : Mode.DISABLED;
         }
@@ -103,22 +103,7 @@ public final class InertiaSecurityModes {
      *         {@code inertia.security.mode}
      */
     public static boolean isLegacyAliasInUse(InertiaConfig config) {
-        return config.securityMode().isEmpty() && legacyFlag().isPresent();
-    }
-
-    /**
-     * Read the raw legacy {@code inertia.csrf-enabled} flag from the config
-     * sources (present only when explicitly set).
-     *
-     * @return the legacy value, empty when unset or unreadable
-     */
-    static java.util.Optional<Boolean> legacyFlag() {
-        try {
-            return org.eclipse.microprofile.config.ConfigProvider.getConfig()
-                .getOptionalValue("inertia.csrf-enabled", Boolean.class);
-        } catch (Exception e) {
-            return java.util.Optional.empty();
-        }
+        return config.securityMode().isEmpty() && config.csrfEnabled().isPresent();
     }
 
     /**

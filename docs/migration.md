@@ -13,6 +13,33 @@ Artifacts are published to Maven Central as `io.github.diovamny.spring.inertia`
 and `io.github.diovamny.quarkus.inertia` (group `io.github.diovamny`). Bump the version
 in your `pom.xml`; no code changes are needed for patch releases.
 
+## 0.0.5 → 0.0.6
+
+- **Quarkus session auto-provisioned (behavior change)**: `quarkus-inertia`
+  now registers a Vert.x `SessionHandler` (`LocalSessionStore`) on every
+  router by default, so flash messages and session-based CSRF work without
+  manual wiring (previously they silently degraded: flash lost, CSRF
+  fail-open, zero warnings at startup). Disable with
+  `inertia.session.enabled=false` (startup then emits a WARN describing the
+  consequences) — required when the application registers its own
+  `SessionHandler`, which takes over the session lifecycle. Spring is
+  unaffected: the HTTP session is available out of the box
+  (`inertia.session.enabled` does not exist there).
+- Quarkus manual `InertiaConfig` implementations must add
+  `boolean sessionEnabled() { return true; }` (CDI-managed mappings are
+  unaffected; source-level change, binary compatible).
+- **Live Props (additive)**: declare them with
+  `inertia.live("stockCount", resolver[, throttleMs], listeners...)`
+  (Spring `Supplier<Object>`, Quarkus `Supplier<Uni<Object>>`). The server
+  emits the `liveProps` map (PageObject component #20) and resolves the prop
+  on full visits and on partial reloads that select it; `defer().live()` is
+  supported for deferred+live props. Clients must be on `@inertiajs/*`
+  `3.11.0` to consume the metadata; apps without live props keep the exact
+  previous wire shape (`liveProps` is omitted).
+- **DevTools Protocol excluded**: no `/__inertia_devtools` endpoints or
+  request-correlation headers are implemented; see ADR 007. Network-level
+  page-object inspection continues to work with the official extension.
+
 ## 0.0.4 → 0.0.5
 
 - v3-only reaffirmed: no `2.x` client row, no legacy `<div data-page>` mode and
@@ -82,20 +109,20 @@ generation and copy what you need.
 ## From Laravel / Rails (PHP/Ruby Inertia adapters)
 
 The frontend does not change: keep your pages/components and the
-`@inertiajs/*@3.7.1` client. Only the server side is rewritten. Generate a
+`@inertiajs/*@3.11.0` client. Only the server side is rewritten. Generate a
 starter and port controllers one by one (both adapters verified with the
 SSR contract suite on 2026-09-25: server-render + hydrate + CSR fallback).
 
 ```bash
-# Spring Boot 4.1.x (use -DframeworkVersion=4.1.0) or Quarkus 3.39.2;
+# Spring Boot 4.1.x (use -DframeworkVersion=4.1.1) or Quarkus 3.40.1;
 # svelte/vue archetypes exist with the same properties.
 mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate \
   -DarchetypeCatalog=local \
   -DarchetypeGroupId=io.github.diovamny \
-  -DarchetypeArtifactId=inertia-spring-react-archetype -DarchetypeVersion=0.0.5 \
+  -DarchetypeArtifactId=inertia-spring-react-archetype -DarchetypeVersion=0.0.6 \
   -DgroupId=com.acme -DartifactId=hello-inertia -Dpackage=com.acme.hello \
-  -DappName="Hello Inertia" -DinertiaAdapterVersion=0.0.5 \
-  -DjavaVersion=21 -DframeworkVersion=4.1.0
+  -DappName="Hello Inertia" -DinertiaAdapterVersion=0.0.6 \
+  -DjavaVersion=21 -DframeworkVersion=4.1.1
 cd hello-inertia/src/main/webui && npm install && npm run build && npm run build:ssr
 ```
 
@@ -105,13 +132,13 @@ cd hello-inertia/src/main/webui && npm install && npm run build && npm run build
 | `Inertia::share('key', $v)` in a ServiceProvider / `inertia_share` | `inertia.share("key", value)`, `share(map)` or `share(provider)` | same |
 | `withErrors(...)` / validation errors + bags | `back().withErrors(...)` / `withValidationErrors(...)` / `withErrorMessages(...)`; `X-Inertia-Error-Bag` honored exactly like the exception path | same |
 | `Inertia::version($v)` / asset versioning | version provider SPI (default manifest/hash chain) | same |
-| `Route::get(...)` closures returning Inertia responses | `@Controller` methods returning `inertia.render(...)` | `@Path` resource methods; Reactive Routes `@Route` needs `@Blocking` + the `quarkus-reactive-routes` dependency (`quarkus-vertx-web` does not exist on Quarkus 3.39) |
+| `Route::get(...)` closures returning Inertia responses | `@Controller` methods returning `inertia.render(...)` | `@Path` resource methods; Reactive Routes `@Route` needs `@Blocking` + the `quarkus-reactive-routes` dependency (`quarkus-vertx-web` does not exist on Quarkus 3.40) |
 | `config/inertia.php` (`ssr.enabled`, `ssr.url`) | `inertia.ssr-enabled=true`, `inertia.ssr-url=http://localhost:13714/render` (hyphenated keys; dotted `inertia.ssr.*` is silently ignored) | same keys in `application.properties` |
 
-SSR keeps working through the sidecar: `npm run build:ssr`, then
-`node src/main/webui/ssr-server.mjs` (`:13714`) next to the app booted with
-`INERTIA_SSR_ENABLED=true`. If the sidecar is down or unreachable, pages fall
-back to CSR automatically (never fatal).
+SSR keeps working through the official sidecar: `npm run build:ssr`, then
+`(cd src/main/webui && node dist-ssr/ssr.js)` (`:13714`) next to the app
+booted with `INERTIA_SSR_ENABLED=true`. If the sidecar is down or unreachable,
+pages fall back to CSR automatically (never fatal).
 
 Gotchas verified during certification:
 

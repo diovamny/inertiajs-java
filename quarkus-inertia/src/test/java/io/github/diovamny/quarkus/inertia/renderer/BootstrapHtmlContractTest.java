@@ -57,7 +57,7 @@ class BootstrapHtmlContractTest {
         var json = new ObjectMapper().writeValueAsString(Map.of(
             "component", "Adversarial", "props", props, "url", "/adversarial", "version", "v1"));
         var page = new PageObject("Adversarial", props, "/adversarial", "v1", null, null, null,
-            null, null, null, null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.renderSync(page, json);
 
         assertTrue(html.contains("<div id=\"app\">"), "div must be payload-free");

@@ -41,7 +41,7 @@ class ErrorResponseFactoryUnitTest {
             @Override public boolean serverHead() { return false; }
             @Override public String metaTitleTemplate() { return "%s"; }
             @Override public boolean camelizeProps() { return false; }
-            @Override public boolean csrfEnabled() { return true; }
+            @Override public java.util.Optional<Boolean> csrfEnabled() { return java.util.Optional.empty(); }
             @Override public java.util.Optional<String> rootView() { return java.util.Optional.empty(); }
             @Override public java.util.Optional<java.util.List<String>> flashKeys() { return java.util.Optional.empty(); }
             @Override public boolean alwaysIncludeErrors() { return true; }
@@ -70,6 +70,8 @@ class ErrorResponseFactoryUnitTest {
             @Override public java.util.Optional<String> securityCookieDomain() { return java.util.Optional.empty(); }
             @Override public java.util.Optional<java.util.List<String>> securityReactiveCsrfPaths() { return java.util.Optional.empty(); }
             @Override public boolean authPropsEnabled() { return false; }
+            @Override public boolean bigintEnabled() { return false; }
+            @Override public boolean sessionEnabled() { return true; }
         };
         factory.versionProvider = () -> version;
         return factory;

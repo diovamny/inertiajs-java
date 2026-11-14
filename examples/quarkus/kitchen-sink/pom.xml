@@ -6,7 +6,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>kitchen-sink</artifactId>
-    <version>0.0.5</version>
+    <version>0.0.6</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -14,7 +14,7 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.platform.version>3.39.2</quarkus.platform.version>
+        <quarkus.platform.version>3.40.1</quarkus.platform.version>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     </properties>
 
@@ -34,12 +34,12 @@
         <dependency>
             <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia</artifactId>
-            <version>0.0.5</version>
+            <version>0.0.6</version>
         </dependency>
         <dependency>
             <groupId>io.github.diovamny.quarkus.inertia</groupId>
             <artifactId>quarkus-inertia-security</artifactId>
-            <version>0.0.5</version>
+            <version>0.0.6</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

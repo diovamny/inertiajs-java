@@ -4,7 +4,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 const root = import.meta.dirname
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [svelte()],
   resolve: {
     alias: {
@@ -20,7 +20,7 @@ export default defineConfig({
     rollupOptions: {
       input: path.resolve(root, 'src/app.ts'),
       output: {
-        entryFileNames: 'assets/[name].js',
+        entryFileNames: isSsrBuild ? '[name].js' : 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name][extname]',
       },
@@ -28,5 +28,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Proxy API calls to the backend during `npm run dev` when needed:
+    // proxy: { '/api': 'http://localhost:8080' },
   },
-})
+}))

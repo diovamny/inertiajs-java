@@ -42,6 +42,16 @@ public class InertiaConfigValidator {
         validateCsrfRefreshPolicy(config.csrfRefreshPolicy());
         validateMaxPageBytes(config.maxPageBytes());
         validateSsrEndpoint();
+        validateSession();
+    }
+
+    private void validateSession() {
+        if (!config.sessionEnabled()) {
+            LOG.warn("inertia.session.enabled=false: mutations will redirect "
+                + "to / without flash messages, and session-based CSRF will "
+                + "not be active unless the application registers its own "
+                + "SessionHandler.");
+        }
     }
 
     private void validateSsrEndpoint() {

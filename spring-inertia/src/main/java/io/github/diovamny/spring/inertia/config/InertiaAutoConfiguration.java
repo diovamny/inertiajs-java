@@ -68,8 +68,8 @@ public class InertiaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JsonProvider inertiaJsonProvider(ObjectMapper objectMapper) {
-        return new JacksonJsonProvider(objectMapper);
+    public JsonProvider inertiaJsonProvider(ObjectMapper objectMapper, InertiaProperties properties) {
+        return new JacksonJsonProvider(objectMapper, properties.isBigintEnabled());
     }
 
     @Bean

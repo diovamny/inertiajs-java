@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.diovamny.inertia.core.model.LiveChannel;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 import io.github.diovamny.spring.inertia.api.Inertia;
 import io.github.diovamny.spring.inertia.api.Inertia.MergeRule;
 
@@ -19,6 +21,8 @@ import io.github.diovamny.spring.inertia.api.Inertia.MergeRule;
 public class TestController {
 
     static int deferredHeavyResolved;
+    static int liveOrderResolved;
+    static int liveDeferredResolved;
 
     private final Inertia inertia;
 
@@ -164,5 +168,61 @@ public class TestController {
     @GetMapping("/big-page")
     public Object bigPage() {
         return inertia.render("BigPage", Map.of("bulk", "x".repeat(100_000)));
+    }
+
+    @GetMapping("/bigint-default")
+    public Object bigintDefault() {
+        return inertia.render("BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L));
+    }
+
+    @GetMapping("/bigint-facade")
+    public Object bigintFacade() {
+        inertia.preserveBigIntegers(true);
+        return inertia.render("BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L));
+    }
+
+    @GetMapping("/bigint-fluent")
+    public Object bigintFluent() {
+        return ((io.github.diovamny.spring.inertia.api.InertiaRender) inertia.render(
+            "BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L))).preserveBigIntegers();
+    }
+
+    @GetMapping("/bigint-optout")
+    public Object bigintOptOut() {
+        inertia.preserveBigIntegers(false);
+        return inertia.render("BigIntPage", Map.of("id", Long.MAX_VALUE, "safe", 42L));
+    }
+
+    @GetMapping("/live")
+    public Object live() {
+        inertia.live("order", TestController::resolveLiveOrder,
+            new LivePropListener(LiveChannel.privateChannel("orders.1"), "OrderUpdated"));
+        return inertia.render("Orders/Show", Map.of("other", "o"));
+    }
+
+    @GetMapping("/live-defer")
+    public Object liveDefer() {
+        return ((io.github.diovamny.spring.inertia.api.InertiaRender) inertia.render(
+                "Orders/Show", Map.of("other", "o")))
+            .defer("default", "stats", TestController::resolveLiveDeferred)
+            .live("stats", TestController::resolveLiveDeferred,
+                new LivePropListener(LiveChannel.publicChannel("stats"), "StatsUpdated"));
+    }
+
+    @GetMapping("/live-throttle")
+    public Object liveThrottle() {
+        inertia.live("poll", () -> "p", 2000,
+            new LivePropListener(LiveChannel.publicChannel("poll"), "PollUpdated"));
+        return inertia.render("Orders/Show", Map.of());
+    }
+
+    private static Map<String, Object> resolveLiveOrder() {
+        liveOrderResolved++;
+        return Map.of("id", 1, "status", "shipped", "revision", liveOrderResolved);
+    }
+
+    private static Map<String, Object> resolveLiveDeferred() {
+        liveDeferredResolved++;
+        return Map.of("total", 42);
     }
 }

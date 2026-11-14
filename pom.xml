@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.diovamny</groupId>
   <artifactId>inertia-parent</artifactId>
-  <version>0.0.5</version>
+  <version>0.0.6</version>
   <packaging>pom</packaging>
   <name>Inertia.js Java Ecosystem</name>
   <description>Server-side Inertia.js v3 adapters for Spring Boot 4.1 and Quarkus</description>
@@ -43,7 +43,7 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.version>3.39.2</quarkus.version>
+    <quarkus.version>3.40.1</quarkus.version>
     <spring-boot.version>4.1.1</spring-boot.version>
     <!-- NOTE: do NOT use <tomcat.version> here: with BOM *import* scope
          (this project has no Boot parent) the property does not propagate
@@ -142,6 +142,9 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.5.2</version>
+          <configuration>
+            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -328,6 +331,8 @@
                 <param>io.github.diovamny.quarkus.inertia.security.InertiaSecuritySuiteTest</param>
                 <param>io.github.diovamny.quarkus.inertia.csrf.CsrfRefreshPolicyTest</param>
                 <param>io.github.diovamny.quarkus.inertia.security.OversizedPageProfileTest</param>
+                <param>io.github.diovamny.quarkus.inertia.session.InertiaSessionDisabledTest</param>
+                <param>io.github.diovamny.quarkus.inertia.session.InertiaSessionProducerTest</param>
               </excludedTestClasses>
               <mutationThreshold>${pit.mutation.minimum}</mutationThreshold>
               <coverageThreshold>${pit.coverage.minimum}</coverageThreshold>

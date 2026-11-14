@@ -39,6 +39,8 @@ public class PageObjectBuilder {
     public static final String CONTEXT_RESCUED_PROPS = "inertia-rescued-props";
     public static final String CONTEXT_RESCUED_CANDIDATES = "inertia-rescued-candidates";
     public static final String CONTEXT_PRESERVE_FRAGMENT = "inertia-preserve-fragment";
+    public static final String CONTEXT_PRESERVE_BIG_INTEGERS = "inertia-preserve-big-integers";
+    public static final String CONTEXT_LAST_PAGE = "inertia-last-page";
     public static final String CONTEXT_META = "inertia-meta";
     public static final String CONTEXT_PAGE_STATUS = "inertia-page-status";
     public static final String CONTEXT_PAGE_VERSION = "inertia-page-version";
@@ -179,6 +181,7 @@ public class PageObjectBuilder {
         metrics.stopPropsResolution(propsSample,
             component != null ? component : "unknown");
         merged = unwrapOptionals(merged, partial);
+        var liveProps = LivePropRegistry.resolveInto(merged, component);
 
         var rescued = rescuedKeys();
 
@@ -201,7 +204,9 @@ public class PageObjectBuilder {
             meta(),
             encryptHistoryEnabled(),
             clearHistoryEnabled(),
-            preserveFragmentEnabled());
+            preserveFragmentEnabled(),
+            preserveBigIntegers(),
+            liveProps.isEmpty() ? null : liveProps);
         return page;
     }
 
@@ -235,6 +240,11 @@ public class PageObjectBuilder {
             return Boolean.TRUE.equals(override);
         }
         return properties.isClearHistory();
+    }
+
+    private Boolean preserveBigIntegers() {
+        var override = InertiaRequestContext.get(CONTEXT_PRESERVE_BIG_INTEGERS);
+        return override instanceof Boolean flag ? flag : null;
     }
 
     private void injectValidationErrors(Map<String, Object> merged, boolean alwaysIncludeErrors) {

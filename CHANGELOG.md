@@ -1,5 +1,81 @@
 # Changelog
 
+## Unreleased — camino a 1.0.0
+
+- BigInt per-response opt-in: `inertia.preserveBigIntegers(true/false)` en ambos
+  adaptadores (Spring facade + `InertiaRender` fluent con re-serialización del
+  body; Quarkus facade), precedencia request > página > global
+  (`inertia.bigint-enabled`); paridad Laravel `preserveBigIntegers()` / Rails
+  `preserve_big_integers`.
+- Soporte `java.math.BigInteger` en `BigIntSerializer`
+  (`isUnsafe`/`encode`/`marker`) y en los módulos Jackson de ambos adaptadores.
+- `PageObject` gana el componente `preserveBigIntegers` (tristate) e
+  `InertiaPageResult` la factory `of(component, props, preserveBigIntegers)`.
+- TCK `PROTO-BigInt-03/04/05`; matriz C100 65/65 (PROTO-060/061/062), I100
+  90/90; `docs/configuration.md` con la sección "BigInt & large numbers" y guía
+  de sesiones/clúster en `docs/getting-started-quarkus.md`.
+
+## 0.0.6
+
+### Added
+
+- **Live Props** (`Inertia::live`): contrato wire y resolución en tiempo real
+  con canales (public/private/presence), eventos y throttle configurable.
+  `PageObject` gana el componente #20 `liveProps` con el modelo wire puro
+  `LiveChannel`/`LivePropListener`/`LivePropMetadata` en `inertia-core` (sin
+  `Supplier` en el JSON y omitido cuando está vacío). API en Spring
+  (`Supplier<Object>`) y Quarkus REST/Reactive (`Supplier<Uni<Object>>`), con
+  evaluación en visita completa, resolución perezosa en partials
+  (`X-Inertia-Partial-Data`) y composición `defer().live()` que emite la clave
+  en `deferredProps` y `liveProps`.
+- TCK `11-live-props.yaml` (6 casos: wire, canales público/privado/presence,
+  partial, lazy y composición defer+live) verde en Spring MVC, Quarkus REST y
+  Quarkus Reactive; `LivePropsSpringIntegrationTest`,
+  `LivePropsQuarkusTest`, `LivePropsReactiveQuarkusTest` y aislamiento en
+  `ReactiveStressTest`.
+- E2E Live Props (`e2e/live-props-contracts.spec.ts`, LP-01..LP-04 + prueba de
+  navegador simulate/re-render) verde contra los kitchen-sinks Spring y
+  Quarkus; nuevo escenario E2E-11 en `specs/e2e-compliance.yaml`.
+- ADR `docs/adr/007-devtools-exclusion.md` y declaración en
+  `docs/NOT_SUPPORTED.md`: el DevTools Protocol queda fuera de alcance por
+  decisión arquitectónica; la inspección de red del page object sigue
+  funcionando sin endpoints adicionales.
+- Starter CRUD de `Contact` in-memory en los 6 arquetipos (list/create/edit/
+  update/delete), `ErrorPage`, `useForm` con errores por campo, flash
+  `success`, y `<parameters>true</parameters>` en los POMs generados
+  (records + `@PathVariable`/`@PathParam` explícitos).
+- BigInt opt-in (`inertia.bigint-enabled`, default `false`) con
+  `BigIntSerializer` en `inertia-core`; TCK `PROTO-BigInt-01/02` y
+  `PROTO-Version-History-01`.
+
+### Changed
+
+- Inertia.js client alignment: `@inertiajs/{core,vue3,react,svelte}` pinned to
+  `3.11.0` (core now a direct dependency), `@inertiajs/vite` `^3.11.0`,
+  TypeScript `^6.0.3`; `scripts/check-client-versions.mjs` valida los 15
+  manifests y los 9 lockfiles.
+- SSR oficial: los seis starters eliminan el sidecar `ssr-server.mjs` y usan
+  `createServer` oficial de `@inertiajs/*/server`; `npm run build:ssr` emite
+  `dist-ssr/ssr.js` y `npm run ssr` lo arranca en `:13714`.
+- Quarkus `3.40.1` LTS como default (matrix CI dual con `3.39.2`); Spring CI
+  `framework-version` alineada a `4.1.1`.
+- Sesión Vert.x auto-provisionada en Quarkus (`inertia.session.enabled=true`,
+  `order(-2)`): flash y CSRF por sesión funcionan sin configuración manual;
+  `false` documentado con WARN de diagnóstico.
+- Tests: ciclo CRUD MockMvc/RestAssured por arquetipo, tests de sesión
+  auto-provisionada, gates de typecheck TS 6 y smoke CRUD en CI.
+
+### Fixed
+
+- E2E-05: las notas pendientes de `rescue` y `scroll` quedan cerradas con
+  aserciones reales (rescue slot recuperado vía `X-Force-Success`; append de
+  página y profundidad de scroll restaurada tras `goBack()`) verdes en Spring
+  MVC y Quarkus REST.
+- Documentación de DevTools Protocol: la afirmación vaga se reemplaza por una
+  declaración arquitectónica precisa respaldada por el ADR 007.
+- SSR: eliminado el bug UTF-8 del sidecar (`raw += chunk`) al migrar al
+  servidor SSR oficial.
+
 ## 0.0.5
 
 - M0 (P100-01): v3-only policy (`docs/COMPATIBILITY_POLICY.md`, frozen snapshot

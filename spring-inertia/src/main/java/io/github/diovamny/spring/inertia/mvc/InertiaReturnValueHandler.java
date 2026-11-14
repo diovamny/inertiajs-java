@@ -11,6 +11,8 @@ import io.github.diovamny.inertia.core.result.InertiaLocationResult;
 import io.github.diovamny.inertia.core.result.InertiaPageResult;
 import io.github.diovamny.inertia.core.result.InertiaRedirectResult;
 import io.github.diovamny.inertia.core.result.InertiaResult;
+import io.github.diovamny.spring.inertia.internal.InertiaRequestContext;
+import io.github.diovamny.spring.inertia.protocol.PageObjectBuilder;
 import io.github.diovamny.spring.inertia.protocol.RedirectProcessor;
 import io.github.diovamny.spring.inertia.protocol.ResponseProcessor;
 
@@ -71,6 +73,10 @@ public class InertiaReturnValueHandler implements HandlerMethodReturnValueHandle
             return responseProcessor.process(page);
         }
         if (returnValue instanceof InertiaPageResult page) {
+            if (page.preserveBigIntegers()) {
+                InertiaRequestContext.set(
+                    PageObjectBuilder.CONTEXT_PRESERVE_BIG_INTEGERS, Boolean.TRUE);
+            }
             return responseProcessor.process(page.component(), page.props());
         }
         if (returnValue instanceof InertiaRedirectResult redirect) {

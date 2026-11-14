@@ -9,3 +9,4 @@
 08-merge.yaml
 09-scroll.yaml
 10-uploads.yaml
+11-live-props.yaml

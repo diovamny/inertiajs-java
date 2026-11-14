@@ -1,0 +1,100 @@
+# Live props: wire metadata, partial-reload resolution and defer composition.
+- id: live-props-page-json
+  description: PROTO-LiveProp-01 - the initial page carries liveProps with channels, types and events.
+  request:
+    method: GET
+    path: /tck/live-props
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/LiveProps
+    jsonKeys: [liveProps]
+    json:
+      props.order.id: 1
+      props.order.status: shipped
+      props.order.revision: 1
+      props.mirror: 1
+      liveProps.order.listeners[0].channel.name: orders.1
+      liveProps.order.listeners[0].channel.type: private
+      liveProps.order.listeners[0].events[0]: OrderUpdated
+    propsAbsent: [stats]
+
+- id: live-props-partial-reload-resolves
+  description: PROTO-LiveProp-02 - a partial reload that includes the live prop runs its resolver and returns fresh data.
+  request:
+    method: GET
+    path: /tck/live-props
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/LiveProps
+      X-Inertia-Partial-Data: "order, mirror"
+  expect:
+    status: 200
+    component: Tck/LiveProps
+    json:
+      props.order.revision: 1
+      props.mirror: 1
+      liveProps.order.listeners[0].channel.name: orders.1
+    propsAbsent: [other, stats]
+
+- id: live-props-partial-reload-foreign-key-skips-resolver
+  description: PROTO-LiveProp-03 - a partial reload that does not request the live prop does not run its resolver.
+  request:
+    method: GET
+    path: /tck/live-props
+    headers:
+      X-Inertia: "true"
+      X-Inertia-Partial-Component: Tck/LiveProps
+      X-Inertia-Partial-Data: "mirror"
+  expect:
+    status: 200
+    component: Tck/LiveProps
+    json:
+      props.mirror: 0
+      liveProps.order.listeners[0].channel.type: private
+    propsAbsent: [order, other, stats]
+
+- id: live-props-throttle
+  description: PROTO-LiveProp-04 - throttle (ms) is emitted only for live props that configure it.
+  request:
+    method: GET
+    path: /tck/live-props
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    json:
+      liveProps.order.throttle: 1000
+      liveProps.throttled.throttle: 2000
+      liveProps.mirror.throttle: null
+
+- id: live-props-empty-omitted
+  description: PROTO-LiveProp-05 - a page without live props omits the liveProps field entirely.
+  request:
+    method: GET
+    path: /tck/live-props/empty
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/LivePropsEmpty
+    jsonAbsent: [liveProps]
+
+- id: live-props-defer-composition
+  description: PROTO-LiveProp-06 - a prop registered with defer().live() appears in both deferredProps and liveProps.
+  request:
+    method: GET
+    path: /tck/live-props
+    headers:
+      X-Inertia: "true"
+  expect:
+    status: 200
+    component: Tck/LiveProps
+    json:
+      liveProps.stats.listeners[0].channel.name: stats
+      liveProps.stats.listeners[0].channel.type: public
+      liveProps.stats.listeners[0].events[0]: StatsUpdated
+    jsonContains:
+      deferredProps.default: stats
+    propsAbsent: [stats]

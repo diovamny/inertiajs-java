@@ -26,7 +26,7 @@ class HtmlRendererTest {
         var ssrClient = new SsrClient(properties, jsonProvider);
         var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient);
 
-        var page = new PageObject("Home", Map.of("message", "Hello"), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of("message", "Hello"), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
 
         assertNotNull(html);
@@ -46,7 +46,7 @@ class HtmlRendererTest {
         var ssrClient = new SsrClient(properties, jsonProvider);
         var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient);
 
-        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
 
         assertNotNull(html);
@@ -70,7 +70,7 @@ class HtmlRendererTest {
         assertTrue(HtmlRenderer.nonceAttribute(null).isEmpty());
 
         properties.setRootTemplate("nonce-test.html");
-        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
         assertTrue(html.contains("nonce=\"test-nonce-123\""));
         assertFalse(html.contains("__INERTIA_CSP_NONCE__"));
@@ -106,7 +106,7 @@ class HtmlRendererTest {
         properties.setRootTemplate("root-test.html");
         var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient);
 
-        var page = new PageObject("Home", Map.of("message", "Hello"), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of("message", "Hello"), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
 
         var expectedShell = "<div id=\"app\"></div>\n    <script type=\"application/json\" data-page=\"app\">"
@@ -132,7 +132,7 @@ class HtmlRendererTest {
             java.util.Optional.of(new SsrClient.SsrResult(java.util.List.of(), body)));
         var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient);
 
-        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
 
         // Single data-page script, single #app carrying data-server-rendered,
@@ -156,7 +156,7 @@ class HtmlRendererTest {
             java.util.Optional.of(new SsrClient.SsrResult(java.util.List.of(), body)));
         var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient);
 
-        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page);
 
         // Templates without __INERTIA_ROOT__ keep the previous behavior.
@@ -170,7 +170,7 @@ class HtmlRendererTest {
         var ssrClient = new SsrClient(properties, jsonProvider);
         var renderer = new HtmlRenderer(properties, jsonProvider, ssrClient);
 
-        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var page = new PageObject("Home", Map.of(), "/", "v1", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var html = renderer.render(page, Map.of("title", "My Custom Title"));
 
         assertNotNull(html);

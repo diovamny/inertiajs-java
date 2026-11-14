@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import io.smallrye.mutiny.Uni;
 import io.github.diovamny.inertia.core.head.HeadBuilder;
+import io.github.diovamny.inertia.core.model.LivePropListener;
 import io.github.diovamny.inertia.core.model.RawJson;
 
 /**
@@ -139,6 +140,31 @@ public interface InertiaProps {
      * @param cacheTtl how long the cached value is considered fresh
      */
     void deferred(String group, String name, Supplier<Uni<Object>> resolver, String cacheKey, Duration cacheTtl);
+
+    /**
+     * Register a live prop: included in the page and broadcast metadata so
+     * the client can refresh it when one of the given events fires.
+     *
+     * <p>On a full visit the resolver produces the initial value. On a
+     * partial reload the resolver runs only when the prop is selected through
+     * {@code X-Inertia-Partial-Data}/{@code X-Inertia-Partial-Except}.</p>
+     *
+     * @param key       the prop name
+     * @param resolver  produces the current value asynchronously
+     * @param listeners channels and events that trigger live updates
+     */
+    void live(String key, Supplier<Uni<Object>> resolver, LivePropListener... listeners);
+
+    /**
+     * Register a live prop with a minimum update interval.
+     *
+     * @param key        the prop name
+     * @param resolver   produces the current value asynchronously
+     * @param throttleMs minimum interval in milliseconds between updates
+     * @param listeners  channels and events that trigger live updates
+     */
+    void live(String key, Supplier<Uni<Object>> resolver, int throttleMs,
+            LivePropListener... listeners);
 
     /**
      * Register a prop that is only included on partial reloads when the client explicitly requests it.

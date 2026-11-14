@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "build:ssr": "vite build --ssr src/ssr.tsx --outDir dist-ssr",
+    "ssr": "node dist-ssr/ssr.js",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@inertiajs/react": "3.7.1",
-    "@inertiajs/vite": "^3.7.0",
+    "@inertiajs/react": "3.11.0",
+    "@inertiajs/core": "3.11.0",
+    "@inertiajs/vite": "^3.11.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -21,7 +23,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.1.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vite": "^8.2.2"
   }
 }

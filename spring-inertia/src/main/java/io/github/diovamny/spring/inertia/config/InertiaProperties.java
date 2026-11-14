@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   version-custom: null
  *   encrypt-history: false
  *   camelize-props: false
+ *   bigint-enabled: false
  *   csrf-enabled: true (deprecated alias, see security.mode)
  *   security.mode: auto
  *   security.fail-on-fallback: false
@@ -119,6 +120,13 @@ public class InertiaProperties {
 
     /** Whether prop keys are converted from snake_case to camelCase. */
     private boolean camelizeProps = false;
+
+    /**
+     * Whether unsafe {@code long} values are serialized as Inertia 3.8.0
+     * {@code {"$bigint":"..."}} markers so JavaScript clients can revive
+     * them as {@code BigInt} without precision loss.
+     */
+    private boolean bigintEnabled = false;
 
     /**
      * XSRF-TOKEN cookie refresh policy (Rails {@code :always} / {@code :lazy}
@@ -561,6 +569,14 @@ public class InertiaProperties {
 
     public void setCamelizeProps(boolean camelizeProps) {
         this.camelizeProps = camelizeProps;
+    }
+
+    public boolean isBigintEnabled() {
+        return bigintEnabled;
+    }
+
+    public void setBigintEnabled(boolean bigintEnabled) {
+        this.bigintEnabled = bigintEnabled;
     }
 
     /**

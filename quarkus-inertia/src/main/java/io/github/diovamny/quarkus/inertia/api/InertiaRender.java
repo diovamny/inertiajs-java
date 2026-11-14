@@ -3,6 +3,7 @@ package io.github.diovamny.quarkus.inertia.api;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.groups.UniAwait;
@@ -19,6 +20,8 @@ import io.smallrye.mutiny.groups.UniRepeat;
 import io.smallrye.mutiny.groups.UniSubscribe;
 
 import io.github.diovamny.inertia.core.spi.FlashStore;
+import io.github.diovamny.quarkus.inertia.protocol.DeferredPropRegistry;
+import io.github.diovamny.quarkus.inertia.protocol.LivePropRegistry;
 
 /**
  * A rendered page that can be chained with flash data before being returned,
@@ -124,6 +127,63 @@ public class InertiaRender implements Uni<Object> {
                 "SSR response caching requires the request-scoped SsrCachePolicy");
         }
         ssrCachePolicy.setTtlMillis(ttl != null ? ttl.toMillis() : null);
+        return this;
+    }
+
+    /**
+     * Register a live prop after rendering, mirroring the fluent
+     * {@code Inertia::render(...)->live(...)} API.
+     *
+     * <p>The page assembly of the reactive pipeline is lazy, so the
+     * registration is visible when the returned {@link Uni} is subscribed:
+     * the resolver runs on a full visit and on a partial reload that selects
+     * the prop, and its metadata travels in {@code liveProps}.</p>
+     *
+     * @param key       the prop name
+     * @param resolver  produces the current value asynchronously
+     * @param listeners channels and events that trigger live updates
+     * @return this render for chaining
+     */
+    public InertiaRender live(String key, Supplier<Uni<Object>> resolver,
+            io.github.diovamny.inertia.core.model.LivePropListener... listeners) {
+        LivePropRegistry.register(key, resolver, null, listeners);
+        return this;
+    }
+
+    /**
+     * Register a live prop with a minimum update interval after rendering.
+     *
+     * @param key        the prop name
+     * @param resolver   produces the current value asynchronously
+     * @param throttleMs minimum interval in milliseconds between updates
+     * @param listeners  channels and events that trigger live updates
+     * @return this render for chaining
+     */
+    public InertiaRender live(String key, Supplier<Uni<Object>> resolver, int throttleMs,
+            io.github.diovamny.inertia.core.model.LivePropListener... listeners) {
+        if (throttleMs < 0) {
+            throw new IllegalArgumentException("live prop throttle must not be negative");
+        }
+        LivePropRegistry.register(key, resolver, throttleMs, listeners);
+        return this;
+    }
+
+    /**
+     * Register a deferred prop after rendering, composable with
+     * {@link #live(String, Supplier, io.github.diovamny.inertia.core.model.LivePropListener...)}
+     * to mirror Laravel's {@code Inertia::defer(...)->live()}.
+     *
+     * <p>On a full visit the prop is grouped under {@code deferredProps}; on
+     * a partial reload that selects it, the resolver runs and the value is
+     * included.</p>
+     *
+     * @param group    the deferred group name
+     * @param key      the prop name
+     * @param resolver produces the prop value on partial reload
+     * @return this render for chaining
+     */
+    public InertiaRender defer(String group, String key, Supplier<Uni<Object>> resolver) {
+        DeferredPropRegistry.register(group, key, resolver);
         return this;
     }
 

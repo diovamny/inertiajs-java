@@ -1,4 +1,4 @@
-# Inertia.js v3 protocol compliance — single source of truth (release-0.0.5, P100-01).
+# Inertia.js v3 protocol compliance — single source of truth (release-0.0.6, P100-01).
 # docs/protocol-compatibility.md is GENERATED from this file by
 # scripts/generate-compatibility-matrix.mjs. Do not edit the markdown by hand.
 # Statuses: NO_EVALUADO | PARCIAL | IMPLEMENTADO | TCK_VERIFICADO (TESTED alias)
@@ -6,7 +6,7 @@
 # Policy: docs/COMPATIBILITY_POLICY.md. Snapshot: specs/inertia-v3-baseline-2026-09-23.yaml.
 # v3 clients only; no legacy v1/v2 mode. CI fails on IMPLEMENTADO without test_ref.
 version: 1
-updated: 2026-09-23
+updated: 2026-11-09
 entries:
   - id: PROTO-001
     section: "Detection"
@@ -468,8 +468,8 @@ entries:
     reference: "https://inertiajs.com/docs/v3/data-loading/infinite-scrolling"
     transports: [spring-mvc, quarkus-rest, quarkus-reactive]
     status: TESTED
-    test_ref: "InertiaPageTest (both), InertiaHeaderExtractorTest"
-    notes: "Header extracted; scrollProps metadata; dedicated infinite-scroll TCK in Fase 2 (H8)"
+    test_ref: "InertiaPageTest (both), InertiaHeaderExtractorTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    notes: "Header extracted; scrollProps metadata; TCK 09-scroll.yaml green on 3 transports; E2E-05 proves append + document scroll-depth restore through the official Vue client"
   - id: PROTO-056
     section: "Special"
     description: "once key, fresh and expiry semantics"
@@ -512,4 +512,61 @@ entries:
     test_ref: "HtmlRendererTest, RenderPageIntegrationTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
     e2e_verified: [spring-mvc, quarkus-rest]
     notes: "v3-pure (59% smaller bootstrap); legacy v1/v2 data-page attribute intentionally unsupported, no opt-in; Playwright e2e parses the script JSON on Spring/Quarkus demos (reactive cell lands in M4)"
-...[truncated 2085 chars]
+  - id: PROTO-060
+    section: "Types"
+    description: "Per-response BigInt opt-in (TCK PROTO-BigInt-03): unsafe longs as $bigint markers + preserveBigIntegers flag"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest]
+    status: TESTED
+    test_ref: "BigIntPerResponseIntegrationTest, BigIntQuarkusTest, JacksonJsonProviderTest, JacksonBigIntProviderTest"
+    notes: "Laravel preserveBigIntegers()/Rails preserve_big_integers parity; precedence request override > page flag > global inertia.bigint-enabled; Spring facade + fluent re-serialization, Quarkus facade"
+  - id: PROTO-061
+    section: "Types"
+    description: "Per-response BigInt opt-out (TCK PROTO-BigInt-04): global flag on, page stays plain and omits preserveBigIntegers"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest]
+    status: TESTED
+    test_ref: "BigIntGlobalEnabledIntegrationTest, BigIntGlobalEnabledQuarkusTest, JacksonJsonProviderTest, JacksonBigIntProviderTest"
+    notes: "Explicit preserveBigIntegers(false) overrides inertia.bigint-enabled=true for the response; wire falls back to plain JSON numbers with no flag"
+  - id: PROTO-062
+    section: "Types"
+    description: "java.math.BigInteger beyond JavaScript precision travels as $bigint marker (TCK PROTO-BigInt-05)"
+    reference: "Protocol"
+    transports: [spring-mvc, quarkus-rest]
+    status: TESTED
+    test_ref: "BigIntSerializerTest, JacksonJsonProviderTest, JacksonBigIntProviderTest"
+    notes: "isUnsafe(BigInteger)/encode(BigInteger)/marker(BigInteger) in inertia-core; Jackson 3 ValueSerializer (Spring) and Jackson 2 StdSerializer (Quarkus); safe values stay plain numbers"
+  - id: PROTO-063
+    section: "LiveProps"
+    description: "Live props wire contract - liveProps field in PageObject with channels, events, and throttle"
+    reference: "https://inertiajs.com/docs/v3/data-props/live-props"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "LiveChannelTest, LivePropListenerTest, LivePropMetadataTest, PageObjectLivePropsTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "PageObject component #20; liveProps omitted when empty; public/private/presence channels and event listeners; TCK 11-live-props.yaml green on 3 transports; Playwright LP-01/LP-02/LP-04 on the Vue kitchen-sink (Spring MVC + Quarkus REST)"
+  - id: PROTO-064
+    section: "LiveProps"
+    description: "Live props partial reload - resolver evaluation on X-Inertia-Partial-Data match"
+    reference: "https://inertiajs.com/docs/v3/data-props/live-props"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "LivePropsSpringIntegrationTest, LivePropsQuarkusTest, LivePropsReactiveQuarkusTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    e2e_verified: [spring-mvc, quarkus-rest]
+    notes: "Full visit resolves every live prop; a partial reload resolves only selected keys and returns the fresh value; Playwright LP-03 mutates the resolver state then reloads stockCount on both demos"
+  - id: PROTO-065
+    section: "LiveProps"
+    description: "Live props lazy evaluation - resolver NOT called when key not in partial data"
+    reference: "https://inertiajs.com/docs/v3/data-props/live-props"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "LivePropsSpringIntegrationTest, LivePropsQuarkusTest, LivePropsReactiveQuarkusTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    notes: "Foreign keys never execute the resolver (counter stays untouched); deferred+live keys skip resolution until selected; partial component mismatches do not trigger live evaluation"
+  - id: PROTO-066
+    section: "LiveProps"
+    description: "Live props defer composition - prop appears in both deferredProps and liveProps"
+    reference: "https://inertiajs.com/docs/v3/data-props/live-props"
+    transports: [spring-mvc, quarkus-rest, quarkus-reactive]
+    status: TESTED
+    test_ref: "LivePropsSpringIntegrationTest, LivePropsQuarkusTest, LivePropsReactiveQuarkusTest, TckSpringTest, TckQuarkusTest, TckReactiveTest"
+    notes: "defer().live() emits the key in deferredProps and liveProps; the resolver is not evaluated on a full visit, only when the partial selection includes it; TCK PROTO-LiveProp-06 covers the composition on 3 transports"

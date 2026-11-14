@@ -32,7 +32,7 @@ class SsrEndpointValidatorTest {
         when(config.securityCookieDomain()).thenReturn(Optional.empty());
         when(config.securityReactiveCsrfPaths()).thenReturn(Optional.empty());
         when(config.authPropsEnabled()).thenReturn(false);
-        when(config.csrfEnabled()).thenReturn(true);
+        when(config.csrfEnabled()).thenReturn(Optional.empty());
         when(config.ssrEnabled()).thenReturn(ssrEnabled);
         when(config.ssrUrl()).thenReturn(url);
         when(config.ssrRemoteEnabled()).thenReturn(remote);

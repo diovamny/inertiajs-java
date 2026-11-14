@@ -275,18 +275,18 @@ public interface InertiaConfig {
     boolean camelizeProps();
 
     /**
-     * Whether CSRF protection is enforced on non-GET Inertia requests.
-     * Legacy flag: only honored when {@code inertia.security.mode} is unset
+     * Legacy {@code inertia.csrf-enabled} flag.
+     * <p>Only honored when {@code inertia.security.mode} is unset
      * ({@code true} maps to {@code adapter}, {@code false} to
-     * {@code disabled}).
+     * {@code disabled}); an unset flag keeps {@code auto}.</p>
      * <p>Property: {@code inertia.csrf-enabled}.</p>
      *
-     * @return {@code true} to enforce, default {@code true}
+     * @return the explicitly configured flag, empty when unset
      * @deprecated use {@code inertia.security.mode} instead
      */
     @Deprecated
-    @WithDefault("true")
-    boolean csrfEnabled();
+    @WithName("csrf-enabled")
+    java.util.Optional<Boolean> csrfEnabled();
 
     /**
      * CSRF ownership: {@code auto} (recommended), {@code framework},
@@ -549,4 +549,28 @@ public interface InertiaConfig {
      * @return the prefix, empty when not configured
      */
     java.util.Optional<String> conventionRoutingPrefix();
+
+    /**
+     * Whether unsafe {@code long} values are serialized as Inertia 3.8.0
+     * {@code {"$bigint":"..."}} markers so JavaScript clients can revive
+     * them as {@code BigInt} without precision loss.
+     * <p>Property: {@code inertia.bigint-enabled}.</p>
+     *
+     * @return {@code true} to enable, default {@code false}
+     */
+    @WithName("bigint-enabled")
+    @WithDefault("false")
+    boolean bigintEnabled();
+
+    /**
+     * Auto-provision a Vert.x {@code SessionHandler} for flash messages
+     * and CSRF token storage. Disable only if you register your own
+     * {@code SessionHandler} or do not need flash/session CSRF.
+     * <p>Property: {@code inertia.session.enabled}.</p>
+     *
+     * @return {@code true} to auto-provision, default {@code true}
+     */
+    @WithName("session.enabled")
+    @WithDefault("true")
+    boolean sessionEnabled();
 }

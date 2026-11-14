@@ -19,7 +19,7 @@ class SsrClientSidecarTest {
 
     private static PageObject page() {
         return new PageObject("Home", Map.of("message", "Hello"), "/", "v1",
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private static SsrClient clientFor(String ssrUrl) {

@@ -50,7 +50,8 @@ public class InertiaSecurityValidator {
         // A rest-csrf signature key signs the cookie, so a client that only
         // echoes the cookie (every official Inertia client) can never pass
         // verification: the check requires cookie == sign(header), which no
-        // echo satisfies (verified against quarkus-rest-csrf 3.39.2 bytecode).
+        // echo satisfies (verified against quarkus-rest-csrf 3.40.1 bytecode,
+        // byte-identical to 3.39.2).
         // Inertia SPAs must therefore leave the key UNSET (plain double-submit
         // + SameSite + HTTPS). Only server-rendered flows that embed the raw
         // token (e.g. Qute `{csrfToken}`) may use a signature key.
