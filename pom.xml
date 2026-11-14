@@ -331,6 +331,8 @@
                 <param>io.github.diovamny.quarkus.inertia.security.InertiaSecuritySuiteTest</param>
                 <param>io.github.diovamny.quarkus.inertia.csrf.CsrfRefreshPolicyTest</param>
                 <param>io.github.diovamny.quarkus.inertia.security.OversizedPageProfileTest</param>
+                <param>io.github.diovamny.quarkus.inertia.session.InertiaSessionDisabledTest</param>
+                <param>io.github.diovamny.quarkus.inertia.session.InertiaSessionProducerTest</param>
               </excludedTestClasses>
               <mutationThreshold>${pit.mutation.minimum}</mutationThreshold>
               <coverageThreshold>${pit.coverage.minimum}</coverageThreshold>
