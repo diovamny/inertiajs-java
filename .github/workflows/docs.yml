@@ -3,20 +3,16 @@ name: Docs site
 # Builds the VitePress site and publishes it to GitHub Pages.
 on:
   push:
-    branches:
-      - main
-      - 'release-*'
+    branches: [ main ]
     tags: [ 'v*' ]
     paths:
       - 'docs-site/**'
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/docs.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'docs-site/**'
-      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
