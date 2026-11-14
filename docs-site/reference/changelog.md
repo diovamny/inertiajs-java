@@ -4,18 +4,6 @@ Release notes for the Inertia.js Java adapters. The canonical history lives in
 `CHANGELOG.md` at the repository root; this page summarizes the changes that
 affect application code and documentation.
 
-## Unreleased — toward 1.0.0
-
-- Per-response BigInt opt-in: `inertia.preserveBigIntegers(true/false)` in both
-  adapters (Spring facade plus fluent `InertiaRender` re-serialization; Quarkus
-  facade). Precedence: request override > page flag > global
-  `inertia.bigint-enabled`.
-- `java.math.BigInteger` support in `BigIntSerializer` and both Jackson modules.
-- `PageObject` gains the tristate `preserveBigIntegers` component and
-  `InertiaPageResult.of(component, props, preserveBigIntegers)`.
-- TCK `PROTO-BigInt-03/04/05`; C100 65/65 and I100 90/90 at the time of the
-  change.
-
 ## 0.0.6
 
 ### Added
@@ -40,6 +28,14 @@ affect application code and documentation.
 - BigInt opt-in (`inertia.bigint-enabled`, default `false`) with
   `BigIntSerializer` in `inertia-core`; TCK `PROTO-BigInt-01/02` and
   `PROTO-Version-History-01`.
+- Per-response BigInt opt-in: `inertia.preserveBigIntegers(true/false)` in both
+  adapters (Spring facade plus fluent `InertiaRender` re-serialization; Quarkus
+  facade). Precedence: request override > page flag > global
+  `inertia.bigint-enabled`.
+- `java.math.BigInteger` support in `BigIntSerializer` and both Jackson modules.
+- `PageObject` gains the tristate `preserveBigIntegers` component and
+  `InertiaPageResult.of(component, props, preserveBigIntegers)`.
+- TCK `PROTO-BigInt-03/04/05`; C100 65/65 and I100 90/90.
 
 ### Changed
 

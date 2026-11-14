@@ -1,20 +1,5 @@
 # Changelog
 
-## Unreleased — camino a 1.0.0
-
-- BigInt per-response opt-in: `inertia.preserveBigIntegers(true/false)` en ambos
-  adaptadores (Spring facade + `InertiaRender` fluent con re-serialización del
-  body; Quarkus facade), precedencia request > página > global
-  (`inertia.bigint-enabled`); paridad Laravel `preserveBigIntegers()` / Rails
-  `preserve_big_integers`.
-- Soporte `java.math.BigInteger` en `BigIntSerializer`
-  (`isUnsafe`/`encode`/`marker`) y en los módulos Jackson de ambos adaptadores.
-- `PageObject` gana el componente `preserveBigIntegers` (tristate) e
-  `InertiaPageResult` la factory `of(component, props, preserveBigIntegers)`.
-- TCK `PROTO-BigInt-03/04/05`; matriz C100 65/65 (PROTO-060/061/062), I100
-  90/90; `docs/configuration.md` con la sección "BigInt & large numbers" y guía
-  de sesiones/clúster en `docs/getting-started-quarkus.md`.
-
 ## 0.0.6
 
 ### Added
@@ -47,6 +32,18 @@
 - BigInt opt-in (`inertia.bigint-enabled`, default `false`) con
   `BigIntSerializer` en `inertia-core`; TCK `PROTO-BigInt-01/02` y
   `PROTO-Version-History-01`.
+- BigInt per-response opt-in: `inertia.preserveBigIntegers(true/false)` en
+  ambos adaptadores (Spring facade + `InertiaRender` fluent con re-serialización
+  del body; Quarkus facade), precedencia request > página > global
+  (`inertia.bigint-enabled`); paridad Laravel `preserveBigIntegers()` / Rails
+  `preserve_big_integers`.
+- Soporte `java.math.BigInteger` en `BigIntSerializer`
+  (`isUnsafe`/`encode`/`marker`) y en los módulos Jackson de ambos adaptadores.
+- `PageObject` gana el componente `preserveBigIntegers` (tristate) e
+  `InertiaPageResult` la factory `of(component, props, preserveBigIntegers)`.
+- TCK `PROTO-BigInt-03/04/05`; matriz C100 65/65 (PROTO-060/061/062), I100
+  90/90; `docs/configuration.md` con la sección "BigInt & large numbers" y guía
+  de sesiones/clúster en `docs/getting-started-quarkus.md`.
 
 ### Changed
 
