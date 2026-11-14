@@ -50,7 +50,9 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
-    if: github.event_name != 'pull_request'
+    # The github-pages environment only allows deployments from main. Tags and
+    # pull requests still build the site for verification but never deploy.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: build
     runs-on: ubuntu-latest
     environment:
