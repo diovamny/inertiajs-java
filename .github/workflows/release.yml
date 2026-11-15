@@ -127,10 +127,33 @@ jobs:
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
         # The previous step guarantees the key exists on tags (fail-closed).
+        # The NVD API occasionally returns a transient 5xx/524 mid-download
+        # (the failure is "Error updating the NVD Data", not a finding). Retry
+        # only that class of failure; a real vulnerability finding must fail
+        # immediately and is never retried.
         if: ${{ env.NVD_API_KEY != '' }}
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: ./mvnw verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            echo "::group::OWASP Dependency Check attempt ${attempt} of 3"
+            ./mvnw verify -Pquality-gates -DskipTests -DskipStaticAnalysis=true -DskipDependencyCheck=false 2>&1 | tee "owasp-attempt-${attempt}.log"
+            status=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            if [ "$status" -eq 0 ]; then
+              exit 0
+            fi
+            if grep -qE "Error updating the NVD Data|NvdApiException|No documents exist" "owasp-attempt-${attempt}.log"; then
+              echo "::warning::NVD data update failed (transient); retrying in 60s (attempt ${attempt}/3)"
+              sleep 60
+            else
+              echo "::error::OWASP failed for a reason other than an NVD update; not retrying"
+              exit "$status"
+            fi
+          done
+          echo "::error::OWASP Dependency Check failed after 3 attempts"
+          exit 1
 
       - name: Write Maven Central server credentials
         # actions/setup-java does not reliably leave a `central` server entry
