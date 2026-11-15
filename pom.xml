@@ -420,7 +420,10 @@
                    instead of failing the fail-closed gate on them. -->
               <nvdMaxRetryCount>10</nvdMaxRetryCount>
               <nvdApiDelay>6000</nvdApiDelay>
-              <nvdApiResultsPerPage>2000</nvdApiResultsPerPage>
+              <!-- 2000-record pages can take ~60s and hit Cloudflare's 524
+                   timeout mid-download; 1000 keeps each response well under
+                   the gateway timeout while staying within the API limits. -->
+              <nvdApiResultsPerPage>1000</nvdApiResultsPerPage>
               <skipProvidedScope>true</skipProvidedScope>
               <skipTestScope>true</skipTestScope>
             </configuration>
