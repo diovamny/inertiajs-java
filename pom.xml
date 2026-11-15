@@ -57,7 +57,7 @@
          Overridden per module (calibrated 2026-09-24); default guards new
          modules. Demos/archetypes opt out explicitly (own smoke suites). -->
     <jacoco.line.minimum>0.50</jacoco.line.minimum>
-    <pitest.version>1.17.4</pitest.version>
+    <pitest.version>1.30.0</pitest.version>
     <!-- Per-module PIT floors for the blocking gate (calibrated 2026-09-25
          from full runs; default guards new modules). Quarkus modules score
          lower because @QuarkusTest integration tests cannot run in minions
