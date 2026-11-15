@@ -54,13 +54,19 @@
 - SSR oficial: los seis starters eliminan el sidecar `ssr-server.mjs` y usan
   `createServer` oficial de `@inertiajs/*/server`; `npm run build:ssr` emite
   `dist-ssr/ssr.js` y `npm run ssr` lo arranca en `:13714`.
-- Quarkus `3.40.1` LTS como default (matrix CI dual con `3.39.2`); Spring CI
+- Quarkus `3.40.1.2` LTS como default (matrix CI dual con `3.39.2`); Spring CI
   `framework-version` alineada a `4.1.1`.
 - Sesión Vert.x auto-provisionada en Quarkus (`inertia.session.enabled=true`,
   `order(-2)`): flash y CSRF por sesión funcionan sin configuración manual;
   `false` documentado con WARN de diagnóstico.
 - Tests: ciclo CRUD MockMvc/RestAssured por arquetipo, tests de sesión
   auto-provisionada, gates de typecheck TS 6 y smoke CRUD en CI.
+
+### Security
+
+- Quarkus `3.40.1.2` como default sube Vert.x a `4.5.35`, que corrige
+  CVE-2026-102460…102477 y CVE-2026-103223/103224 (CVSS >= 8) presentes en
+  Vert.x <= `4.5.34`. Sin supresiones: el gate OWASP sigue fail-closed.
 
 ### Fixed
 

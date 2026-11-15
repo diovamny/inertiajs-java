@@ -43,7 +43,10 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.version>3.40.1</quarkus.version>
+    <!-- 3.40.1.2 is the 3.40.1 patch that ships Vert.x 4.5.35; 3.40.1
+         shipped 4.5.34, inside the affected range of CVE-2026-102460 through
+         CVE-2026-102477 and CVE-2026-103223/103224 (CVSS >= 8). -->
+    <quarkus.version>3.40.1.2</quarkus.version>
     <spring-boot.version>4.1.1</spring-boot.version>
     <!-- NOTE: do NOT use <tomcat.version> here: with BOM *import* scope
          (this project has no Boot parent) the property does not propagate
@@ -412,12 +415,17 @@
               </suppressionFiles>
               <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
               <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
-              <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
-              <!-- NVD API resilience: the first scan on a fresh runner pulls
-                   the whole NVD dataset (hundreds of paged requests), and NVD
-                   rate-limits/flakes surface inside the client as an NPE
-                   ("bytes is null"). Retries + delay ride out transients
+              <!-- NVD data source. The paged API is not reliable on a fresh
+                   runner: Cloudflare returns 524 mid-download and the scan
+                   aborts before any finding is evaluated. Use the official
+                   2.0 JSON feeds instead; dependency-check expands {0} for
+                   every year from 2002 to the current year and appends the
+                   "modified" feed. -->
+              <nvdDatafeedUrl>https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{0}.json.gz</nvdDatafeedUrl>
+              <!-- API fallback settings (only used if nvdDatafeedUrl is
+                   removed): retries + delay ride out rate limits/flakes
                    instead of failing the fail-closed gate on them. -->
+              <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
               <nvdMaxRetryCount>10</nvdMaxRetryCount>
               <nvdApiDelay>6000</nvdApiDelay>
               <!-- 2000-record pages can take ~60s and hit Cloudflare's 524

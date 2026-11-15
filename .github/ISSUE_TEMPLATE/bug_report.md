@@ -28,7 +28,7 @@ What you expected to happen.
 
 - Adapter version: `0.0.4`
 - Java version: (e.g. 21, 25)
-- Spring Boot / Quarkus version: (e.g. 4.1.1 / 3.40.1)
+- Spring Boot / Quarkus version: (e.g. 4.1.1 / 3.40.1.2)
 - GraalVM version (only for native issues):
 - OS:
 

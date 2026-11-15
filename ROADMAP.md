@@ -11,7 +11,7 @@ and [compatibility policy](docs/COMPATIBILITY_POLICY.md).
 - Live Props (`Inertia::live`): wire contract (`liveProps`), canales
   public/private/presence, eventos, throttle y composición `defer().live()`
   con resolución en partial reload en los 3 transportes.
-- Quarkus `3.40.1` LTS default con soporte dual verificado `3.39.2`; Spring
+- Quarkus `3.40.1.2` LTS default con compatibilidad dual verificada `3.39.2`; Spring
   Boot `4.1.1` en POMs y CI.
 - Sesión Vert.x auto-provisionada en Quarkus (`inertia.session.enabled`) para
   flash + CSRF de sesión sin configuración.

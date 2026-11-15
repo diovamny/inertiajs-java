@@ -44,12 +44,18 @@ affect application code and documentation.
 - Official SSR: all six starters drop `ssr-server.mjs` and use `createServer`
   from `@inertiajs/*/server`. `npm run build:ssr` emits `dist-ssr/ssr.js`;
   `npm run ssr` starts it on port `13714`.
-- Quarkus `3.40.1` LTS as default (dual CI matrix with `3.39.2`); Spring CI
+- Quarkus `3.40.1.2` LTS as default (dual CI matrix with `3.39.2`); Spring CI
   `framework-version` aligned to `4.1.1`.
 - Vert.x session auto-provisioned on Quarkus (`inertia.session.enabled=true`,
   `order(-2)`): flash and session CSRF work without manual wiring.
 - Tests: CRUD cycle per archetype with MockMvc/RestAssured, auto-provisioned
   session tests, TypeScript 6 typecheck gates and CRUD smoke in CI.
+
+### Security
+
+- Quarkus `3.40.1.2` as default upgrades Vert.x to `4.5.35`, fixing
+  CVE-2026-102460…102477 and CVE-2026-103223/103224 (CVSS >= 8) in Vert.x
+  `<= 4.5.34`. No suppressions: the OWASP gate stays fail-closed.
 
 ### Fixed
 
@@ -96,7 +102,7 @@ affect application code and documentation.
 
 - Supported JDK: **21+**.
 - Spring Boot: **4.1.x** (certified with `4.1.1`).
-- Quarkus: **3.40.x** (certified with `3.40.1`).
+- Quarkus: **3.40.x** (certified with `3.40.1.2`).
 - Official clients: `@inertiajs/*` **3.11.0**.
 - Protocol: Inertia.js **v3 only**. There is no v1/v2 compatibility mode.
 

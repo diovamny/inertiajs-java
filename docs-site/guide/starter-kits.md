@@ -51,7 +51,7 @@ Optionally pin the framework version explicitly:
 ```bash
 -DinertiaAdapterVersion=0.0.6 \
 -DjavaVersion=21 \
--DframeworkVersion=4.1.1     # or 3.40.1 for Quarkus
+-DframeworkVersion=4.1.1     # or 3.40.1.2 for Quarkus
 ```
 
 ## Run it

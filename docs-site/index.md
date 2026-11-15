@@ -240,7 +240,7 @@ variants use `-react-archetype` and `-svelte-archetype`.
 <div class="pill-row">
   <span class="pill">Java 21+</span>
   <span class="pill">Spring Boot 4.1.1</span>
-  <span class="pill">Quarkus 3.40.1</span>
+  <span class="pill">Quarkus 3.40.1.2</span>
   <span class="pill">@inertiajs/* 3.11.0</span>
   <span class="pill">Protocol v3</span>
   <span class="pill">11 TCK suites</span>

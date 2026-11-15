@@ -384,7 +384,7 @@ public class RxWelcomeRoute {
         return inertia.render("Welcome", Map.of(
             "appName", appName,
             "framework", "Quarkus",
-            "frameworkVersion", "3.40.1",
+            "frameworkVersion", "3.40.1.2",
             "inertiaUrl", "https://inertiajs.com/"));
     }
 }

@@ -10,7 +10,7 @@ CSRF.
 | Tool | Version |
 |---|---|
 | JDK | 21+ |
-| Quarkus | 3.40.1 (3.39.2 also certified) |
+| Quarkus | 3.40.1.2 (3.39.2 compatibility only; 3.40.1.2+ carries the Vert.x security fixes) |
 | Maven | 3.9+ |
 | Node.js | 22+ |
 

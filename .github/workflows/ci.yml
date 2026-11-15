@@ -83,6 +83,19 @@ jobs:
           java-version: 21
           cache: maven
 
+      - name: Cache OWASP Dependency-Check data
+        # setup-java's Maven cache is shared by every job and is usually
+        # saved by a faster job before this one, so it cannot be relied on to
+        # carry the NVD database. Keep it in its own cache, keyed by the root
+        # POM so a Dependency-Check upgrade never restores an incompatible
+        # schema.
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: dc-data-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+          restore-keys: |
+            dc-data-${{ runner.os }}-
+
       - name: Require NVD_API_KEY (fail-closed)
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
@@ -93,10 +106,10 @@ jobs:
           fi
 
       - name: OWASP Dependency Check
-        # The NVD API occasionally returns a transient 5xx/524 mid-download
-        # (the failure is "Error updating the NVD Data", not a finding). Retry
-        # only that class of failure; a real vulnerability finding must fail
-        # immediately and is never retried.
+        # NVD updates occasionally fail transiently (API 5xx/524 mid-download
+        # or a feed download error); the failure is an update exception, not a
+        # finding. Retry only that class of failure; a real vulnerability
+        # finding must fail immediately and is never retried.
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
@@ -112,7 +125,7 @@ jobs:
             if [ "$status" -eq 0 ]; then
               exit 0
             fi
-            if grep -qE "Error updating the NVD Data|NvdApiException|No documents exist" "owasp-attempt-${attempt}.log"; then
+            if grep -qE "Error updating the NVD Data|NvdApiException|No documents exist|Unable to download the data feed META files|Error downloading NVD CVE|DownloadFailedException|TooManyRequestsException|NVD Returned Status Code: 5" "owasp-attempt-${attempt}.log"; then
               echo "::warning::NVD data update failed (transient); retrying in 60s (attempt ${attempt}/3)"
               sleep 60
             else
@@ -340,17 +353,17 @@ jobs:
             framework-version: 4.1.1
             starter-kind: spring
             starter-jar: hello-inertia-*.jar
-          # Quarkus default (3.40.1 LTS)
+          # Quarkus default (3.40.1.2 LTS)
           - archetype: inertia-quarkus-vue-archetype
-            framework-version: 3.40.1
+            framework-version: 3.40.1.2
             starter-kind: quarkus
             starter-jar: quarkus-app/quarkus-run.jar
           - archetype: inertia-quarkus-react-archetype
-            framework-version: 3.40.1
+            framework-version: 3.40.1.2
             starter-kind: quarkus
             starter-jar: quarkus-app/quarkus-run.jar
           - archetype: inertia-quarkus-svelte-archetype
-            framework-version: 3.40.1
+            framework-version: 3.40.1.2
             starter-kind: quarkus
             starter-jar: quarkus-app/quarkus-run.jar
           # Quarkus legacy (3.39.2 retrocompat)
@@ -704,9 +717,9 @@ jobs:
           - archetype: inertia-spring-vue-archetype
             framework-version: 4.1.1
             starter-jar: hello-inertia-*.jar
-          # Quarkus default (3.40.1 LTS)
+          # Quarkus default (3.40.1.2 LTS)
           - archetype: inertia-quarkus-vue-archetype
-            framework-version: 3.40.1
+            framework-version: 3.40.1.2
             starter-jar: quarkus-app/quarkus-run.jar
           # Quarkus legacy (3.39.2 retrocompat)
           - archetype: inertia-quarkus-vue-archetype

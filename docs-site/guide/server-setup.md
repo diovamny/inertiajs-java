@@ -12,7 +12,7 @@ working app in one command, start with [Starter Kits](/guide/starter-kits).
 | Node.js | 22+ |
 | npm | 10+ |
 | Spring Boot | 4.1.1 |
-| Quarkus | 3.40.1 |
+| Quarkus | 3.40.1.2 |
 
 ## Dependencies
 

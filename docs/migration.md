@@ -114,7 +114,7 @@ starter and port controllers one by one (both adapters verified with the
 SSR contract suite on 2026-09-25: server-render + hydrate + CSR fallback).
 
 ```bash
-# Spring Boot 4.1.x (use -DframeworkVersion=4.1.1) or Quarkus 3.40.1;
+# Spring Boot 4.1.x (use -DframeworkVersion=4.1.1) or Quarkus 3.40.1.2;
 # svelte/vue archetypes exist with the same properties.
 mvn -B org.apache.maven.plugins:maven-archetype-plugin:3.3.1:generate \
   -DarchetypeCatalog=local \

@@ -38,7 +38,7 @@ interaction quality of a SPA.
 
 <div class="pill-row">
   <span class="pill">Spring Boot 4.1.1</span>
-  <span class="pill">Quarkus 3.40.1</span>
+  <span class="pill">Quarkus 3.40.1.2</span>
   <span class="pill">Vue 3 · React 19 · Svelte 5</span>
   <span class="pill">Protocol v3</span>
 </div>

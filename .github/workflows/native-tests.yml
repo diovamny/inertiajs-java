@@ -48,7 +48,7 @@ jobs:
           -DappName="Native Quarkus"
           -DinertiaAdapterVersion=0.0.6
           -DjavaVersion=21
-          -DframeworkVersion=3.40.1
+          -DframeworkVersion=3.40.1.2
         working-directory: /tmp
 
       - name: Build native binary (Mandrel jdk-25 container build)

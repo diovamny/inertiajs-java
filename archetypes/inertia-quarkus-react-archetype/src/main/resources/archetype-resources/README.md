@@ -84,7 +84,7 @@ Open `http://localhost:8080/`.
 | Component | Version |
 |-----------|---------|
 | Java | 21 |
-| Quarkus | 3.40.1 (default), 3.39.2 (legacy) |
+| Quarkus | 3.40.1.2 (default), 3.39.2 (legacy) |
 | Inertia.js | 3.11.0 |
 | TypeScript | 6.0.3 |
 | Node | 24.21+ |

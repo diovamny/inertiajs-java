@@ -33,6 +33,17 @@ jobs:
           server-username: ${{ secrets.CENTRAL_USERNAME }}
           server-password: ${{ secrets.CENTRAL_PASSWORD }}
 
+      - name: Cache OWASP Dependency-Check data
+        # Restore the NVD database produced by CI so the release does not
+        # spend ~20 minutes rebuilding it (and is less exposed to NVD flakiness).
+        # Keyed by the root POM so a Dependency-Check upgrade starts clean.
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: dc-data-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+          restore-keys: |
+            dc-data-${{ runner.os }}-
+
       - name: Run tests and blocking quality gates
         # Releases fail when ANY gate fails: unit/integration suites,
         # Checkstyle and SpotBugs (thresholds in the root pom). OWASP stays
@@ -110,8 +121,10 @@ jobs:
         # Releases must not skip dependency vulnerability scanning. On tag
         # pushes the key is mandatory; manual dispatches (trials) may run
         # without it but then skip the scan explicitly loud, never silently.
-        # NOTE: the secrets context is not allowed in `if:`, so the secret is
-        # mapped to env first and the condition reads env instead.
+        # The secret is also exposed as a step output because the secrets
+        # context is not allowed in `if:` and step-level `env` is not visible
+        # to another step's condition.
+        id: nvd_key
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
@@ -120,18 +133,21 @@ jobs:
               echo "::error::NVD_API_KEY is required for releases (fail-closed SCA, Dependency-Check 12.1.0)"
               exit 1
             fi
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
             echo "NVD_API_KEY unset: OWASP scan will be skipped (non-tag trial run only)"
+          else
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: OWASP Dependency Check
         # Releases must not skip dependency vulnerability scanning. Runs only
         # when NVD_API_KEY is configured; fails on CVSS >= 8 (see root pom).
         # The previous step guarantees the key exists on tags (fail-closed).
-        # The NVD API occasionally returns a transient 5xx/524 mid-download
-        # (the failure is "Error updating the NVD Data", not a finding). Retry
-        # only that class of failure; a real vulnerability finding must fail
-        # immediately and is never retried.
-        if: ${{ env.NVD_API_KEY != '' }}
+        # NVD updates occasionally fail transiently (API 5xx/524 mid-download
+        # or a feed download error); the failure is an update exception, not a
+        # finding. Retry only that class of failure; a real vulnerability
+        # finding must fail immediately and is never retried.
+        if: steps.nvd_key.outputs.has_key == 'true'
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
@@ -147,7 +163,7 @@ jobs:
             if [ "$status" -eq 0 ]; then
               exit 0
             fi
-            if grep -qE "Error updating the NVD Data|NvdApiException|No documents exist" "owasp-attempt-${attempt}.log"; then
+            if grep -qE "Error updating the NVD Data|NvdApiException|No documents exist|Unable to download the data feed META files|Error downloading NVD CVE|DownloadFailedException|TooManyRequestsException|NVD Returned Status Code: 5" "owasp-attempt-${attempt}.log"; then
               echo "::warning::NVD data update failed (transient); retrying in 60s (attempt ${attempt}/3)"
               sleep 60
             else
