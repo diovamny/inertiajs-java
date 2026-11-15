@@ -8,6 +8,8 @@ Single-page Vue, React and Svelte apps powered by Spring Boot and Quarkus contro
 [![Maven Central spring-inertia](https://img.shields.io/maven-central/v/io.github.diovamny.spring.inertia/spring-inertia)](https://central.sonatype.com/artifact/io.github.diovamny.spring.inertia/spring-inertia)
 [![Maven Central quarkus-inertia](https://img.shields.io/maven-central/v/io.github.diovamny.quarkus.inertia/quarkus-inertia)](https://central.sonatype.com/artifact/io.github.diovamny.quarkus.inertia/quarkus-inertia)
 
+Visit [Web Inertia Java Adapters](https://diovamny.github.io/inertiajs-java/)
+
 Visit [inertiajs.com](https://inertiajs.com/) to learn the protocol. This is a community
 project and is not officially maintained by the Inertia.js team.
 
